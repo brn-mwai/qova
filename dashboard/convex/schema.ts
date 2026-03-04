@@ -130,6 +130,18 @@ export default defineSchema({
     .index("by_webhook", ["webhookId"])
     .index("by_time", ["deliveredAt"]),
 
+  integrationDeliveries: defineTable({
+    userId: v.string(),
+    integrationType: v.string(), // "slack" | "telegram" | "email"
+    event: v.string(), // JSON stringified event
+    success: v.boolean(),
+    error: v.optional(v.string()),
+    deliveredAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_type", ["integrationType"])
+    .index("by_time", ["deliveredAt"]),
+
   // ─── Notifications ───────────────────────────────────────────────
   notifications: defineTable({
     userId: v.string(),

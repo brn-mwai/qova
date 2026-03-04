@@ -1,4 +1,5 @@
 import type { MutationCtx } from "../_generated/server";
+import { internal } from "../_generated/api";
 
 /**
  * Log an audit trail entry AND dispatch a user notification in one call.
@@ -49,5 +50,20 @@ export async function trackEvent(
 			read: false,
 			createdAt: Date.now(),
 		});
+
+		// Dispatch to external integrations (Slack, Telegram, email) via scheduler
+		await ctx.scheduler.runAfter(
+			0,
+			internal.actions.integrationDispatch.dispatchNotification,
+			{
+				userId: opts.userId,
+				event: {
+					type: opts.notification.type,
+					title: opts.notification.title,
+					message: opts.notification.message,
+					agentAddress: opts.notification.agentAddress,
+				},
+			},
+		);
 	}
 }

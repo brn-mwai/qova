@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { mutation, query, internalQuery } from "./_generated/server";
 
 export const list = query({
 	handler: async (ctx) => {
@@ -8,6 +8,17 @@ export const list = query({
 		return await ctx.db
 			.query("integrations")
 			.withIndex("by_user", (q) => q.eq("userId", identity.subject))
+			.collect();
+	},
+});
+
+/** Internal query for dispatch action -- no auth check, filtered by userId. */
+export const listByUserId = internalQuery({
+	args: { userId: v.string() },
+	handler: async (ctx, { userId }) => {
+		return await ctx.db
+			.query("integrations")
+			.withIndex("by_user", (q) => q.eq("userId", userId))
 			.collect();
 	},
 });

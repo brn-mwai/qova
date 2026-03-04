@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation } from "../_generated/server";
+import { mutation, internalQuery } from "../_generated/server";
 
 /**
  * Upsert user from Clerk webhook.
@@ -62,6 +62,17 @@ export const deleteUser = mutation({
       await ctx.db.delete(user._id);
     }
   },
+});
+
+/** Internal query for dispatch action -- lookup user by Clerk subject ID. */
+export const getByClerkId = internalQuery({
+	args: { clerkId: v.string() },
+	handler: async (ctx, { clerkId }) => {
+		return await ctx.db
+			.query("users")
+			.withIndex("by_clerk_id", (q) => q.eq("clerkId", clerkId))
+			.first();
+	},
 });
 
 export const linkWallet = mutation({

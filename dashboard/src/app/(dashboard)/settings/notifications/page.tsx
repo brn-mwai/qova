@@ -150,7 +150,9 @@ export default function NotificationSettingsPage(): React.ReactElement {
 							Notification Preferences
 						</CardTitle>
 						<CardDescription>
-							Choose which notifications you receive and how.
+							Choose which notifications you receive and how. Email delivery
+							is active when configured. Push notifications coming soon.
+							In-app notifications are always enabled.
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
@@ -204,6 +206,8 @@ export default function NotificationSettingsPage(): React.ReactElement {
 										<Switch
 											checked={prefs[row.pushKey]}
 											onCheckedChange={(v) => update(row.pushKey, v)}
+											disabled
+											title="Push notifications coming soon"
 										/>
 									</div>
 								</div>

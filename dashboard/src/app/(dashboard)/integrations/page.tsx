@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import {
 	Plugs,
@@ -9,6 +9,8 @@ import {
 	ArrowRight,
 	MagnifyingGlass,
 	Power,
+	Lightning,
+	SpinnerGap,
 } from "@phosphor-icons/react";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
@@ -200,6 +202,40 @@ export default function IntegrationsPage(): React.ReactElement {
 		{},
 	);
 	const [connecting, setConnecting] = useState(false);
+	const [testing, setTesting] = useState(false);
+
+	const testSlack = useAction(api.actions.integrationTest.testSlack);
+	const testTelegram = useAction(api.actions.integrationTest.testTelegram);
+	const testX402 = useAction(api.actions.integrationTest.testX402);
+	const testCoinbase = useAction(api.actions.integrationTest.testCoinbase);
+	const testOpenAI = useAction(api.actions.integrationTest.testOpenAI);
+
+	const TEST_ACTIONS: Record<string, (args: { integrationId: string }) => Promise<{ success: boolean; message: string; duration: number }>> = {
+		slack: testSlack,
+		telegram: testTelegram,
+		x402: testX402,
+		"coinbase-wallet": testCoinbase,
+		"openai-agents": testOpenAI,
+	};
+
+	async function handleTest(): Promise<void> {
+		if (!selectedIntegration) return;
+		const testFn = TEST_ACTIONS[selectedIntegration.id];
+		if (!testFn) return;
+		setTesting(true);
+		try {
+			const result = await testFn({ integrationId: selectedIntegration.id });
+			if (result.success) {
+				toast.success(result.message, { description: `${result.duration}ms` });
+			} else {
+				toast.error(result.message, { description: `${result.duration}ms` });
+			}
+		} catch (err) {
+			toast.error(err instanceof Error ? err.message : "Test failed");
+		} finally {
+			setTesting(false);
+		}
+	}
 
 	const connectedSet = useMemo(() => {
 		const set = new Set<string>();
@@ -465,6 +501,20 @@ export default function IntegrationsPage(): React.ReactElement {
 							</div>
 						)}
 						<DialogFooter>
+							{selectedIsConnected && TEST_ACTIONS[selectedIntegration.id] && (
+								<Button
+									variant="outline"
+									onClick={handleTest}
+									disabled={testing}
+								>
+									{testing ? (
+										<SpinnerGap className="size-4 mr-1 animate-spin" />
+									) : (
+										<Lightning className="size-4 mr-1" weight="fill" />
+									)}
+									{testing ? "Testing..." : "Test Connection"}
+								</Button>
+							)}
 							{selectedIsConnected && (
 								<Button
 									variant="outline"

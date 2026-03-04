@@ -9,16 +9,19 @@
  */
 
 import type * as actions_chain from "../actions/chain.js";
+import type * as actions_integrationDispatch from "../actions/integrationDispatch.js";
+import type * as actions_integrationTest from "../actions/integrationTest.js";
 import type * as actions_sync from "../actions/sync.js";
 import type * as actions_webhookTest from "../actions/webhookTest.js";
 import type * as integrationConfigs from "../integrationConfigs.js";
+import type * as lib_integrationHelpers from "../lib/integrationHelpers.js";
+import type * as lib_trackEvent from "../lib/trackEvent.js";
 import type * as mutations_activity from "../mutations/activity.js";
 import type * as mutations_agents from "../mutations/agents.js";
 import type * as mutations_apiKeys from "../mutations/apiKeys.js";
 import type * as mutations_cre from "../mutations/cre.js";
 import type * as mutations_notifications from "../mutations/notifications.js";
 import type * as mutations_scores from "../mutations/scores.js";
-import type * as mutations_stats from "../mutations/stats.js";
 import type * as mutations_users from "../mutations/users.js";
 import type * as mutations_webhooks from "../mutations/webhooks.js";
 import type * as queries_activity from "../queries/activity.js";
@@ -42,16 +45,19 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   "actions/chain": typeof actions_chain;
+  "actions/integrationDispatch": typeof actions_integrationDispatch;
+  "actions/integrationTest": typeof actions_integrationTest;
   "actions/sync": typeof actions_sync;
   "actions/webhookTest": typeof actions_webhookTest;
   integrationConfigs: typeof integrationConfigs;
+  "lib/integrationHelpers": typeof lib_integrationHelpers;
+  "lib/trackEvent": typeof lib_trackEvent;
   "mutations/activity": typeof mutations_activity;
   "mutations/agents": typeof mutations_agents;
   "mutations/apiKeys": typeof mutations_apiKeys;
   "mutations/cre": typeof mutations_cre;
   "mutations/notifications": typeof mutations_notifications;
   "mutations/scores": typeof mutations_scores;
-  "mutations/stats": typeof mutations_stats;
   "mutations/users": typeof mutations_users;
   "mutations/webhooks": typeof mutations_webhooks;
   "queries/activity": typeof queries_activity;

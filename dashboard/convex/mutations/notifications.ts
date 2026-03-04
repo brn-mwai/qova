@@ -38,6 +38,27 @@ export const markAllRead = mutation({
   },
 });
 
+/** Log an integration delivery result. Internal only. */
+export const logIntegrationDelivery = internalMutation({
+  args: {
+    userId: v.string(),
+    integrationType: v.string(),
+    event: v.string(),
+    success: v.boolean(),
+    error: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.insert("integrationDeliveries", {
+      userId: args.userId,
+      integrationType: args.integrationType,
+      event: args.event,
+      success: args.success,
+      error: args.error,
+      deliveredAt: Date.now(),
+    });
+  },
+});
+
 /**
  * Create a notification. Internal only -- should not be callable from the client.
  * Use internalMutation so only server-side code (actions, other mutations) can call it.
