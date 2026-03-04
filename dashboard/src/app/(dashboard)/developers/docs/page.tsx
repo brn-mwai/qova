@@ -31,72 +31,74 @@ interface Endpoint {
 const ENDPOINTS: Endpoint[] = [
   {
     method: "GET",
-    path: "/api/badge/:address",
-    description: "Get an SVG badge for an agent's current score (no auth required)",
-    example: `# Embed in markdown or HTML:
-![Qova Score](https://app.qova.cc/api/badge/0x742d...bD18)
-
-# Or use as an image tag:
-<img src="https://app.qova.cc/api/badge/0x742d...bD18" alt="Qova Score" />`,
-    response: `<!-- Returns SVG image (200 OK) -->
-<svg xmlns="http://www.w3.org/2000/svg" width="128" height="20">
-  qova score | AAA 967
-</svg>
-
-<!-- Agent not found returns N/A badge -->`,
-  },
-  {
-    method: "GET",
-    path: "SDK: client.getScore(address)",
-    description: "Read an agent's reputation score from the on-chain ReputationRegistry contract",
-    example: `import { createQovaClient } from "@qova/core";
-
-const client = createQovaClient({ chain: "base" });
-const score = await client.getScore("0x742d...bD18");
-console.log(score); // 967`,
-    response: `// Returns a number 0-1000
-967`,
-  },
-  {
-    method: "GET",
-    path: "SDK: client.getAgentDetails(address)",
-    description: "Read full agent details struct from the ReputationRegistry",
-    example: `const details = await client.getAgentDetails("0x742d...bD18");`,
+    path: "/api/agents/:address",
+    description: "Get agent details including score, grade, and transaction stats",
+    example: `curl -H "Authorization: Bearer qova_xxx" \\
+  https://api.qova.cc/api/agents/0x742d...bD18`,
     response: `{
+  "address": "0x742d...bD18",
   "score": 967,
+  "grade": "AAA",
   "isRegistered": true,
-  "lastUpdated": 1709136600,
-  "updateCount": 42
+  "totalTxCount": 156,
+  "totalVolume": "45.2000 ETH"
 }`,
   },
   {
     method: "POST",
-    path: "SDK: client.registerAgent(address)",
-    description: "Register a new agent on-chain (requires walletClient)",
-    example: `import { createQovaClient } from "@qova/core";
-import { createWalletClient, http } from "viem";
-
-const wallet = createWalletClient({ ... });
-const client = createQovaClient({
-  chain: "base",
-  walletClient: wallet,
-});
-const txHash = await client.registerAgent("0x742d...bD18");`,
-    response: `// Returns transaction hash
-"0xabc123...def456"`,
+    path: "/api/agents/register",
+    description: "Register a new agent on-chain and begin score tracking",
+    example: `curl -X POST -H "Authorization: Bearer qova_xxx" \\
+  -H "Content-Type: application/json" \\
+  -d '{"agent": "0x742d...bD18"}' \\
+  https://api.qova.cc/api/agents/register`,
+    response: `{
+  "txHash": "0xabc...def",
+  "agent": "0x742d...bD18"
+}`,
   },
   {
     method: "POST",
-    path: "SDK: client.executeAgentAction(...)",
-    description: "Execute an agent action through QovaCore (register + record tx + update score)",
-    example: `const txHash = await client.executeAgentAction(
-  "0x742d...bD18",    // agent address
-  "0xdeadbeef...",     // transaction hash
-  BigInt(1e18),        // amount in wei
-  0                    // TX_TYPE.PAYMENT
-);`,
-    response: `// Returns transaction hash
-"0xfed987...654cba"`,
+    path: "/api/verify",
+    description: "Verify an agent's trust score, sanctions, and registration status",
+    example: `curl -X POST -H "Authorization: Bearer qova_xxx" \\
+  -H "Content-Type: application/json" \\
+  -d '{"agent": "0x742d...bD18"}' \\
+  https://api.qova.cc/api/verify`,
+    response: `{
+  "agent": "0x742d...bD18",
+  "verified": true,
+  "score": 967,
+  "grade": "AAA",
+  "sanctionsClean": true,
+  "isRegistered": true,
+  "timestamp": "2026-02-28T14:30:00Z"
+}`,
+  },
+  {
+    method: "GET",
+    path: "/api/scores/:address/history",
+    description: "Get historical score snapshots for an agent",
+    example: `curl -H "Authorization: Bearer qova_xxx" \\
+  https://api.qova.cc/api/scores/0x742d...bD18/history?limit=30`,
+    response: `{
+  "agent": "0x742d...bD18",
+  "snapshots": [
+    { "score": 967, "grade": "AAA", "timestamp": "2026-02-28" },
+    { "score": 963, "grade": "AAA", "timestamp": "2026-02-27" }
+  ]
+}`,
+  },
+  {
+    method: "GET",
+    path: "/api/badge/:address",
+    description: "Get an SVG badge for an agent's current score (no auth required)",
+    example: `# Embed in markdown:
+![Qova Score](https://qova.cc/api/badge/0x742d...bD18)`,
+    response: `<!-- Returns SVG image -->
+<svg xmlns="http://www.w3.org/2000/svg" ...>
+  qova score | AAA 967
+</svg>`,
   },
 ]
 

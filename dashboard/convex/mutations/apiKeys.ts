@@ -1,6 +1,5 @@
 import { v } from "convex/values";
-import { mutation } from "../_generated/server";
-import { trackEvent } from "../lib/trackEvent";
+import { mutation, internalMutation } from "../_generated/server";
 
 /**
  * SHA-256 hash a string. Uses the Web Crypto API available in Convex runtime.
@@ -13,62 +12,88 @@ async function sha256(input: string): Promise<string> {
   return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-/** Create a new API key. Returns the full key ONCE. */
+/**
+ * Generate a cryptographically random API key.
+ */
+function generateKey(): string {
+  const randomBytes = new Uint8Array(30);
+  crypto.getRandomValues(randomBytes);
+  return (
+    "qova_" +
+    Array.from(randomBytes)
+      .map((b) => b.toString(36).padStart(2, "0"))
+      .join("")
+      .slice(0, 40)
+  );
+}
+
+/**
+ * Create a new API key from the dashboard (requires Clerk auth).
+ * Returns the full key — shown to user once, never stored in plaintext.
+ */
 export const create = mutation({
+  args: {
+    name: v.string(),
+    scopes: v.array(v.string()),
+    expiresInDays: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthenticated");
+
+    const userId = identity.subject;
+    const key = generateKey();
+    const keyPrefix = key.slice(0, 12);
+    const keyHash = await sha256(key);
+
+    const expiresAt = args.expiresInDays
+      ? Date.now() + args.expiresInDays * 86400000
+      : undefined;
+
+    const id = await ctx.db.insert("apiKeys", {
+      userId,
+      name: args.name,
+      keyPrefix,
+      keyHash,
+      scopes: args.scopes,
+      expiresAt,
+      createdAt: Date.now(),
+      isActive: true,
+    });
+
+    return { key, keyPrefix, id };
+  },
+});
+
+/**
+ * Create a key via the API server (internal, no Clerk auth needed).
+ * Called by the Hono API when an admin-scoped key creates a new key.
+ */
+export const createInternal = internalMutation({
   args: {
     userId: v.string(),
     name: v.string(),
     scopes: v.array(v.string()),
     expiresAt: v.optional(v.number()),
+    keyPrefix: v.string(),
+    keyHash: v.string(),
   },
   handler: async (ctx, args) => {
-    // Verify caller identity
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error("Unauthenticated");
-    if (identity.subject !== args.userId) throw new Error("Forbidden");
-
-    // Generate a cryptographically random key
-    const randomBytes = new Uint8Array(30);
-    crypto.getRandomValues(randomBytes);
-    const key =
-      "qova_" +
-      Array.from(randomBytes)
-        .map((b) => b.toString(36).padStart(2, "0"))
-        .join("")
-        .slice(0, 40);
-
-    const keyPrefix = key.slice(0, 12);
-    const keyHash = await sha256(key);
-
-    await ctx.db.insert("apiKeys", {
+    const id = await ctx.db.insert("apiKeys", {
       userId: args.userId,
       name: args.name,
-      keyPrefix,
-      keyHash,
+      keyPrefix: args.keyPrefix,
+      keyHash: args.keyHash,
       scopes: args.scopes,
       expiresAt: args.expiresAt,
       createdAt: Date.now(),
       isActive: true,
     });
-
-    await trackEvent(ctx, {
-      userId: args.userId,
-      action: "api_key.create",
-      resource: "api_key",
-      resourceId: keyPrefix,
-      metadata: { name: args.name, scopes: args.scopes },
-      notification: {
-        type: "system",
-        title: "API Key Created",
-        message: `New API key "${args.name}" (${keyPrefix}...) has been created.`,
-      },
-    });
-
-    return key; // Return full key only on creation
+    return id;
   },
 });
 
-/** Revoke an API key. */
+/** Revoke an API key (dashboard — uses Clerk auth). */
 export const revoke = mutation({
   args: { id: v.id("apiKeys") },
   handler: async (ctx, { id }) => {
@@ -79,17 +104,22 @@ export const revoke = mutation({
     if (!key || key.userId !== identity.subject) throw new Error("Forbidden");
 
     await ctx.db.patch(id, { isActive: false });
-    await trackEvent(ctx, {
-      userId: identity.subject,
-      action: "api_key.revoke",
-      resource: "api_key",
-      resourceId: key.keyPrefix,
-      metadata: { name: key.name },
-    });
+    return { revoked: true };
   },
 });
 
-/** Delete an API key permanently. */
+/** Revoke a key via the API server (internal). */
+export const revokeInternal = internalMutation({
+  args: { id: v.id("apiKeys"), userId: v.string() },
+  handler: async (ctx, { id, userId }) => {
+    const key = await ctx.db.get(id);
+    if (!key || key.userId !== userId) throw new Error("Forbidden");
+    await ctx.db.patch(id, { isActive: false });
+    return { revoked: true };
+  },
+});
+
+/** Delete an API key permanently (dashboard). */
 export const remove = mutation({
   args: { id: v.id("apiKeys") },
   handler: async (ctx, { id }) => {
@@ -100,12 +130,20 @@ export const remove = mutation({
     if (!key || key.userId !== identity.subject) throw new Error("Forbidden");
 
     await ctx.db.delete(id);
-    await trackEvent(ctx, {
-      userId: identity.subject,
-      action: "api_key.delete",
-      resource: "api_key",
-      resourceId: key.keyPrefix,
-      metadata: { name: key.name },
-    });
+    return { deleted: true };
+  },
+});
+
+/** Update lastUsedAt timestamp when a key is used for authentication. */
+export const touchLastUsed = internalMutation({
+  args: { keyHash: v.string() },
+  handler: async (ctx, { keyHash }) => {
+    const key = await ctx.db
+      .query("apiKeys")
+      .withIndex("by_hash", (q) => q.eq("keyHash", keyHash))
+      .first();
+    if (key) {
+      await ctx.db.patch(key._id, { lastUsedAt: Date.now() });
+    }
   },
 });

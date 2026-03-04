@@ -1,6 +1,5 @@
 import { v } from "convex/values";
 import { mutation } from "../_generated/server";
-import { trackEvent } from "../lib/trackEvent";
 
 /** Allowed webhook event types. */
 const VALID_EVENTS = new Set([
@@ -61,14 +60,6 @@ export const create = mutation({
       createdAt: Date.now(),
     });
 
-    await trackEvent(ctx, {
-      userId: args.userId,
-      action: "webhook.create",
-      resource: "webhook",
-      resourceId: id,
-      metadata: { url: args.url, events: args.events },
-    });
-
     return { id, secret };
   },
 });
@@ -98,35 +89,5 @@ export const remove = mutation({
     if (!webhook || webhook.userId !== identity.subject) throw new Error("Forbidden");
 
     await ctx.db.delete(id);
-    await trackEvent(ctx, {
-      userId: identity.subject,
-      action: "webhook.delete",
-      resource: "webhook",
-      metadata: { url: webhook.url },
-    });
-  },
-});
-
-/** Log a webhook delivery attempt. Called by the test action. */
-export const logDelivery = mutation({
-  args: {
-    webhookId: v.id("webhooks"),
-    event: v.string(),
-    payload: v.string(),
-    statusCode: v.optional(v.number()),
-    responseBody: v.optional(v.string()),
-    duration: v.number(),
-    success: v.boolean(),
-  },
-  handler: async (ctx, args) => {
-    await ctx.db.insert("webhookDeliveries", {
-      webhookId: args.webhookId,
-      event: args.event,
-      payload: args.payload,
-      statusCode: args.statusCode,
-      response: args.responseBody,
-      deliveredAt: Date.now(),
-      success: args.success,
-    });
   },
 });

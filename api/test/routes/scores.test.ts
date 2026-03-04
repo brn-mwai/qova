@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { AUTH_HEADERS, authedHeaders } from "../helpers.js";
 
 vi.mock("../../src/services/chain", () => ({
 	getQovaClient: () => ({
@@ -25,7 +26,7 @@ const VALID_ADDRESS = "0x0000000000000000000000000000000000000001";
 
 describe("CRE-compatible endpoints", () => {
 	it("GET /api/scores/agents returns agent list", async () => {
-		const res = await app.request("/api/scores/agents");
+		const res = await app.request("/api/scores/agents", { headers: AUTH_HEADERS });
 		expect(res.status).toBe(200);
 		const body = await res.json();
 		expect(body.agents).toBeInstanceOf(Array);
@@ -35,7 +36,7 @@ describe("CRE-compatible endpoints", () => {
 	it("POST /api/scores/enrich returns enrichment data", async () => {
 		const res = await app.request("/api/scores/enrich", {
 			method: "POST",
-			headers: { "Content-Type": "application/json" },
+			headers: authedHeaders({ "Content-Type": "application/json" }),
 			body: JSON.stringify({ agent: VALID_ADDRESS }),
 		});
 		expect(res.status).toBe(200);
@@ -48,7 +49,7 @@ describe("CRE-compatible endpoints", () => {
 	it("POST /api/scores/anomaly-check returns anomaly result", async () => {
 		const res = await app.request("/api/scores/anomaly-check", {
 			method: "POST",
-			headers: { "Content-Type": "application/json" },
+			headers: authedHeaders({ "Content-Type": "application/json" }),
 			body: JSON.stringify({
 				agent: VALID_ADDRESS,
 				txHash: `0x${"ab".repeat(32)}`,
@@ -68,7 +69,7 @@ describe("POST /api/scores/compute", () => {
 	it("computes score from raw metrics", async () => {
 		const res = await app.request("/api/scores/compute", {
 			method: "POST",
-			headers: { "Content-Type": "application/json" },
+			headers: authedHeaders({ "Content-Type": "application/json" }),
 			body: JSON.stringify({
 				totalVolume: "100000000000000000000",
 				transactionCount: 500,
@@ -90,7 +91,7 @@ describe("POST /api/scores/compute", () => {
 
 describe("GET /api/scores/:address", () => {
 	it("returns full score breakdown", async () => {
-		const res = await app.request(`/api/scores/${VALID_ADDRESS}`);
+		const res = await app.request(`/api/scores/${VALID_ADDRESS}`, { headers: AUTH_HEADERS });
 		expect(res.status).toBe(200);
 		const body = await res.json();
 		expect(body.score).toBe(850);
@@ -104,7 +105,7 @@ describe("GET /api/scores/:address", () => {
 
 describe("CRE /v1 backward-compatible endpoints", () => {
 	it("GET /v1/agents returns same shape as mock API", async () => {
-		const res = await app.request("/v1/agents");
+		const res = await app.request("/v1/agents", { headers: AUTH_HEADERS });
 		expect(res.status).toBe(200);
 		const body = await res.json();
 		expect(body.agents).toBeInstanceOf(Array);
@@ -113,7 +114,7 @@ describe("CRE /v1 backward-compatible endpoints", () => {
 	it("POST /v1/enrich returns same shape as mock API", async () => {
 		const res = await app.request("/v1/enrich", {
 			method: "POST",
-			headers: { "Content-Type": "application/json" },
+			headers: authedHeaders({ "Content-Type": "application/json" }),
 			body: JSON.stringify({ agent: VALID_ADDRESS }),
 		});
 		expect(res.status).toBe(200);
@@ -125,7 +126,7 @@ describe("CRE /v1 backward-compatible endpoints", () => {
 	it("POST /v1/anomaly-check returns same shape", async () => {
 		const res = await app.request("/v1/anomaly-check", {
 			method: "POST",
-			headers: { "Content-Type": "application/json" },
+			headers: authedHeaders({ "Content-Type": "application/json" }),
 			body: JSON.stringify({}),
 		});
 		expect(res.status).toBe(200);
@@ -136,7 +137,7 @@ describe("CRE /v1 backward-compatible endpoints", () => {
 	it("POST /v1/sanctions/check returns same shape", async () => {
 		const res = await app.request("/v1/sanctions/check", {
 			method: "POST",
-			headers: { "Content-Type": "application/json" },
+			headers: authedHeaders({ "Content-Type": "application/json" }),
 			body: JSON.stringify({}),
 		});
 		expect(res.status).toBe(200);

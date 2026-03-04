@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { AUTH_HEADERS, authedHeaders } from "../helpers.js";
 
 vi.mock("../../src/services/chain", () => ({
 	getQovaClient: () => ({
@@ -21,7 +22,7 @@ const VALID_ADDRESS = "0x0000000000000000000000000000000000000001";
 
 describe("GET /api/budgets/:address", () => {
 	it("returns enriched budget status", async () => {
-		const res = await app.request(`/api/budgets/${VALID_ADDRESS}`);
+		const res = await app.request(`/api/budgets/${VALID_ADDRESS}`, { headers: AUTH_HEADERS });
 		expect(res.status).toBe(200);
 		const body = await res.json();
 		expect(body.config.dailyLimit).toContain("ETH");
@@ -37,7 +38,7 @@ describe("POST /api/budgets/:address/check", () => {
 			`/api/budgets/${VALID_ADDRESS}/check`,
 			{
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers: authedHeaders({ "Content-Type": "application/json" }),
 				body: JSON.stringify({ amount: "1000000000000000000" }),
 			},
 		);

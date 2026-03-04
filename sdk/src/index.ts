@@ -2,11 +2,38 @@
  * @qova/core - Financial Trust Infrastructure for AI Agents
  *
  * TypeScript SDK for interacting with the Qova protocol on Base L2.
- * Built on viem with full type safety and Zod runtime validation.
+ *
+ * Two ways to use:
+ *   1. HTTP SDK (recommended) — API key auth, no wallet needed:
+ *      import Qova from "@qova/core";
+ *      const qova = new Qova("qova_your_api_key");
+ *
+ *   2. On-chain SDK (advanced) — direct contract interaction:
+ *      import { createQovaClient } from "@qova/core/chain";
  *
  * @author Qova Engineering <eng@qova.cc>
  * @see https://qova.cc
  */
+
+// ── HTTP SDK (primary interface) ──
+export { Qova, type QovaOptions } from "./http/client.js";
+export { Agents } from "./http/agents.js";
+export { Scores } from "./http/scores.js";
+export { Transactions } from "./http/transactions.js";
+export { Budgets } from "./http/budgets.js";
+export { Verify } from "./http/verify.js";
+export { Keys } from "./http/keys.js";
+export {
+	QovaApiError,
+	QovaAuthError,
+	QovaRateLimitError,
+	QovaNetworkError,
+	QovaConfigError,
+} from "./http/errors.js";
+export type * from "./http/types.js";
+
+// Default export for `import Qova from "@qova/core"`
+export { Qova as default } from "./http/client.js";
 
 // ── ABIs (for advanced usage) ──
 export {

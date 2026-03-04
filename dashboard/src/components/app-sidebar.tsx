@@ -20,6 +20,7 @@ import { LogoMark } from "@/components/brand/logo-mark"
 import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
 import { NavUser } from "@/components/nav-user"
+import { SidebarWallet } from "@/components/sidebar-wallet"
 import {
   Sidebar,
   SidebarContent,
@@ -93,6 +94,11 @@ const data = {
       icon: WebhooksLogo,
     },
     {
+      title: "Usage",
+      url: "/developers/usage",
+      icon: ChartBar,
+    },
+    {
       title: "API Docs",
       url: "/developers/docs",
       icon: Code,
@@ -141,6 +147,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
+        <SidebarWallet />
         <NavUser />
       </SidebarFooter>
     </Sidebar>

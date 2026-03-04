@@ -1,82 +1,125 @@
 import { v } from "convex/values";
-import { mutation } from "../_generated/server";
-import { trackEvent } from "../lib/trackEvent";
+import { mutation, internalMutation } from "../_generated/server";
 
-const DEFAULT_WORKFLOWS = [
-  {
-    workflowId: "payment-volume",
-    name: "Payment Volume Analysis",
-    description:
-      "Analyzes transaction volume, frequency, and consistency to assess payment reliability and throughput capacity.",
-    weight: 0.35,
-    icon: "CurrencyCircleDollar",
-  },
-  {
-    workflowId: "longevity",
-    name: "Operational Longevity",
-    description:
-      "Evaluates agent uptime, registration age, and historical activity patterns to measure operational maturity.",
-    weight: 0.25,
-    icon: "Timer",
-  },
-  {
-    workflowId: "sanctions",
-    name: "Sanctions & Compliance",
-    description:
-      "Screens agent addresses against known sanctions lists and checks for interaction with flagged contracts.",
-    weight: 0.2,
-    icon: "ShieldCheck",
-  },
-  {
-    workflowId: "volatility",
-    name: "Score Volatility",
-    description:
-      "Measures score stability over time. Lower volatility indicates predictable, reliable agent behavior.",
-    weight: 0.2,
-    icon: "ChartLineUp",
-  },
-];
-
-/** Seed the 4 default CRE workflows if they don't already exist. */
-export const seedWorkflows = mutation({
+/**
+ * Seed CRE workflows with default data.
+ * Internal only -- not callable from client to prevent production data wipes.
+ */
+export const seedWorkflows = internalMutation({
   args: {},
-  handler: async (ctx): Promise<number> => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error("Unauthenticated");
+  handler: async (ctx) => {
+    // Clear existing
+    const existing = await ctx.db.query("creWorkflows").collect();
+    for (const w of existing) await ctx.db.delete(w._id);
 
-    let created = 0;
-    for (const wf of DEFAULT_WORKFLOWS) {
-      const existing = await ctx.db
-        .query("creWorkflows")
-        .withIndex("by_workflow_id", (q) => q.eq("workflowId", wf.workflowId))
-        .unique();
+    const existingExecs = await ctx.db.query("creExecutions").collect();
+    for (const e of existingExecs) await ctx.db.delete(e._id);
 
-      if (!existing) {
-        await ctx.db.insert("creWorkflows", {
-          ...wf,
-          status: "active",
-          totalRuns: 0,
-          successRate: 100,
-          createdAt: Date.now(),
+    const now = Date.now();
+    const HOUR = 3600000;
+    const DAY = 86400000;
+
+    const workflows = [
+      {
+        workflowId: "payment-volume",
+        name: "Payment Volume Analysis",
+        description:
+          "Analyzes transaction volume, frequency, and consistency over rolling windows. Higher consistent volume yields better scores.",
+        weight: 0.35,
+        status: "active",
+        lastRunAt: now - HOUR * 2,
+        avgDurationMs: 4200,
+        totalRuns: 1847,
+        successRate: 99.2,
+        icon: "CurrencyCircleDollar",
+        createdAt: now - DAY * 90,
+      },
+      {
+        workflowId: "longevity",
+        name: "Agent Longevity Score",
+        description:
+          "Measures on-chain account age, registration date, and continuous activity periods. Rewards long-standing agents.",
+        weight: 0.25,
+        status: "active",
+        lastRunAt: now - HOUR * 1,
+        avgDurationMs: 2800,
+        totalRuns: 1847,
+        successRate: 99.8,
+        icon: "Timer",
+        createdAt: now - DAY * 90,
+      },
+      {
+        workflowId: "sanctions",
+        name: "Sanctions & Compliance",
+        description:
+          "Cross-references agent addresses against OFAC, EU, and UN sanctions lists. Binary pass/fail with score penalty on failure.",
+        weight: 0.25,
+        status: "active",
+        lastRunAt: now - HOUR * 3,
+        avgDurationMs: 6100,
+        totalRuns: 1846,
+        successRate: 98.5,
+        icon: "ShieldCheck",
+        createdAt: now - DAY * 90,
+      },
+      {
+        workflowId: "volatility",
+        name: "Score Volatility Index",
+        description:
+          "Computes standard deviation of score changes over 30/60/90-day windows. Low volatility indicates stable, predictable behavior.",
+        weight: 0.15,
+        status: "active",
+        lastRunAt: now - HOUR * 4,
+        avgDurationMs: 3400,
+        totalRuns: 1845,
+        successRate: 99.5,
+        icon: "ChartLineUp",
+        createdAt: now - DAY * 90,
+      },
+    ];
+
+    for (const w of workflows) {
+      await ctx.db.insert("creWorkflows", w);
+    }
+
+    // Generate execution history for each workflow (last 7 days)
+    const statuses = ["completed", "completed", "completed", "completed", "failed"];
+    for (const w of workflows) {
+      for (let i = 0; i < 40; i++) {
+        const startedAt = now - Math.floor(Math.random() * 7 * DAY);
+        const status = statuses[Math.floor(Math.random() * statuses.length)];
+        const durationMs =
+          status === "completed"
+            ? w.avgDurationMs! + Math.floor(Math.random() * 2000) - 1000
+            : Math.floor(Math.random() * 1000);
+
+        await ctx.db.insert("creExecutions", {
+          workflowId: w.workflowId,
+          agentAddress:
+            i % 3 === 0
+              ? "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD18"
+              : i % 3 === 1
+                ? "0x8Ba1f109551bD432803012645Ac136c89aFbEf99"
+                : "0xaB5801a7D398351b8bE11C439e05C5B3259aeC9B",
+          status,
+          inputScore: 500 + Math.floor(Math.random() * 500),
+          outputScore:
+            status === "completed"
+              ? 500 + Math.floor(Math.random() * 500)
+              : undefined,
+          durationMs: status === "completed" ? durationMs : undefined,
+          error:
+            status === "failed" ? "Upstream data source timeout" : undefined,
+          startedAt,
+          completedAt:
+            status === "completed" ? startedAt + durationMs : undefined,
         });
-        created++;
       }
     }
-
-    if (created > 0) {
-      await trackEvent(ctx, {
-        userId: identity.subject,
-        action: "cre.seed_workflows",
-        resource: "cre_workflow",
-        metadata: { count: created },
-      });
-    }
-
-    return created;
   },
 });
 
-/** Record a new CRE execution and update workflow stats. Requires authentication. */
+/** Record a new CRE execution. Requires authentication. */
 export const createExecution = mutation({
   args: {
     workflowId: v.string(),
@@ -88,45 +131,23 @@ export const createExecution = mutation({
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Unauthenticated");
 
+    // Validate status
     const validStatuses = new Set(["running", "completed", "failed"]);
     if (!validStatuses.has(args.status)) {
       throw new Error(`Invalid status: ${args.status}`);
     }
 
-    const id = await ctx.db.insert("creExecutions", {
+    return await ctx.db.insert("creExecutions", {
       workflowId: args.workflowId,
       agentAddress: args.agentAddress,
       status: args.status,
       inputScore: args.inputScore,
       startedAt: Date.now(),
     });
-
-    // Update workflow stats
-    const workflow = await ctx.db
-      .query("creWorkflows")
-      .withIndex("by_workflow_id", (q) => q.eq("workflowId", args.workflowId))
-      .unique();
-
-    if (workflow) {
-      await ctx.db.patch(workflow._id, {
-        lastRunAt: Date.now(),
-        totalRuns: workflow.totalRuns + 1,
-      });
-    }
-
-    await trackEvent(ctx, {
-      userId: identity.subject,
-      action: "cre.execute",
-      resource: "cre_execution",
-      resourceId: id,
-      metadata: { workflowId: args.workflowId, agentAddress: args.agentAddress },
-    });
-
-    return id;
   },
 });
 
-/** Update workflow status (active/paused). Requires authentication. */
+/** Update workflow status. Requires authentication. */
 export const updateWorkflowStatus = mutation({
   args: {
     workflowId: v.string(),
@@ -136,6 +157,7 @@ export const updateWorkflowStatus = mutation({
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Unauthenticated");
 
+    // Validate status
     const validStatuses = new Set(["active", "paused", "error"]);
     if (!validStatuses.has(status)) {
       throw new Error(`Invalid status: ${status}`);
@@ -146,15 +168,8 @@ export const updateWorkflowStatus = mutation({
       .withIndex("by_workflow_id", (q) => q.eq("workflowId", workflowId))
       .unique();
 
-    if (!workflow) throw new Error(`Workflow "${workflowId}" not found`);
-
-    await ctx.db.patch(workflow._id, { status });
-    await trackEvent(ctx, {
-      userId: identity.subject,
-      action: `cre.workflow_${status}`,
-      resource: "cre_workflow",
-      resourceId: workflowId,
-      metadata: { previousStatus: workflow.status },
-    });
+    if (workflow) {
+      await ctx.db.patch(workflow._id, { status });
+    }
   },
 });

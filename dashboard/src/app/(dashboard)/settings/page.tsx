@@ -1,17 +1,56 @@
 "use client"
 
+import { useState } from "react"
 import {
   Cloud,
   Gear,
   Link as LinkIcon,
   ShieldCheck,
+  Copy,
+  Check,
 } from "@phosphor-icons/react"
-import { useUser } from "@clerk/nextjs"
 import { useConvexAvailable } from "@/components/providers/convex-provider"
 import { StatusBadge } from "@/components/data/status-badge"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Badge } from "@/components/ui/badge"
 import { PageHeader } from "@/components/shared/page-header"
+
+function EnvironmentToggle(): React.ReactElement {
+  const [env, setEnv] = useState<"sandbox" | "production">(() => {
+    if (typeof window !== "undefined") {
+      return (localStorage.getItem("qova_env") as "sandbox" | "production") ?? "sandbox"
+    }
+    return "sandbox"
+  })
+
+  function toggle(): void {
+    const next = env === "sandbox" ? "production" : "sandbox"
+    setEnv(next)
+    if (typeof window !== "undefined") {
+      localStorage.setItem("qova_env", next)
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <Badge
+        variant="outline"
+        className={
+          env === "production"
+            ? "bg-rose-500/10 text-rose-600 border-rose-200"
+            : "bg-teal-500/10 text-teal-600 border-teal-200"
+        }
+      >
+        {env === "production" ? "Production" : "Sandbox"}
+      </Badge>
+      <Button variant="outline" size="sm" onClick={toggle}>
+        Switch to {env === "sandbox" ? "Production" : "Sandbox"}
+      </Button>
+    </div>
+  )
+}
 import {
   Card,
   CardContent,
@@ -20,11 +59,20 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 
-const CHAIN_CONFIG = {
-  name: process.env.NEXT_PUBLIC_CHAIN_NAME ?? "Base",
-  chainId: process.env.NEXT_PUBLIC_CHAIN_ID ?? "8453",
-  explorer: process.env.NEXT_PUBLIC_EXPLORER_URL ?? "https://basescan.org",
-  explorerLabel: process.env.NEXT_PUBLIC_EXPLORER_LABEL ?? "basescan.org",
+function CopyButton({ value }: { value: string }): React.ReactElement {
+  const [copied, setCopied] = useState(false)
+
+  function handleCopy(): void {
+    navigator.clipboard.writeText(value)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <Button variant="ghost" size="sm" className="size-7 p-0" onClick={handleCopy}>
+      {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+    </Button>
+  )
 }
 
 function SettingRow({
@@ -50,8 +98,9 @@ function SettingRow({
 }
 
 export default function SettingsPage(): React.ReactElement {
-  const { user } = useUser()
   const convexAvailable = useConvexAvailable()
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "Not configured"
+  const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL || "Not configured"
 
   return (
     <div className="px-4 lg:px-6">
@@ -79,27 +128,20 @@ export default function SettingsPage(): React.ReactElement {
                 <Label htmlFor="display-name">Display Name</Label>
                 <Input
                   id="display-name"
-                  value={user?.fullName ?? user?.firstName ?? ""}
-                  readOnly
+                  placeholder="Qova User"
+                  disabled
                   className="bg-muted"
                 />
                 <p className="text-[10px] text-muted-foreground">
-                  Managed by Clerk.{" "}
-                  <button
-                    type="button"
-                    onClick={() => user?.update && window.open("https://accounts.qova.cc/user", "_blank")}
-                    className="underline hover:text-foreground"
-                  >
-                    Update profile
-                  </button>
+                  Managed by Clerk. Update in your profile.
                 </p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
-                  value={user?.primaryEmailAddress?.emailAddress ?? ""}
-                  readOnly
+                  placeholder="user@qova.cc"
+                  disabled
                   className="bg-muted"
                 />
                 <p className="text-[10px] text-muted-foreground">
@@ -108,15 +150,15 @@ export default function SettingsPage(): React.ReactElement {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="user-id">User ID</Label>
+              <Label htmlFor="org">Organization</Label>
               <Input
-                id="user-id"
-                value={user?.id ?? ""}
-                readOnly
-                className="bg-muted font-mono text-xs"
+                id="org"
+                placeholder="My Organization"
+                disabled
+                className="bg-muted"
               />
               <p className="text-[10px] text-muted-foreground">
-                Your unique Clerk identifier.
+                Organization membership is managed in Team settings.
               </p>
             </div>
           </CardContent>
@@ -130,27 +172,32 @@ export default function SettingsPage(): React.ReactElement {
               System Status
             </CardTitle>
             <CardDescription>
-              Service health for dashboard infrastructure.
+              Runtime services and infrastructure health.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <SettingRow
-              label="Database"
-              description="Real-time data for agents, scores, and activity"
+              label="Convex Database"
+              description="Real-time database for agent data, scores, and activity"
             >
               <StatusBadge status={convexAvailable ? "active" : "inactive"} />
             </SettingRow>
             <SettingRow
-              label="Actions"
-              description="Convex actions for agent registration, scoring, and verification"
+              label="Qova API"
+              description="On-chain API for agent registration, scoring, and verification"
             >
-              <StatusBadge status={convexAvailable ? "active" : "inactive"} />
+              <code className="rounded border bg-muted px-2 py-0.5 font-mono text-xs">
+                {apiUrl === "Not configured" ? "Not set" : "Configured"}
+              </code>
             </SettingRow>
             <SettingRow
-              label="Authentication"
-              description="User identity and session management"
+              label="Convex URL"
+              description="Deployment endpoint for real-time data sync"
             >
-              <StatusBadge status="active" />
+              <code className="rounded border bg-muted px-2 py-0.5 font-mono text-xs max-w-48 truncate">
+                {convexUrl === "Not configured" ? "Not set" : convexUrl.replace("https://", "")}
+              </code>
+              {convexUrl !== "Not configured" && <CopyButton value={convexUrl} />}
             </SettingRow>
           </CardContent>
         </Card>
@@ -163,25 +210,66 @@ export default function SettingsPage(): React.ReactElement {
               Network
             </CardTitle>
             <CardDescription>
-              Blockchain network configuration.
+              Blockchain network and chain configuration.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <SettingRow label="Chain" description="Target blockchain network">
-              <span className="font-mono text-xs">{CHAIN_CONFIG.name}</span>
+              <span className="font-mono text-xs">Base Sepolia</span>
             </SettingRow>
             <SettingRow label="Chain ID" description="Numeric chain identifier">
-              <span className="font-mono text-xs">{CHAIN_CONFIG.chainId}</span>
+              <span className="font-mono text-xs">84532</span>
             </SettingRow>
             <SettingRow label="Explorer" description="Block explorer for transaction verification">
               <a
-                href={CHAIN_CONFIG.explorer}
+                href="https://sepolia.basescan.org"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="font-mono text-xs text-muted-foreground hover:text-foreground transition-colors"
               >
-                {CHAIN_CONFIG.explorerLabel}
+                sepolia.basescan.org
               </a>
+            </SettingRow>
+          </CardContent>
+        </Card>
+
+        {/* Environment */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Cloud size={16} />
+              Environment
+            </CardTitle>
+            <CardDescription>
+              Switch between sandbox and production API environments.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <SettingRow
+              label="Active Environment"
+              description="Sandbox uses testnet (Base Sepolia) with mock data. Production uses mainnet."
+            >
+              <EnvironmentToggle />
+            </SettingRow>
+            <SettingRow
+              label="API Base URL"
+              description="Automatically set based on the active environment"
+            >
+              <code className="text-[11px] px-2 py-0.5 bg-muted rounded font-mono">
+                {typeof window !== "undefined" && localStorage.getItem("qova_env") === "production"
+                  ? "https://api.qova.cc"
+                  : "https://sandbox.api.qova.cc"}
+              </code>
+            </SettingRow>
+            <SettingRow
+              label="Chain"
+              description="Blockchain network for on-chain operations"
+            >
+              <span className="text-xs text-muted-foreground">
+                {typeof window !== "undefined" && localStorage.getItem("qova_env") === "production"
+                  ? "Base Mainnet (8453)"
+                  : "Base Sepolia (84532)"}
+              </span>
             </SettingRow>
           </CardContent>
         </Card>
@@ -194,7 +282,7 @@ export default function SettingsPage(): React.ReactElement {
               Security
             </CardTitle>
             <CardDescription>
-              Verification and trust infrastructure.
+              Authentication and verification methods.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -214,7 +302,7 @@ export default function SettingsPage(): React.ReactElement {
               label="Data Integrity"
               description="On-chain hash anchoring for score immutability"
             >
-              <span className="text-xs text-muted-foreground">{CHAIN_CONFIG.name}</span>
+              <span className="text-xs text-muted-foreground">Base L2</span>
             </SettingRow>
           </CardContent>
         </Card>

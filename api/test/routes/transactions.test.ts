@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { AUTH_HEADERS, authedHeaders } from "../helpers.js";
 
 vi.mock("../../src/services/chain", () => ({
 	getQovaClient: () => ({
@@ -20,6 +21,7 @@ describe("GET /api/transactions/:address/stats", () => {
 	it("returns enriched transaction stats", async () => {
 		const res = await app.request(
 			`/api/transactions/${VALID_ADDRESS}/stats`,
+			{ headers: AUTH_HEADERS },
 		);
 		expect(res.status).toBe(200);
 		const body = await res.json();
@@ -34,7 +36,7 @@ describe("POST /api/transactions/record", () => {
 	it("records a transaction", async () => {
 		const res = await app.request("/api/transactions/record", {
 			method: "POST",
-			headers: { "Content-Type": "application/json" },
+			headers: authedHeaders({ "Content-Type": "application/json" }),
 			body: JSON.stringify({
 				agent: VALID_ADDRESS,
 				txHash: `0x${"ab".repeat(32)}`,
