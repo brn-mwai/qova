@@ -202,7 +202,7 @@ export default function CreditReportPage(): React.ReactElement {
           <CardHeader>
             <CardTitle className="text-sm">Score Breakdown</CardTitle>
             <CardDescription>
-              Contribution from each CRE workflow
+              Estimated contribution from each CRE workflow
             </CardDescription>
           </CardHeader>
           <CardContent>

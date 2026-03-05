@@ -26,18 +26,18 @@ export const SUPPORTED_CHAINS: ChainConfig[] = [
 		brandColor: "#0052FF",
 	},
 	{
-		id: 2046399126,
-		name: "SKALE Europa",
-		icon: "/chains/skale.svg",
-		explorerUrl: "https://elated-tan-skat.explorer.mainnet.skalenodes.com",
-		explorerLabel: "SKALE Explorer",
-		nativeCurrency: { name: "sFUEL", symbol: "sFUEL", decimals: 18 },
-		isTestnet: false,
-		brandColor: "#68D391",
+		id: 84532,
+		name: "Base Sepolia",
+		icon: "/chains/base.svg",
+		explorerUrl: "https://sepolia.basescan.org",
+		explorerLabel: "Sepolia Basescan",
+		nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+		isTestnet: true,
+		brandColor: "#0052FF",
 	},
 ] as const;
 
-export const DEFAULT_CHAIN_ID = 8453;
+export const DEFAULT_CHAIN_ID = 84532;
 
 /** Lookup a chain config by ID. Returns undefined if not found. */
 export function getChain(chainId: number): ChainConfig | undefined {
@@ -47,13 +47,13 @@ export function getChain(chainId: number): ChainConfig | undefined {
 /** Build a block-explorer address URL for a given chain. */
 export function getExplorerUrl(chainId: number, address: string): string {
 	const chain = getChain(chainId);
-	if (!chain) return `https://basescan.org/address/${address}`;
+	if (!chain) return `https://sepolia.basescan.org/address/${address}`;
 	return `${chain.explorerUrl}/address/${address}`;
 }
 
 /** Build a block-explorer transaction URL for a given chain. */
 export function getExplorerTxUrl(chainId: number, txHash: string): string {
 	const chain = getChain(chainId);
-	if (!chain) return `https://basescan.org/tx/${txHash}`;
+	if (!chain) return `https://sepolia.basescan.org/tx/${txHash}`;
 	return `${chain.explorerUrl}/tx/${txHash}`;
 }

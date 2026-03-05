@@ -92,12 +92,12 @@ export function ScoreAlerts(): React.ReactElement {
 								<div className="flex items-center gap-1.5 font-mono text-xs tabular-nums">
 									<span>{d.currentScore}</span>
 									{d.delta > 0 ? (
-										<span className="flex items-center text-green-500">
+										<span className="flex items-center text-score-green">
 											<TrendUp className="size-3" weight="bold" />
 											+{d.delta}
 										</span>
 									) : d.delta < 0 ? (
-										<span className="flex items-center text-red-500">
+										<span className="flex items-center text-score-red">
 											<TrendDown className="size-3" weight="bold" />
 											{d.delta}
 										</span>

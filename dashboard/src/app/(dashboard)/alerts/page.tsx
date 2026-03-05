@@ -155,8 +155,17 @@ export default function AlertsPage(): React.ReactElement {
 				<Card>
 					<CardContent className="p-0 divide-y">
 						{notifications === undefined ? (
-							<div className="flex flex-col items-center justify-center py-12 text-center">
-								<p className="text-sm text-muted-foreground">Loading...</p>
+							<div className="divide-y">
+								{Array.from({ length: 5 }).map((_, i) => (
+									<div key={i} className="flex items-start gap-3 p-4">
+										<div className="size-5 rounded bg-muted animate-pulse mt-0.5 shrink-0" />
+										<div className="flex-1 space-y-2">
+											<div className="h-4 w-48 rounded bg-muted animate-pulse" />
+											<div className="h-3 w-72 rounded bg-muted animate-pulse" />
+											<div className="h-2.5 w-20 rounded bg-muted animate-pulse" />
+										</div>
+									</div>
+								))}
 							</div>
 						) : filtered.length > 0 ? (
 							filtered.map((notif) => {

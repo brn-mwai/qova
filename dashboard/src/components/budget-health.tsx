@@ -18,15 +18,15 @@ function parseNumeric(value: string | undefined): number {
 }
 
 function utilizationColor(pct: number): string {
-	if (pct > 85) return "text-red-500"
-	if (pct > 60) return "text-yellow-500"
-	return "text-green-500"
+	if (pct > 85) return "text-score-red"
+	if (pct > 60) return "text-score-yellow"
+	return "text-score-green"
 }
 
 function barColor(pct: number): string {
-	if (pct > 85) return "[&>div]:bg-red-500"
-	if (pct > 60) return "[&>div]:bg-yellow-500"
-	return "[&>div]:bg-green-500"
+	if (pct > 85) return "[&>div]:bg-[var(--score-red)]"
+	if (pct > 60) return "[&>div]:bg-[var(--score-yellow)]"
+	return "[&>div]:bg-[var(--score-green)]"
 }
 
 export function BudgetHealth(): React.ReactElement {

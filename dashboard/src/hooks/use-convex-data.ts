@@ -235,6 +235,17 @@ export function useCurrencyBreakdown(): Array<{
 	return result ?? [];
 }
 
+/** World ID verification status for the current user. */
+export function useWorldIdStatus(): {
+	verified: boolean;
+	level: string | null;
+	verifiedAt: number | null;
+} {
+	const available = useConvexAvailable();
+	const result = useQuery(api.queries.worldId.getVerificationStatus, available ? {} : "skip");
+	return result ?? { verified: false, level: null, verifiedAt: null };
+}
+
 /** Single agent by address. */
 export function useAgentByAddress(address: string): {
 	_id: string;

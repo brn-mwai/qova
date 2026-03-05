@@ -2,8 +2,10 @@
 	"evm": {
 		"chainSelectorName": "ethereum-testnet-sepolia-base-1",
 		"transactionValidator": "0x5d7a7AEAb26D2F0076892D1C9A28F230EbB3e900",
-		"reputationRegistry": "0x0b2466b01E6d73A24D9C716A9072ED3923563fBB"
+		"reputationRegistry": "0x0b2466b01E6d73A24D9C716A9072ED3923563fBB",
+		"qovaCore": "0x9Ee4ae0bD93E95498fB6AB444ae6205d56fEf76a"
 	},
 	"scoringApiUrl": "http://localhost:3001/v1",
-	"alertWebhookUrl": "http://localhost:3001/v1/webhook"
+	"alertWebhookUrl": "http://localhost:3001/v1/webhook",
+	"rpcUrl": "https://sepolia.base.org"
 }

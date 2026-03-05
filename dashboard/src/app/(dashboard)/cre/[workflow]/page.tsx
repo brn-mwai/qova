@@ -510,7 +510,7 @@ export default function WorkflowDetailPage(): React.ReactElement {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Network</span>
-                        <span className="font-mono">Base Sepolia</span>
+                        <span className="font-mono">{process.env.NEXT_PUBLIC_CHAIN_NAME ?? "Base"}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Timeout</span>

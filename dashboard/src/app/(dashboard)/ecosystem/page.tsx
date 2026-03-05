@@ -30,7 +30,6 @@ import {
 import { PageHeader } from "@/components/shared/page-header"
 import {
   useAgentList,
-  useSystemStats,
   useGradeDistribution,
   useRecentActivity,
 } from "@/hooks/use-convex-data"
@@ -100,7 +99,6 @@ function GradeBar({
 
 export default function EcosystemPage(): React.ReactElement {
   const agents = useAgentList()
-  const stats = useSystemStats()
   const gradeDistribution = useGradeDistribution()
   const recentActivity = useRecentActivity(20)
 

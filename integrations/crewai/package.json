@@ -4,7 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "build": "tsc",
+    "build": "echo 'Stub -- no source yet'",
     "test": "echo 'Integration tests pending'"
   }
 }

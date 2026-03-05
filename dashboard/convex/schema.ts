@@ -86,6 +86,8 @@ export default defineSchema({
     onboardingComplete: v.boolean(),
     createdAt: v.number(),
     lastLoginAt: v.optional(v.number()),
+    // World ID verification
+    worldIdVerified: v.optional(v.boolean()),
   })
     .index("by_clerk_id", ["clerkId"])
     .index("by_email", ["email"])
@@ -248,4 +250,16 @@ export default defineSchema({
     timezone: v.string(),
   })
     .index("by_userId", ["userId"]),
+
+  // ─── World ID Verification ────────────────────────────────────
+  worldIdVerifications: defineTable({
+    userId: v.string(), // Clerk subject ID
+    nullifierHash: v.string(),
+    merkleRoot: v.string(),
+    proof: v.string(), // stored for audit trail
+    verificationLevel: v.string(), // "orb" | "device"
+    verifiedAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_nullifier", ["nullifierHash"]),
 });

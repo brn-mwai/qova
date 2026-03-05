@@ -3,7 +3,9 @@
 		"chainSelectorName": "ethereum-testnet-sepolia-base-1",
 		"reputationRegistry": "0x0b2466b01E6d73A24D9C716A9072ED3923563fBB",
 		"transactionValidator": "0x5d7a7AEAb26D2F0076892D1C9A28F230EbB3e900",
-		"budgetEnforcer": "0x271618781040dc358e4F6B66561b65A839b0C76E"
+		"budgetEnforcer": "0x271618781040dc358e4F6B66561b65A839b0C76E",
+		"qovaCore": "0x9Ee4ae0bD93E95498fB6AB444ae6205d56fEf76a"
 	},
-	"sanctionsApiUrl": "http://localhost:3001/v1/sanctions"
+	"sanctionsApiUrl": "http://localhost:3001/v1/sanctions",
+	"rpcUrl": "https://sepolia.base.org"
 }

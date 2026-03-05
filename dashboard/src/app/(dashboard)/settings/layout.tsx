@@ -2,11 +2,12 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Gear, Users, Bell } from "@phosphor-icons/react"
+import { Gear, Users, Bell, Wallet } from "@phosphor-icons/react"
 import { cn } from "@/lib/utils"
 
 const settingsNav = [
   { href: "/settings", label: "General", icon: Gear },
+  { href: "/settings/wallet", label: "Wallet", icon: Wallet },
   { href: "/settings/team", label: "Team", icon: Users },
   { href: "/settings/notifications", label: "Notifications", icon: Bell },
 ]

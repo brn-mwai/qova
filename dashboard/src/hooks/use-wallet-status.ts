@@ -1,6 +1,6 @@
 "use client"
 
-import { useAccount, useChainId } from "wagmi"
+import { useAccount, useBalance, useChainId } from "wagmi"
 import { SUPPORTED_CHAINS, getChain, type ChainConfig } from "@/lib/chains"
 
 interface WalletStatus {
@@ -10,6 +10,8 @@ interface WalletStatus {
 	chainId: number | undefined
 	needsChainSwitch: boolean
 	currentChain: ChainConfig | undefined
+	balanceFormatted: string | undefined
+	balanceSymbol: string | undefined
 }
 
 const DISCONNECTED: WalletStatus = {
@@ -19,19 +21,21 @@ const DISCONNECTED: WalletStatus = {
 	chainId: undefined,
 	needsChainSwitch: false,
 	currentChain: undefined,
+	balanceFormatted: undefined,
+	balanceSymbol: undefined,
 }
 
 const SUPPORTED_IDS = new Set(SUPPORTED_CHAINS.map((c) => c.id))
 
 export function useWalletStatus(): WalletStatus {
-	if (!process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID) {
+	const { address, isConnected } = useAccount()
+	const chainId = useChainId()
+	const { data: balance } = useBalance({ address })
+
+	if (!isConnected || !address) {
 		return DISCONNECTED
 	}
 
-	const { address, isConnected } = useAccount()
-	const chainId = useChainId()
-
-	// Accept ANY chain in SUPPORTED_CHAINS (multi-chain)
 	const isCorrectChain = SUPPORTED_IDS.has(chainId)
 	const currentChain = getChain(chainId)
 
@@ -42,5 +46,7 @@ export function useWalletStatus(): WalletStatus {
 		chainId,
 		needsChainSwitch: isConnected && !isCorrectChain,
 		currentChain,
+		balanceFormatted: balance?.formatted,
+		balanceSymbol: balance?.symbol,
 	}
 }

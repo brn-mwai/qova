@@ -2,6 +2,7 @@ import { describe, expect, it } from "bun:test";
 import { encodeFunctionData } from "viem";
 import {
 	BUDGET_ENFORCER_ABI,
+	QOVA_CORE_ABI,
 	REPUTATION_REGISTRY_ABI,
 	TRANSACTION_VALIDATOR_ABI,
 } from "../shared/contracts";
@@ -79,6 +80,34 @@ describe("Contract ABI encoding", () => {
 		const data = encodeFunctionData({
 			abi: BUDGET_ENFORCER_ABI,
 			functionName: "hasBudget",
+			args: ["0x0000000000000000000000000000000000000001"],
+		});
+		expect(data).toBeTruthy();
+	});
+
+	it("encodes getAgentScore (QovaCore) call data", () => {
+		const data = encodeFunctionData({
+			abi: QOVA_CORE_ABI,
+			functionName: "getAgentScore",
+			args: ["0x0000000000000000000000000000000000000001"],
+		});
+		expect(data).toBeTruthy();
+		expect(data.startsWith("0x")).toBe(true);
+	});
+
+	it("encodes getAgentStats (QovaCore) call data", () => {
+		const data = encodeFunctionData({
+			abi: QOVA_CORE_ABI,
+			functionName: "getAgentStats",
+			args: ["0x0000000000000000000000000000000000000001"],
+		});
+		expect(data).toBeTruthy();
+	});
+
+	it("encodes getAgentBudgetStatus (QovaCore) call data", () => {
+		const data = encodeFunctionData({
+			abi: QOVA_CORE_ABI,
+			functionName: "getAgentBudgetStatus",
 			args: ["0x0000000000000000000000000000000000000001"],
 		});
 		expect(data).toBeTruthy();

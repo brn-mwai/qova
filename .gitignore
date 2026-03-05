@@ -12,4 +12,4 @@ contracts/out/
 contracts/cache/
 .convex/
 .claude/settings.local.json
-bun.lock
+.vercel

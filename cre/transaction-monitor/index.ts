@@ -3,8 +3,10 @@
  * CRE Workflow: Transaction Monitor
  *
  * Trigger: EVM Log (TransactionRecorded events on TransactionValidator)
- * Purpose: Reacts to new agent transactions, runs fraud/anomaly check via
- *          off-chain API, and sends alerts via webhook if anomalies detected.
+ * Purpose: Reacts to new agent transactions, reads on-chain transaction history,
+ *          computes anomaly risk scores using frequency, value, failure rate, and
+ *          flagged contract analysis, then writes a monitoring report on-chain
+ *          and sends webhook alerts for high-risk findings.
  */
 
 import {
@@ -18,12 +20,30 @@ import {
 	json,
 	LAST_FINALIZED_BLOCK_NUMBER,
 	ok,
+	prepareReportRequest,
 	Runner,
 	type Runtime,
 } from "@chainlink/cre-sdk";
-import { type Address, decodeFunctionResult, encodeFunctionData, zeroAddress } from "viem";
-import { REPUTATION_REGISTRY_ABI } from "../shared/contracts";
-import { type TransactionMonitorConfig, TransactionMonitorConfigSchema } from "../shared/types";
+import {
+	type Address,
+	decodeFunctionResult,
+	encodeFunctionData,
+	keccak256,
+	toHex,
+	zeroAddress,
+} from "viem";
+import { CRE_REASONS } from "../shared/constants";
+import {
+	EVENT_SIGNATURES,
+	REPUTATION_REGISTRY_ABI,
+	TRANSACTION_VALIDATOR_ABI,
+} from "../shared/contracts";
+import { computeAnomalyReport, type MonitoringMetrics } from "../shared/monitoring";
+import {
+	type MonitoringReport,
+	type TransactionMonitorConfig,
+	TransactionMonitorConfigSchema,
+} from "../shared/types";
 
 export async function main(): Promise<void> {
 	const runner = await Runner.newRunner<TransactionMonitorConfig>({
@@ -44,8 +64,7 @@ function initWorkflow(config: TransactionMonitorConfig) {
 	// TransactionRecorded(address indexed agent, bytes32 indexed txHash, uint256 amount, uint8 txType, uint48 timestamp)
 	const logTrigger = evmClient.logTrigger({
 		addresses: [transactionValidator],
-		// topic[0] = event signature hash
-		topics: [{ values: ["0x9e01dbe80e0d45ff3a91deb78de18f8c7d498e13e9d0e1f7a18c84e8b0e14f9a"] }],
+		topics: [{ values: [EVENT_SIGNATURES.TransactionRecorded] }],
 	});
 
 	return [
@@ -57,7 +76,7 @@ function initWorkflow(config: TransactionMonitorConfig) {
 
 function onTransactionRecorded(runtime: Runtime<TransactionMonitorConfig>, log: EVMLog): string {
 	const config = runtime.config;
-	const httpClient = new cre.capabilities.HTTPClient();
+	const { chainSelectorName, transactionValidator, reputationRegistry } = config.evm;
 
 	// Extract data from the EVM log
 	const agentAddress = bytesToHex(log.topics[1] ?? new Uint8Array());
@@ -66,13 +85,13 @@ function onTransactionRecorded(runtime: Runtime<TransactionMonitorConfig>, log: 
 
 	runtime.log(`Transaction detected: agent=${agentAddress}, tx=${txHash}`);
 
-	// Step 1: Read current score for context
-	const { chainSelectorName, reputationRegistry } = config.evm;
 	const network = getNetwork({ chainFamily: "evm", chainSelectorName, isTestnet: true });
 	if (!network) throw new Error(`Network not found: ${chainSelectorName}`);
 
 	const evmClient = new cre.capabilities.EVMClient(network.chainSelector.selector);
+	const httpClient = new cre.capabilities.HTTPClient();
 
+	// ── Step 1: Read agent's current reputation score ──
 	const scoreCallData = encodeFunctionData({
 		abi: REPUTATION_REGISTRY_ABI,
 		functionName: "getScore",
@@ -96,37 +115,148 @@ function onTransactionRecorded(runtime: Runtime<TransactionMonitorConfig>, log: 
 		data: bytesToHex(scoreResult.data),
 	}) as number;
 
-	// Step 2: Run anomaly detection via off-chain API
-	const checkAnomaly = (
+	// ── Step 2: Read transaction statistics from TransactionValidator ──
+	const statsCallData = encodeFunctionData({
+		abi: TRANSACTION_VALIDATOR_ABI,
+		functionName: "getTransactionStats",
+		args: [agentAddress as Address],
+	});
+
+	const statsResult = evmClient
+		.callContract(runtime, {
+			call: encodeCallMsg({
+				from: zeroAddress,
+				to: transactionValidator as Address,
+				data: statsCallData,
+			}),
+			blockNumber: LAST_FINALIZED_BLOCK_NUMBER,
+		})
+		.result();
+
+	const stats = decodeFunctionResult({
+		abi: TRANSACTION_VALIDATOR_ABI,
+		functionName: "getTransactionStats",
+		data: bytesToHex(statsResult.data),
+	}) as unknown as {
+		totalCount: bigint;
+		totalVolume: bigint;
+		successCount: bigint;
+		lastActivityTimestamp: bigint;
+	};
+
+	// ── Step 3: Fetch off-chain transaction enrichment via HTTP consensus ──
+	const fetchTxDetails = (
 		sendRequester: HTTPSendRequester,
 		apiUrl: string,
-	): { anomalyDetected: boolean; riskScore: number; flags: string[] } => {
+	): {
+		recentTxCount: number;
+		avgValueWei: string;
+		failedTxCount: number;
+		flaggedContracts: string[];
+	} => {
 		const response = sendRequester
 			.sendRequest({
-				url: `${apiUrl}/anomaly-check`,
+				url: `${apiUrl}/tx-details`,
 				method: "POST",
 				body: JSON.stringify({
 					agent: agentAddress,
 					txHash,
 					logData,
-					currentScore,
 				}),
 			})
 			.result();
-		if (!ok(response)) throw new Error(`Anomaly check failed: ${response.statusCode}`);
-		return json(response) as { anomalyDetected: boolean; riskScore: number; flags: string[] };
+		if (!ok(response)) throw new Error(`Transaction details fetch failed: ${response.statusCode}`);
+		return json(response) as {
+			recentTxCount: number;
+			avgValueWei: string;
+			failedTxCount: number;
+			flaggedContracts: string[];
+		};
 	};
 
-	const anomalyResult = httpClient
+	const txDetails = httpClient
 		.sendRequest(
 			runtime,
-			checkAnomaly,
+			fetchTxDetails,
 			consensusIdenticalAggregation(),
 		)(config.scoringApiUrl)
 		.result();
 
-	// Step 3: If anomaly detected and webhook configured, send alert
-	if (anomalyResult.anomalyDetected && config.alertWebhookUrl) {
+	// ── Step 4: Parse the transaction amount from log data ──
+	// Log data contains: uint256 amount, uint8 txType, uint48 timestamp (ABI-encoded)
+	// The amount is the first 32-byte word
+	const latestTxValue = logData.length >= 66 ? BigInt(`0x${logData.slice(2, 66)}`) : 0n;
+
+	// ── Step 5: Compute anomaly report ──
+	const now = runtime.now();
+	const currentTimestamp = Math.floor(now.getTime() / 1000);
+
+	const metrics: MonitoringMetrics = {
+		totalCount: Number(stats.totalCount),
+		successCount: Number(stats.successCount),
+		totalVolume: stats.totalVolume,
+		latestTxValue,
+		latestTxTimestamp: Number(stats.lastActivityTimestamp),
+		firstActivityTimestamp:
+			Number(stats.lastActivityTimestamp) > 0
+				? Number(stats.lastActivityTimestamp) - Number(stats.totalCount) * 3600
+				: 0,
+		interactedWithFlagged: txDetails.flaggedContracts.length > 0,
+		currentTimestamp,
+	};
+
+	const anomaly = computeAnomalyReport(metrics);
+	const failureRate =
+		Number(stats.totalCount) > 0
+			? (Number(stats.totalCount) - Number(stats.successCount)) / Number(stats.totalCount)
+			: 0;
+
+	runtime.log(
+		`Anomaly analysis: agent=${agentAddress}, risk=${anomaly.riskScore}, severity=${anomaly.severity}, flags=${anomaly.flags.length}`,
+	);
+
+	// ── Step 6: Build monitoring report ──
+	const report: MonitoringReport = {
+		agent: agentAddress,
+		riskScore: anomaly.riskScore,
+		severity: anomaly.severity,
+		flags: anomaly.flags,
+		currentReputationScore: currentScore,
+		txStats: {
+			totalCount: Number(stats.totalCount),
+			successCount: Number(stats.successCount),
+			totalVolume: stats.totalVolume.toString(),
+			failureRate,
+		},
+		alertTriggered: anomaly.severity !== "LOW",
+		timestamp: currentTimestamp,
+	};
+
+	// ── Step 7: Write monitoring report on-chain via CRE report ──
+	const reason = keccak256(toHex(CRE_REASONS.transactionMonitor));
+	const writeCallData = encodeFunctionData({
+		abi: REPUTATION_REGISTRY_ABI,
+		functionName: "updateScore",
+		args: [
+			agentAddress as Address,
+			anomaly.riskScore > 75 ? (Math.max(0, currentScore - 50) as unknown as number) : currentScore,
+			reason,
+		],
+	});
+
+	const creReport = runtime.report(prepareReportRequest(writeCallData)).result();
+
+	evmClient
+		.writeReport(runtime, {
+			receiver: reputationRegistry,
+			report: creReport,
+		})
+		.result();
+
+	runtime.log(`Monitoring report written on-chain for agent ${agentAddress}`);
+
+	// ── Step 8: Send alert webhook if risk is elevated ──
+	if (anomaly.severity !== "LOW" && config.alertWebhookUrl) {
 		const sendAlert = (sendRequester: HTTPSendRequester, webhookUrl: string): string => {
 			const response = sendRequester
 				.sendRequest({
@@ -134,13 +264,15 @@ function onTransactionRecorded(runtime: Runtime<TransactionMonitorConfig>, log: 
 					method: "POST",
 					body: JSON.stringify({
 						type: "TRANSACTION_ANOMALY",
-						severity: anomalyResult.riskScore > 0.8 ? "CRITICAL" : "WARNING",
+						severity: anomaly.severity,
 						agent: agentAddress,
 						txHash,
-						riskScore: anomalyResult.riskScore,
-						flags: anomalyResult.flags,
+						riskScore: anomaly.riskScore,
+						flags: anomaly.flags.map((f) => f.type),
+						flagDetails: anomaly.flags.map((f) => f.description),
 						currentScore,
-						timestamp: Date.now(),
+						failureRate,
+						timestamp: currentTimestamp,
 					}),
 				})
 				.result();
@@ -155,15 +287,12 @@ function onTransactionRecorded(runtime: Runtime<TransactionMonitorConfig>, log: 
 			)(config.alertWebhookUrl)
 			.result();
 
-		runtime.log(`Alert sent for agent ${agentAddress}: risk=${anomalyResult.riskScore}`);
+		runtime.log(
+			`Alert sent for agent ${agentAddress}: risk=${anomaly.riskScore}, severity=${anomaly.severity}`,
+		);
 	}
 
-	return JSON.stringify({
-		agent: agentAddress,
-		txHash,
-		anomalyDetected: anomalyResult.anomalyDetected,
-		riskScore: anomalyResult.riskScore,
-	});
+	return JSON.stringify(report);
 }
 
 main();

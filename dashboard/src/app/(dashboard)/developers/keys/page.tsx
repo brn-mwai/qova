@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../../../convex/_generated/api";
+import type { Id } from "../../../../../convex/_generated/dataModel";
 import {
 	Key,
 	Plus,
@@ -124,7 +125,7 @@ export default function ApiKeysPage(): React.ReactElement {
 
 	async function handleRevoke(id: string): Promise<void> {
 		try {
-			await revokeKey({ id: id as never });
+			await revokeKey({ id: id as Id<"apiKeys"> });
 			toast.success("API key revoked");
 		} catch (err) {
 			toast.error(err instanceof Error ? err.message : "Failed to revoke");
@@ -133,7 +134,7 @@ export default function ApiKeysPage(): React.ReactElement {
 
 	async function handleDelete(id: string): Promise<void> {
 		try {
-			await removeKey({ id: id as never });
+			await removeKey({ id: id as Id<"apiKeys"> });
 			setConfirmDelete(null);
 			toast.success("API key deleted permanently");
 		} catch (err) {

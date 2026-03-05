@@ -11,6 +11,7 @@ import {
 import { ThemeProvider } from "next-themes";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Web3Provider } from "@/providers/web3-provider";
+import "@coinbase/onchainkit/styles.css";
 
 const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL ?? "";
 const clerkPubKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ?? "";

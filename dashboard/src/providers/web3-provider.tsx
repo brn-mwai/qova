@@ -1,60 +1,52 @@
 "use client"
 
-import { getDefaultConfig, RainbowKitProvider, darkTheme, lightTheme } from "@rainbow-me/rainbowkit"
-import { WagmiProvider } from "wagmi"
-import { base, type Chain } from "wagmi/chains"
+import { OnchainKitProvider } from "@coinbase/onchainkit"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { useTheme } from "next-themes"
-import "@rainbow-me/rainbowkit/styles.css"
+import { type ReactNode, useState } from "react"
+import { type State, WagmiProvider, createConfig, http } from "wagmi"
+import { baseSepolia } from "wagmi/chains"
+import { coinbaseWallet } from "wagmi/connectors"
 
-/** SKALE Europa Hub -- gasless L2 */
-const skaleEuropa: Chain = {
-  id: 2046399126,
-  name: "SKALE Europa",
-  nativeCurrency: { name: "sFUEL", symbol: "sFUEL", decimals: 18 },
-  rpcUrls: {
-    default: { http: ["https://mainnet.skalenodes.com/v1/elated-tan-skat"] },
+const CDP_API_KEY = process.env.NEXT_PUBLIC_CDP_API_KEY ?? ""
+const WALLETCONNECT_PROJECT_ID = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ?? ""
+
+export const wagmiConfig = createConfig({
+  chains: [baseSepolia],
+  connectors: [
+    coinbaseWallet({
+      appName: "Qova Protocol",
+      preference: "smartWalletOnly",
+    }),
+  ],
+  ssr: true,
+  transports: {
+    [baseSepolia.id]: http(),
   },
-  blockExplorers: {
-    default: { name: "SKALE Explorer", url: "https://elated-tan-skat.explorer.mainnet.skalenodes.com" },
-  },
+})
+
+interface Web3ProviderProps {
+  children: ReactNode
+  initialState?: State
 }
 
-const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ?? ""
-
-const config = projectId
-  ? getDefaultConfig({
-      appName: "Qova Protocol",
-      projectId,
-      chains: [base, skaleEuropa],
-      ssr: true,
-    })
-  : null
-
-const queryClient = new QueryClient()
-
-export function Web3Provider({ children }: { children: React.ReactNode }): React.ReactElement {
-  const { resolvedTheme } = useTheme()
-
-  if (!config) {
-    return <>{children}</>
-  }
+export function Web3Provider({ children, initialState }: Web3ProviderProps): React.ReactElement {
+  const [queryClient] = useState(() => new QueryClient())
 
   return (
-    <WagmiProvider config={config}>
+    <WagmiProvider config={wagmiConfig} initialState={initialState}>
       <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider
-          theme={resolvedTheme === "dark" ? darkTheme({
-            accentColor: "#1A1A1A",
-            borderRadius: "medium",
-          }) : lightTheme({
-            accentColor: "#1A1A1A",
-            borderRadius: "medium",
-          })}
-          modalSize="compact"
+        <OnchainKitProvider
+          apiKey={CDP_API_KEY}
+          chain={baseSepolia}
+          config={{
+            appearance: {
+              mode: "auto",
+            },
+          }}
+          projectId={WALLETCONNECT_PROJECT_ID || undefined}
         >
           {children}
-        </RainbowKitProvider>
+        </OnchainKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
   )

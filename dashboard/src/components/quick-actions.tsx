@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button"
 const actions = [
 	{
 		label: "Register Agent",
-		href: "/agents",
+		href: "/agents?register=true",
 		icon: Robot,
 		description: "Add a new AI agent",
 	},

@@ -2,13 +2,15 @@
 
 import {
   Cloud,
+  Fingerprint,
   Gear,
   Link as LinkIcon,
   ShieldCheck,
 } from "@phosphor-icons/react"
-import { useUser } from "@clerk/nextjs"
+import { useUser, useClerk } from "@clerk/nextjs"
 import { useConvexAvailable } from "@/components/providers/convex-provider"
 import { StatusBadge } from "@/components/data/status-badge"
+import { WorldIdVerifyButton } from "@/components/world-id/verify-button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { PageHeader } from "@/components/shared/page-header"
@@ -51,6 +53,7 @@ function SettingRow({
 
 export default function SettingsPage(): React.ReactElement {
   const { user } = useUser()
+  const { openUserProfile } = useClerk()
   const convexAvailable = useConvexAvailable()
 
   return (
@@ -87,7 +90,7 @@ export default function SettingsPage(): React.ReactElement {
                   Managed by Clerk.{" "}
                   <button
                     type="button"
-                    onClick={() => user?.update && window.open("https://accounts.qova.cc/user", "_blank")}
+                    onClick={() => openUserProfile()}
                     className="underline hover:text-foreground"
                   >
                     Update profile
@@ -122,6 +125,23 @@ export default function SettingsPage(): React.ReactElement {
           </CardContent>
         </Card>
 
+        {/* World ID Verification */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Fingerprint size={16} />
+              Identity Verification
+            </CardTitle>
+            <CardDescription>
+              Verify your identity with World ID to boost agent trust scores and unlock
+              premium features.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <WorldIdVerifyButton />
+          </CardContent>
+        </Card>
+
         {/* System Status */}
         <Card>
           <CardHeader>
@@ -135,14 +155,8 @@ export default function SettingsPage(): React.ReactElement {
           </CardHeader>
           <CardContent>
             <SettingRow
-              label="Database"
-              description="Real-time data for agents, scores, and activity"
-            >
-              <StatusBadge status={convexAvailable ? "active" : "inactive"} />
-            </SettingRow>
-            <SettingRow
-              label="Actions"
-              description="Convex actions for agent registration, scoring, and verification"
+              label="Database & Actions"
+              description="Real-time data, agent registration, scoring, and verification"
             >
               <StatusBadge status={convexAvailable ? "active" : "inactive"} />
             </SettingRow>

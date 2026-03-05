@@ -71,9 +71,9 @@ export function ScoreTrendChart() {
         <CardTitle>Score Trend</CardTitle>
         <CardDescription>
           <span className="hidden @[540px]/card:block">
-            Average agent score over time
+            Score trend over time
           </span>
-          <span className="@[540px]/card:hidden">Score history</span>
+          <span className="@[540px]/card:hidden">Score trend</span>
         </CardDescription>
         <CardAction>
           <ToggleGroup

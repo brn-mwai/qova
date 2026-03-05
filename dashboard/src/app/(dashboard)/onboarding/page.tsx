@@ -4,6 +4,11 @@ import { useCallback, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useMutation, useQuery } from "convex/react"
 import { motion, AnimatePresence } from "framer-motion"
+import { useAccount, useDisconnect } from "wagmi"
+import {
+  ConnectWallet,
+  Wallet as OnchainWallet,
+} from "@coinbase/onchainkit/wallet"
 import {
   ArrowLeft,
   ArrowRight,
@@ -16,15 +21,18 @@ import {
   Binoculars,
   Robot,
   SpinnerGap,
+  CheckCircle,
+  Warning,
 } from "@phosphor-icons/react"
 import { api } from "../../../../convex/_generated/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Badge } from "@/components/ui/badge"
 import { useConvexAvailable } from "@/components/providers/convex-provider"
 import { cn } from "@/lib/utils"
 
-const TOTAL_STEPS = 4
+const TOTAL_STEPS = 5
 
 const roles = [
   {
@@ -72,6 +80,10 @@ function isValidAddress(address: string): boolean {
   return /^0x[a-fA-F0-9]{40}$/.test(address)
 }
 
+function truncateAddress(address: string): string {
+  return `${address.slice(0, 6)}...${address.slice(-4)}`
+}
+
 export default function OnboardingPage(): React.ReactElement {
   const router = useRouter()
   const available = useConvexAvailable()
@@ -79,6 +91,10 @@ export default function OnboardingPage(): React.ReactElement {
   const completeOnboarding = useMutation(api.users.completeOnboarding)
   const updatePreferences = useMutation(api.users.updatePreferences)
   const upsertAgent = useMutation(api.mutations.agents.upsertAgent)
+  const linkWallet = useMutation(api.mutations.users.linkWallet)
+
+  const { address: walletAddress, isConnected: walletConnected } = useAccount()
+  const { disconnect: disconnectWallet } = useDisconnect()
 
   const [step, setStep] = useState(0)
   const [selectedRole, setSelectedRole] = useState("developer")
@@ -87,6 +103,9 @@ export default function OnboardingPage(): React.ReactElement {
   const [agentError, setAgentError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [completing, setCompleting] = useState(false)
+  const [walletLinking, setWalletLinking] = useState(false)
+  const [walletLinked, setWalletLinked] = useState(false)
+  const [walletError, setWalletError] = useState<string | null>(null)
 
   // Redirect if already onboarded
   useEffect(() => {
@@ -119,6 +138,7 @@ export default function OnboardingPage(): React.ReactElement {
     try {
       await upsertAgent({
         address: agentAddress,
+        name: agentName,
         score: 0,
         isRegistered: true,
       })
@@ -129,6 +149,28 @@ export default function OnboardingPage(): React.ReactElement {
       setSubmitting(false)
     }
   }, [agentAddress, agentName, upsertAgent, handleNext])
+
+  // Link wallet to Convex user
+  const handleLinkWallet = useCallback(async (): Promise<void> => {
+    if (!walletAddress || !available) return
+    setWalletLinking(true)
+    setWalletError(null)
+    try {
+      await linkWallet({ walletAddress })
+      setWalletLinked(true)
+    } catch (err) {
+      setWalletError(err instanceof Error ? err.message : "Failed to link wallet")
+    } finally {
+      setWalletLinking(false)
+    }
+  }, [walletAddress, available, linkWallet])
+
+  // Auto-link when wallet connects
+  useEffect(() => {
+    if (walletConnected && walletAddress && available && !walletLinked && !walletLinking && step === 3) {
+      handleLinkWallet()
+    }
+  }, [walletConnected, walletAddress, available, walletLinked, walletLinking, step, handleLinkWallet])
 
   const handleComplete = useCallback(async (): Promise<void> => {
     setCompleting(true)
@@ -178,7 +220,7 @@ export default function OnboardingPage(): React.ReactElement {
         </div>
 
         <AnimatePresence mode="wait">
-          {/* ─── Step 0: Welcome + Role ─── */}
+          {/* ---- Step 0: Welcome + Role ---- */}
           {step === 0 && (
             <motion.div
               key="step-0"
@@ -234,7 +276,7 @@ export default function OnboardingPage(): React.ReactElement {
             </motion.div>
           )}
 
-          {/* ─── Step 1: First Agent ─── */}
+          {/* ---- Step 1: First Agent ---- */}
           {step === 1 && (
             <motion.div
               key="step-1"
@@ -301,7 +343,7 @@ export default function OnboardingPage(): React.ReactElement {
             </motion.div>
           )}
 
-          {/* ─── Step 2: Feature Tour ─── */}
+          {/* ---- Step 2: Feature Tour ---- */}
           {step === 2 && (
             <motion.div
               key="step-2"
@@ -354,10 +396,114 @@ export default function OnboardingPage(): React.ReactElement {
             </motion.div>
           )}
 
-          {/* ─── Step 3: Ready ─── */}
+          {/* ---- Step 3: Connect Wallet ---- */}
           {step === 3 && (
             <motion.div
               key="step-3"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-6"
+            >
+              <div className="text-center">
+                <h1 className="font-heading text-2xl font-semibold">
+                  Connect a wallet
+                </h1>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Link a wallet for on-chain verification. This is optional.
+                </p>
+              </div>
+
+              <div className="rounded-lg border border-border p-6 space-y-5">
+                {!walletConnected ? (
+                  <>
+                    <div className="flex justify-center">
+                      <OnchainWallet>
+                        <ConnectWallet className="!flex !items-center !justify-center !gap-2 !w-full !rounded-md !border !border-border !bg-foreground !px-4 !py-2.5 !text-sm !font-medium !text-background !shadow-none hover:!bg-foreground/90">
+                          <Wallet className="size-4" />
+                          <span>Connect Wallet</span>
+                        </ConnectWallet>
+                      </OnchainWallet>
+                    </div>
+
+                    <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
+                      <p className="text-xs font-medium text-muted-foreground">
+                        Supported wallets
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        <Badge variant="outline" className="text-[10px]">
+                          Coinbase Smart Wallet
+                        </Badge>
+                        <Badge variant="outline" className="text-[10px]">
+                          Coinbase Wallet
+                        </Badge>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <span className="size-2.5 rounded-full bg-[var(--score-green)]" />
+                      <span className="font-mono text-sm">
+                        {walletAddress ? truncateAddress(walletAddress) : ""}
+                      </span>
+                      {walletLinked && (
+                        <CheckCircle
+                          size={16}
+                          weight="fill"
+                          className="text-[var(--score-green)]"
+                        />
+                      )}
+                    </div>
+
+                    {walletLinking && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <SpinnerGap size={14} className="animate-spin" />
+                        Linking to your account...
+                      </div>
+                    )}
+                    {walletLinked && (
+                      <p className="text-xs text-[var(--score-green)]">
+                        Wallet linked successfully
+                      </p>
+                    )}
+                    {walletError && (
+                      <div className="flex items-center gap-2 text-sm text-destructive">
+                        <Warning size={14} />
+                        {walletError}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between">
+                <Button variant="ghost" onClick={handleBack}>
+                  <ArrowLeft size={14} />
+                  Back
+                </Button>
+                <div className="flex items-center gap-3">
+                  {!walletConnected && (
+                    <Button variant="ghost" onClick={handleNext}>
+                      Skip for now
+                    </Button>
+                  )}
+                  {walletConnected && (
+                    <Button onClick={handleNext}>
+                      Continue
+                      <ArrowRight size={14} />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ---- Step 4: Ready ---- */}
+          {step === 4 && (
+            <motion.div
+              key="step-4"
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}

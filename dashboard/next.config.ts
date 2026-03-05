@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   experimental: {
-    optimizePackageImports: ["@phosphor-icons/react", "recharts"],
+    optimizePackageImports: ["@phosphor-icons/react", "@coinbase/onchainkit", "recharts"],
   },
 
   images: {
@@ -10,6 +10,20 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "img.clerk.com" },
       { protocol: "https", hostname: "*.clerk.accounts.dev" },
     ],
+  },
+
+  webpack: (config) => {
+    // Resolve modules that MetaMask SDK pulls in but aren't available in web
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      "@react-native-async-storage/async-storage": false,
+    };
+    // Suppress pino-pretty optional dependency warning from WalletConnect
+    config.externals = [
+      ...(Array.isArray(config.externals) ? config.externals : []),
+      "pino-pretty",
+    ];
+    return config;
   },
 };
 

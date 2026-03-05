@@ -27,6 +27,7 @@ const routeTitles: Record<string, string> = {
   "/developers/docs": "API Documentation",
   "/settings": "Settings",
   "/settings/team": "Team",
+  "/settings/wallet": "Wallet",
   "/settings/notifications": "Notification Preferences",
   "/onboarding": "Welcome",
 }

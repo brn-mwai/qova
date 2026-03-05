@@ -12,7 +12,6 @@ import {
 	ShieldCheck,
 	Eye,
 	Code,
-	CurrencyCircleDollar,
 	Trash,
 	EnvelopeSimple,
 	Warning,
@@ -105,7 +104,7 @@ export default function TeamPage(): React.ReactElement {
 				name: inviteName.trim(),
 				role: inviteRole,
 			});
-			toast.success(`Invitation sent to ${inviteEmail}`);
+			toast.success(`${inviteName} added to team as ${inviteRole}`);
 			setInviteOpen(false);
 			setInviteEmail("");
 			setInviteName("");

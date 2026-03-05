@@ -3,7 +3,6 @@
 import { useState } from "react"
 import {
   Code,
-  Play,
   Copy,
   ArrowRight,
 } from "@phosphor-icons/react"

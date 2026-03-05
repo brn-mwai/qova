@@ -3,9 +3,13 @@
  * CRE Workflow: Agent Verify
  *
  * Trigger: HTTP POST /verify
- * Purpose: External services trigger on-demand agent verification.
- *          Reads on-chain reputation + transaction data, runs sanctions screening
- *          off-chain, and returns a verification attestation.
+ * Purpose: Performs comprehensive on-demand agent verification. Reads on-chain
+ *          registration, reputation, transaction stats, and budget status. Fetches
+ *          contract creation details and sanctions screening off-chain. Runs 8
+ *          verification checks covering registration, contract existence, age,
+ *          owner consistency, recent activity, ownership stability, sanctions,
+ *          and minimum score. Returns VERIFIED, PARTIALLY_VERIFIED, UNVERIFIED,
+ *          or SUSPICIOUS status with a credit grade (AAA through D).
  */
 
 import {
@@ -19,16 +23,30 @@ import {
 	json,
 	LAST_FINALIZED_BLOCK_NUMBER,
 	ok,
+	prepareReportRequest,
 	Runner,
 	type Runtime,
 } from "@chainlink/cre-sdk";
-import { type Address, decodeFunctionResult, encodeFunctionData, zeroAddress } from "viem";
+import {
+	type Address,
+	decodeFunctionResult,
+	encodeFunctionData,
+	keccak256,
+	toHex,
+	zeroAddress,
+} from "viem";
+import { CRE_REASONS } from "../shared/constants";
 import {
 	BUDGET_ENFORCER_ABI,
 	REPUTATION_REGISTRY_ABI,
 	TRANSACTION_VALIDATOR_ABI,
 } from "../shared/contracts";
-import { type AgentVerifyConfig, AgentVerifyConfigSchema } from "../shared/types";
+import {
+	type AgentVerifyConfig,
+	AgentVerifyConfigSchema,
+	type VerificationReport,
+} from "../shared/types";
+import { computeVerification, type VerificationInput } from "../shared/verification";
 
 export async function main(): Promise<void> {
 	const runner = await Runner.newRunner<AgentVerifyConfig>({
@@ -53,7 +71,7 @@ function onVerifyRequest(runtime: Runtime<AgentVerifyConfig>, payload: HTTPPaylo
 	const { chainSelectorName, reputationRegistry, transactionValidator, budgetEnforcer } =
 		config.evm;
 
-	// Parse agent address from HTTP request input
+	// ── Parse request body ──
 	const bodyStr = new TextDecoder().decode(payload.input);
 	let requestBody: { agent?: string };
 	try {
@@ -75,7 +93,7 @@ function onVerifyRequest(runtime: Runtime<AgentVerifyConfig>, payload: HTTPPaylo
 	const evmClient = new cre.capabilities.EVMClient(network.chainSelector.selector);
 	const httpClient = new cre.capabilities.HTTPClient();
 
-	// Step 1: Check if agent is registered
+	// ── Step 1: Check if agent is registered ──
 	const isRegisteredCallData = encodeFunctionData({
 		abi: REPUTATION_REGISTRY_ABI,
 		functionName: "isRegistered",
@@ -99,39 +117,39 @@ function onVerifyRequest(runtime: Runtime<AgentVerifyConfig>, payload: HTTPPaylo
 		data: bytesToHex(isRegisteredResult.data),
 	}) as boolean;
 
-	if (!isRegistered) {
-		return JSON.stringify({
-			agent: agentAddress,
-			verified: false,
-			reason: "Agent not registered",
-		});
-	}
-
-	// Step 2: Read current reputation score
-	const scoreCallData = encodeFunctionData({
+	// ── Step 2: Read agent details (score, lastUpdated, updateCount) ──
+	const detailsCallData = encodeFunctionData({
 		abi: REPUTATION_REGISTRY_ABI,
-		functionName: "getScore",
+		functionName: "getAgentDetails",
 		args: [agentAddress as Address],
 	});
 
-	const scoreResult = evmClient
+	const detailsResult = evmClient
 		.callContract(runtime, {
 			call: encodeCallMsg({
 				from: zeroAddress,
 				to: reputationRegistry as Address,
-				data: scoreCallData,
+				data: detailsCallData,
 			}),
 			blockNumber: LAST_FINALIZED_BLOCK_NUMBER,
 		})
 		.result();
 
-	const score = decodeFunctionResult({
+	const agentDetails = decodeFunctionResult({
 		abi: REPUTATION_REGISTRY_ABI,
-		functionName: "getScore",
-		data: bytesToHex(scoreResult.data),
-	}) as number;
+		functionName: "getAgentDetails",
+		data: bytesToHex(detailsResult.data),
+	}) as unknown as {
+		score: number;
+		lastUpdated: bigint;
+		updateCount: bigint;
+		registered: boolean;
+	};
 
-	// Step 3: Read transaction stats
+	const score = agentDetails.score;
+	const registrationTimestamp = Number(agentDetails.lastUpdated);
+
+	// ── Step 3: Read transaction statistics ──
 	const statsCallData = encodeFunctionData({
 		abi: TRANSACTION_VALIDATOR_ABI,
 		functionName: "getTransactionStats",
@@ -160,7 +178,31 @@ function onVerifyRequest(runtime: Runtime<AgentVerifyConfig>, payload: HTTPPaylo
 		lastActivityTimestamp: bigint;
 	};
 
-	// Step 4: Check budget status
+	// ── Step 4: Read success rate ──
+	const successRateCallData = encodeFunctionData({
+		abi: TRANSACTION_VALIDATOR_ABI,
+		functionName: "getSuccessRate",
+		args: [agentAddress as Address],
+	});
+
+	const successRateResult = evmClient
+		.callContract(runtime, {
+			call: encodeCallMsg({
+				from: zeroAddress,
+				to: transactionValidator as Address,
+				data: successRateCallData,
+			}),
+			blockNumber: LAST_FINALIZED_BLOCK_NUMBER,
+		})
+		.result();
+
+	const successRate = decodeFunctionResult({
+		abi: TRANSACTION_VALIDATOR_ABI,
+		functionName: "getSuccessRate",
+		data: bytesToHex(successRateResult.data),
+	}) as bigint;
+
+	// ── Step 5: Check budget status ──
 	const hasBudgetCallData = encodeFunctionData({
 		abi: BUDGET_ENFORCER_ABI,
 		functionName: "hasBudget",
@@ -184,7 +226,45 @@ function onVerifyRequest(runtime: Runtime<AgentVerifyConfig>, payload: HTTPPaylo
 		data: bytesToHex(hasBudgetResult.data),
 	}) as boolean;
 
-	// Step 5: Run sanctions screening off-chain
+	// ── Step 6: Fetch off-chain contract metadata and verification data ──
+	const fetchContractInfo = (
+		sendRequester: HTTPSendRequester,
+		rpcUrl: string,
+	): {
+		contractExists: boolean;
+		creationTimestamp: number;
+		ownerAddress: string;
+		ownerConsistent: boolean;
+		recentOwnershipTransfer: boolean;
+		lastOwnershipTransferTimestamp: number;
+	} => {
+		const response = sendRequester
+			.sendRequest({
+				url: `${rpcUrl}/contract-info`,
+				method: "POST",
+				body: JSON.stringify({ agent: agentAddress }),
+			})
+			.result();
+		if (!ok(response)) throw new Error(`Contract info fetch failed: ${response.statusCode}`);
+		return json(response) as {
+			contractExists: boolean;
+			creationTimestamp: number;
+			ownerAddress: string;
+			ownerConsistent: boolean;
+			recentOwnershipTransfer: boolean;
+			lastOwnershipTransferTimestamp: number;
+		};
+	};
+
+	const contractInfo = httpClient
+		.sendRequest(
+			runtime,
+			fetchContractInfo,
+			consensusIdenticalAggregation(),
+		)(config.sanctionsApiUrl)
+		.result();
+
+	// ── Step 7: Run sanctions screening ──
 	const checkSanctions = (
 		sendRequester: HTTPSendRequester,
 		apiUrl: string,
@@ -208,40 +288,88 @@ function onVerifyRequest(runtime: Runtime<AgentVerifyConfig>, payload: HTTPPaylo
 		)(config.sanctionsApiUrl)
 		.result();
 
-	// Step 6: Compute verification result
-	const verified = sanctionsResult.clean && score > 0;
-	const successRate =
-		Number(stats.totalCount) > 0 ? Number((stats.successCount * 10000n) / stats.totalCount) : 0;
+	// ── Step 8: Run comprehensive verification computation ──
+	const now = runtime.now();
+	const currentTimestamp = Math.floor(now.getTime() / 1000);
 
-	// Determine grade
-	let grade: string;
-	if (score >= 950) grade = "AAA";
-	else if (score >= 900) grade = "AA";
-	else if (score >= 850) grade = "A";
-	else if (score >= 750) grade = "BBB";
-	else if (score >= 650) grade = "BB";
-	else if (score >= 550) grade = "B";
-	else if (score >= 450) grade = "CCC";
-	else if (score >= 350) grade = "CC";
-	else if (score >= 250) grade = "C";
-	else grade = "D";
+	const verificationInput: VerificationInput = {
+		isRegistered,
+		score,
+		registrationTimestamp,
+		contractExists: contractInfo.contractExists,
+		contractCreationTimestamp: contractInfo.creationTimestamp,
+		ownerAddress: contractInfo.ownerAddress,
+		ownerConsistent: contractInfo.ownerConsistent,
+		transactionCount: Number(stats.totalCount),
+		lastActivityTimestamp: Number(stats.lastActivityTimestamp),
+		recentOwnershipTransfer: contractInfo.recentOwnershipTransfer,
+		lastOwnershipTransferTimestamp: contractInfo.lastOwnershipTransferTimestamp,
+		sanctionsClean: sanctionsResult.clean,
+		currentTimestamp,
+		hasBudget,
+	};
+
+	const verification = computeVerification(verificationInput);
 
 	runtime.log(
-		`Verification complete: agent=${agentAddress}, verified=${verified}, score=${score}, grade=${grade}`,
+		`Verification complete: agent=${agentAddress}, status=${verification.status}, grade=${verification.grade}, checks=${verification.checksPassed}/${verification.checksTotal}`,
 	);
 
-	return JSON.stringify({
+	// ── Step 9: Build verification report ──
+	const isActive =
+		Number(stats.lastActivityTimestamp) > 0 &&
+		currentTimestamp - Number(stats.lastActivityTimestamp) <= 30 * 86400;
+
+	const report: VerificationReport = {
 		agent: agentAddress,
-		verified,
+		status: verification.status,
+		grade: verification.grade,
 		score,
-		grade,
-		sanctionsClean: sanctionsResult.clean,
-		transactionCount: Number(stats.totalCount),
-		successRate,
-		totalVolume: stats.totalVolume.toString(),
+		checks: verification.checks,
+		checksPassed: verification.checksPassed,
+		checksTotal: verification.checksTotal,
+		isRegistered,
 		hasBudget,
-		timestamp: Math.floor(Date.now() / 1000),
+		sanctionsClean: sanctionsResult.clean,
+		activity: {
+			totalTransactions: Number(stats.totalCount),
+			successRate: Number(successRate),
+			totalVolume: stats.totalVolume.toString(),
+			lastActivityTimestamp: Number(stats.lastActivityTimestamp),
+			isActive,
+		},
+		timestamp: currentTimestamp,
+	};
+
+	// ── Step 10: Write verification attestation on-chain ──
+	const reason = keccak256(toHex(CRE_REASONS.agentVerify));
+
+	// If agent is SUSPICIOUS, apply a score penalty
+	let adjustedScore = score;
+	if (verification.status === "SUSPICIOUS") {
+		adjustedScore = Math.max(0, score - 100);
+	} else if (verification.status === "UNVERIFIED") {
+		adjustedScore = Math.max(0, score - 50);
+	}
+
+	const writeCallData = encodeFunctionData({
+		abi: REPUTATION_REGISTRY_ABI,
+		functionName: "updateScore",
+		args: [agentAddress as Address, adjustedScore, reason],
 	});
+
+	const creReport = runtime.report(prepareReportRequest(writeCallData)).result();
+
+	evmClient
+		.writeReport(runtime, {
+			receiver: reputationRegistry,
+			report: creReport,
+		})
+		.result();
+
+	runtime.log(`Verification report written on-chain: ${agentAddress} -> ${verification.status}`);
+
+	return JSON.stringify(report);
 }
 
 main();
