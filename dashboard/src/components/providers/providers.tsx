@@ -90,6 +90,8 @@ export function Providers({
 				signInUrl="/sign-in"
 				signUpUrl="/sign-up"
 				afterSignOutUrl="/sign-in"
+				signInFallbackRedirectUrl="/"
+				signUpFallbackRedirectUrl="/onboarding"
 			>
 				<ConvexWithClerkInner>
 					<InnerProviders>{children}</InnerProviders>

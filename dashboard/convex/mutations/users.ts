@@ -91,7 +91,20 @@ export const linkWallet = mutation({
       .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
       .first();
 
-    if (!user) throw new Error("User not found");
+    if (!user) {
+      // User record not created yet (Clerk webhook may not have fired).
+      // Create a minimal record so the wallet link isn't lost.
+      await ctx.db.insert("users", {
+        clerkId: identity.subject,
+        email: identity.email ?? "",
+        name: identity.name,
+        role: "owner",
+        walletAddress,
+        onboardingComplete: false,
+        createdAt: Date.now(),
+      });
+      return;
+    }
 
     await ctx.db.patch(user._id, { walletAddress });
   },
