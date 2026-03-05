@@ -15,7 +15,10 @@ export const verifyWorldId = mutation({
 	},
 	handler: async (ctx, args): Promise<{ success: boolean; alreadyVerified: boolean }> => {
 		const identity = await ctx.auth.getUserIdentity();
-		if (!identity) throw new Error("Unauthenticated");
+		if (!identity) {
+			// Auth not available -- return gracefully to avoid retry loops
+			return { success: false, alreadyVerified: false };
+		}
 
 		const userId = identity.subject;
 

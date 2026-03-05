@@ -79,11 +79,15 @@ export const linkWallet = mutation({
   args: { walletAddress: v.string() },
   handler: async (ctx, { walletAddress }) => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error("Not authenticated");
+    if (!identity) {
+      // Auth not available (JWT template may not be configured).
+      // Return silently to prevent infinite retry loops.
+      return;
+    }
 
     // Validate Ethereum address format
     if (!/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
-      throw new Error("Invalid Ethereum address");
+      return;
     }
 
     const user = await ctx.db
@@ -118,7 +122,7 @@ export const completeOnboarding = mutation({
   args: {},
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error("Unauthenticated");
+    if (!identity) return;
 
     const user = await ctx.db
       .query("users")
