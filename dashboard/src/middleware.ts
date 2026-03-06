@@ -28,6 +28,7 @@ export default async function middleware(
 		"/verify(.*)",
 		"/api/webhooks(.*)",
 		"/api/badge(.*)",
+		"/api/cre(.*)",
 	]);
 
 	const handler = clerkMiddleware(async (auth, req) => {

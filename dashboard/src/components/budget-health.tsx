@@ -8,7 +8,7 @@ import {
 	CardTitle,
 } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import { useAgentList } from "@/hooks/use-convex-data"
+import { useFilteredAgentList } from "@/hooks/use-convex-data"
 import { shortenAddress } from "@/lib/constants"
 
 function parseNumeric(value: string | undefined): number {
@@ -30,7 +30,7 @@ function barColor(pct: number): string {
 }
 
 export function BudgetHealth(): React.ReactElement {
-	const agents = useAgentList()
+	const agents = useFilteredAgentList()
 
 	const withBudget = agents
 		.filter((a) => a.monthlyLimit)

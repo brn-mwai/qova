@@ -29,9 +29,9 @@ import {
 } from "@/components/ui/table"
 import { PageHeader } from "@/components/shared/page-header"
 import {
-  useAgentList,
-  useGradeDistribution,
-  useRecentActivity,
+  useFilteredAgentList,
+  useFilteredGradeDistribution,
+  useFilteredRecentActivity,
 } from "@/hooks/use-convex-data"
 
 const GRADE_ORDER = ["AAA", "AA", "A", "BBB", "BB", "B", "CCC", "CC", "C", "D"]
@@ -98,9 +98,9 @@ function GradeBar({
 }
 
 export default function EcosystemPage(): React.ReactElement {
-  const agents = useAgentList()
-  const gradeDistribution = useGradeDistribution()
-  const recentActivity = useRecentActivity(20)
+  const agents = useFilteredAgentList()
+  const gradeDistribution = useFilteredGradeDistribution()
+  const recentActivity = useFilteredRecentActivity(20)
 
   const totalAgents = agents.length
   const avgScore =

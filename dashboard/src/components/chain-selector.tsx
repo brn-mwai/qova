@@ -9,6 +9,8 @@ import {
 	SelectValue,
 } from "@/components/ui/select"
 import { Globe } from "@phosphor-icons/react"
+import { useAgentList } from "@/hooks/use-convex-data"
+import { useMemo } from "react"
 
 interface ChainSelectorProps {
 	value?: number
@@ -26,6 +28,19 @@ export function ChainSelector({
 	showAll = false,
 }: ChainSelectorProps): React.ReactElement {
 	const selected = SUPPORTED_CHAINS.find((c) => c.id === value)
+	const agents = useAgentList()
+
+	const chainCounts = useMemo(() => {
+		const counts = new Map<number, number>()
+		for (const a of agents) {
+			if (a.chainId) {
+				counts.set(a.chainId, (counts.get(a.chainId) ?? 0) + 1)
+			}
+		}
+		return counts
+	}, [agents])
+
+	const totalAgents = agents.length
 
 	return (
 		<Select
@@ -50,12 +65,22 @@ export function ChainSelector({
 						{selected ? (
 							<>
 								<ChainDot color={selected.brandColor} />
-								{compact ? selected.name : selected.name}
+								{selected.name}
+								{chainCounts.get(selected.id) !== undefined && (
+									<span className="font-mono text-[10px] text-muted-foreground">
+										({chainCounts.get(selected.id)})
+									</span>
+								)}
 							</>
 						) : (
 							<>
 								<Globe weight="bold" className="size-3.5" />
 								All Chains
+								{totalAgents > 0 && (
+									<span className="font-mono text-[10px] text-muted-foreground">
+										({totalAgents})
+									</span>
+								)}
 							</>
 						)}
 					</span>
@@ -67,17 +92,31 @@ export function ChainSelector({
 						<span className="flex items-center gap-2">
 							<Globe weight="bold" className="size-3.5" />
 							All Chains
+							{totalAgents > 0 && (
+								<span className="font-mono text-[10px] text-muted-foreground ml-auto">
+									{totalAgents}
+								</span>
+							)}
 						</span>
 					</SelectItem>
 				)}
-				{SUPPORTED_CHAINS.map((chain) => (
-					<SelectItem key={chain.id} value={String(chain.id)}>
-						<span className="flex items-center gap-2">
-							<ChainDot color={chain.brandColor} />
-							{chain.name}
-						</span>
-					</SelectItem>
-				))}
+				{SUPPORTED_CHAINS.map((chain) => {
+					const count = chainCounts.get(chain.id) ?? 0
+					return (
+						<SelectItem key={chain.id} value={String(chain.id)}>
+							<span className="flex items-center gap-2">
+								<ChainDot color={chain.brandColor} />
+								{chain.name}
+								{chain.isTestnet && (
+									<span className="text-[10px] text-muted-foreground">testnet</span>
+								)}
+								<span className="font-mono text-[10px] text-muted-foreground ml-auto">
+									{count}
+								</span>
+							</span>
+						</SelectItem>
+					)
+				})}
 			</SelectContent>
 		</Select>
 	)

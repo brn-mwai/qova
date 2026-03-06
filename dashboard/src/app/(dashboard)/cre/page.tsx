@@ -11,6 +11,8 @@ import {
   XCircle,
   CircleNotch,
   Info,
+  Lightning,
+  SpinnerGap,
 } from "@phosphor-icons/react"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -34,13 +36,21 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { PageHeader } from "@/components/shared/page-header"
-import { useCreWorkflows, useRecentCreExecutions } from "@/hooks/use-convex-data"
+import { AddressDisplay } from "@/components/shared/address-display"
+import { useCreWorkflows, useRecentCreExecutions, useAgentList } from "@/hooks/use-convex-data"
 import { useMutation } from "convex/react"
 import { api } from "../../../../convex/_generated/api"
 import { useConvexAvailable } from "@/components/providers/convex-provider"
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState, useCallback } from "react"
 import { toast } from "sonner"
 import type { ComponentType } from "react"
 import type { IconProps } from "@phosphor-icons/react"
@@ -100,6 +110,93 @@ function WorkflowStatusBadge({ status }: { status: string }): React.ReactElement
   )
 }
 
+function RunScoringPanel(): React.ReactElement {
+  const agents = useAgentList()
+  const [selectedAgent, setSelectedAgent] = useState<string>("")
+  const [running, setRunning] = useState(false)
+
+  const handleRun = useCallback(async (): Promise<void> => {
+    if (!selectedAgent) {
+      toast.error("Select an agent to score")
+      return
+    }
+    setRunning(true)
+    try {
+      const res = await fetch("/api/cre/execute", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agentAddress: selectedAgent, workflowId: "composite" }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        toast.error(data.error ?? "Scoring failed")
+        return
+      }
+      toast.success(
+        `Score computed: ${data.currentScore} -> ${data.newScore}${data.txHash ? " (written on-chain)" : " (no change)"}`,
+      )
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Network error")
+    } finally {
+      setRunning(false)
+    }
+  }, [selectedAgent])
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center gap-2">
+          <Lightning className="size-4 text-score-yellow" weight="fill" />
+          <CardTitle className="text-sm">Run Scoring</CardTitle>
+        </div>
+        <CardDescription className="text-xs">
+          Execute the CRE scoring pipeline against an agent&apos;s on-chain data
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+          <div className="flex-1 space-y-1.5">
+            <label className="text-xs text-muted-foreground" htmlFor="agent-select">
+              Agent Address
+            </label>
+            <Select value={selectedAgent} onValueChange={setSelectedAgent}>
+              <SelectTrigger id="agent-select" className="w-full">
+                <SelectValue placeholder="Select an agent..." />
+              </SelectTrigger>
+              <SelectContent>
+                {agents.length === 0 ? (
+                  <SelectItem value="none" disabled>No agents registered</SelectItem>
+                ) : (
+                  agents.map((a) => (
+                    <SelectItem key={a.address} value={a.address}>
+                      <span className="flex items-center gap-2">
+                        <span className="text-sm">{a.name ?? a.addressShort}</span>
+                        <span className="font-mono text-[11px] text-muted-foreground">{a.addressShort}</span>
+                      </span>
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+          <Button
+            onClick={handleRun}
+            disabled={running || !selectedAgent}
+            className="sm:w-auto"
+          >
+            {running ? (
+              <SpinnerGap size={14} className="animate-spin" />
+            ) : (
+              <Lightning size={14} weight="bold" />
+            )}
+            {running ? "Scoring..." : "Run Now"}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
 export default function CrePage(): React.ReactElement {
   const workflows = useCreWorkflows()
   const recentExecutions = useRecentCreExecutions(15)
@@ -128,6 +225,11 @@ export default function CrePage(): React.ReactElement {
           title="Scoring Engine"
           subtitle="How Qova computes reputation scores using Chainlink CRE"
         />
+      </div>
+
+      {/* Run Scoring Panel */}
+      <div className="px-4 lg:px-6">
+        <RunScoringPanel />
       </div>
 
       {/* Methodology Explainer */}
@@ -279,10 +381,12 @@ export default function CrePage(): React.ReactElement {
                           {exec.workflowId}
                         </Link>
                       </TableCell>
-                      <TableCell className="font-mono text-xs text-muted-foreground">
-                        {exec.agentAddress
-                          ? `${exec.agentAddress.slice(0, 6)}...${exec.agentAddress.slice(-4)}`
-                          : "--"}
+                      <TableCell>
+                        {exec.agentAddress ? (
+                          <AddressDisplay address={exec.agentAddress} className="text-xs" />
+                        ) : (
+                          <span className="text-xs text-muted-foreground">--</span>
+                        )}
                       </TableCell>
                       <TableCell className="text-right font-mono text-xs tabular-nums">
                         {exec.inputScore ?? "--"}

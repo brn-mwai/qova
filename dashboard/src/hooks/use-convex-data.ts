@@ -1,8 +1,10 @@
 "use client";
 
+import { useMemo } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { useConvexAvailable } from "@/components/providers/convex-provider";
+import { useChainFilter } from "@/components/providers/chain-provider";
 
 /** All agents sorted by score descending. */
 export function useAgentList(): Array<{
@@ -102,6 +104,7 @@ export function useScoreHistory(agent: string, limit?: number): Array<{
 /** Leaderboard: ranked agents. */
 export function useLeaderboard(limit?: number): Array<{
 	rank: number;
+	name?: string;
 	address: string;
 	addressShort: string;
 	score: number;
@@ -277,4 +280,56 @@ export function useAgentByAddress(address: string): {
 	const available = useConvexAvailable();
 	const result = useQuery(api.queries.agents.getByAddress, available ? { address } : "skip");
 	return result ?? null;
+}
+
+/** All agents filtered by the global chain selector. */
+export function useFilteredAgentList(): ReturnType<typeof useAgentList> {
+	const agents = useAgentList();
+	const { selectedChainId } = useChainFilter();
+
+	return useMemo(() => {
+		if (selectedChainId === 0) return agents;
+		return agents.filter((a) => a.chainId === selectedChainId);
+	}, [agents, selectedChainId]);
+}
+
+/** Recent activity filtered by chain (cross-refs agent addresses). */
+export function useFilteredRecentActivity(limit?: number): ReturnType<typeof useRecentActivity> {
+	const activity = useRecentActivity(limit);
+	const filteredAgents = useFilteredAgentList();
+	const { selectedChainId } = useChainFilter();
+
+	return useMemo(() => {
+		if (selectedChainId === 0) return activity;
+		const agentSet = new Set(filteredAgents.map((a) => a.address.toLowerCase()));
+		return activity.filter((tx) => agentSet.has(tx.agent.toLowerCase()));
+	}, [activity, filteredAgents, selectedChainId]);
+}
+
+/** Grade distribution filtered by chain. */
+export function useFilteredGradeDistribution(): Record<string, number> {
+	const agents = useFilteredAgentList();
+
+	return useMemo(() => {
+		const counts: Record<string, number> = {};
+		for (const a of agents) {
+			counts[a.grade] = (counts[a.grade] ?? 0) + 1;
+		}
+		return counts;
+	}, [agents]);
+}
+
+/** Leaderboard filtered by chain. */
+export function useFilteredLeaderboard(limit?: number): ReturnType<typeof useLeaderboard> {
+	const leaderboard = useLeaderboard(limit);
+	const filteredAgents = useFilteredAgentList();
+	const { selectedChainId } = useChainFilter();
+
+	return useMemo(() => {
+		if (selectedChainId === 0) return leaderboard;
+		const agentSet = new Set(filteredAgents.map((a) => a.address.toLowerCase()));
+		return leaderboard
+			.filter((entry) => agentSet.has(entry.address.toLowerCase()))
+			.map((entry, i) => ({ ...entry, rank: i + 1 }));
+	}, [leaderboard, filteredAgents, selectedChainId]);
 }

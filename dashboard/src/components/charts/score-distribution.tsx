@@ -1,7 +1,7 @@
 "use client"
 
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, XAxis, YAxis } from "recharts"
-import { useGradeDistribution } from "@/hooks/use-convex-data"
+import { useFilteredGradeDistribution } from "@/hooks/use-convex-data"
 import {
   Card,
   CardContent,
@@ -37,7 +37,7 @@ const chartConfig = {
 } satisfies ChartConfig
 
 export function ScoreDistribution(): React.ReactElement {
-  const distribution = useGradeDistribution()
+  const distribution = useFilteredGradeDistribution()
 
   const totalAgents = GRADE_ORDER.reduce((sum, g) => sum + (distribution[g] ?? 0), 0)
 

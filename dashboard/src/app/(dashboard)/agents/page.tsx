@@ -16,7 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/shared/page-header";
 import { RegisterAgentDialog } from "@/components/register-agent-dialog";
-import { useAgentList } from "@/hooks/use-convex-data";
+import { useFilteredAgentList } from "@/hooks/use-convex-data";
 
 function timeAgo(iso: string): string {
 	const diff = Date.now() - new Date(iso).getTime();
@@ -128,7 +128,7 @@ const columns: ColumnDef<AgentRow>[] = [
 /* ------------------------------------------------------------------ */
 
 export default function AgentsPage(): React.ReactElement {
-	const agents = useAgentList();
+	const agents = useFilteredAgentList();
 	const [registerOpen, setRegisterOpen] = useState(false);
 
 	// Listen for command palette "Register New Agent" event

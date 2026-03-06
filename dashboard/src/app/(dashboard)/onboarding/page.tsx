@@ -92,6 +92,7 @@ export default function OnboardingPage(): React.ReactElement {
   const updatePreferences = useMutation(api.users.updatePreferences)
   const upsertAgent = useMutation(api.mutations.agents.upsertAgent)
   const linkWallet = useMutation(api.mutations.users.linkWallet)
+  const seedDemo = useMutation(api.mutations.seed.seedDemoData)
 
   const { address: walletAddress, isConnected: walletConnected } = useAccount()
   const { disconnect: disconnectWallet } = useDisconnect()
@@ -177,13 +178,14 @@ export default function OnboardingPage(): React.ReactElement {
     try {
       if (available) {
         await updatePreferences({ role: selectedRole })
+        await seedDemo({}).catch(() => {})
         await completeOnboarding({})
       }
       router.push("/")
     } catch {
       router.push("/")
     }
-  }, [available, updatePreferences, selectedRole, completeOnboarding, router])
+  }, [available, updatePreferences, selectedRole, seedDemo, completeOnboarding, router])
 
   // Keyboard navigation
   useEffect(() => {

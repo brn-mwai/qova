@@ -10,7 +10,7 @@ import { ScoreAlerts } from "@/components/score-alerts"
 import { ActivityChart } from "@/components/charts/activity-chart"
 import { ScoreBadge } from "@/components/scores/score-badge"
 import { Badge } from "@/components/ui/badge"
-import { useLeaderboard, useRecentActivity } from "@/hooks/use-convex-data"
+import { useFilteredLeaderboard, useFilteredRecentActivity } from "@/hooks/use-convex-data"
 import { PageHeader } from "@/components/shared/page-header"
 import {
   Card,
@@ -40,8 +40,8 @@ function timeAgo(ts: number): string {
 }
 
 export default function OverviewPage(): React.ReactElement {
-  const leaderboard = useLeaderboard(5)
-  const recentActivity = useRecentActivity(10)
+  const leaderboard = useFilteredLeaderboard(5)
+  const recentActivity = useFilteredRecentActivity(10)
 
   return (
     <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
@@ -106,9 +106,10 @@ export default function OverviewPage(): React.ReactElement {
                       <TableCell>
                         <Link
                           href={`/agents/${agent.address}`}
-                          className="font-mono text-sm hover:underline"
+                          className="hover:underline"
                         >
-                          {agent.addressShort}
+                          <span className="text-sm font-medium block">{agent.name ?? agent.addressShort}</span>
+                          <span className="font-mono text-[11px] text-muted-foreground">{agent.addressShort}</span>
                         </Link>
                       </TableCell>
                       <TableCell>

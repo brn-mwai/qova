@@ -3,7 +3,7 @@
 import * as React from "react"
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts"
 import { useIsMobile } from "@/hooks/use-mobile"
-import { useAgentList, useScoreHistory } from "@/hooks/use-convex-data"
+import { useFilteredAgentList, useScoreHistory } from "@/hooks/use-convex-data"
 import {
   Card,
   CardAction,
@@ -46,7 +46,7 @@ export function ScoreTrendChart() {
   }, [isMobile])
 
   // Fetch all agents and first agent's score history
-  const agents = useAgentList()
+  const agents = useFilteredAgentList()
   const firstAddress = agents[0]?.address ?? ""
   const snapshots = useScoreHistory(firstAddress, 91)
 

@@ -62,8 +62,8 @@ const DEFAULT_PREFS: LocalPrefs = {
 export default function NotificationSettingsPage(): React.ReactElement {
 	const { user } = useUser();
 
-	const settings = useQuery(api.userSettings.get);
-	const saveSettings = useMutation(api.userSettings.save);
+	const settings = useQuery(api.queries.settings.getSettings);
+	const saveSettings = useMutation(api.mutations.settings.updateSettings);
 
 	const [prefs, setPrefs] = useState<LocalPrefs>(DEFAULT_PREFS);
 	const [saving, setSaving] = useState(false);

@@ -126,6 +126,56 @@ export const createExecution = mutation({
   },
 });
 
+/** Record a CRE execution from the server-side API route (no auth required). */
+export const createServerExecution = mutation({
+  args: {
+    workflowId: v.string(),
+    agentAddress: v.optional(v.string()),
+    status: v.string(),
+    inputScore: v.optional(v.number()),
+    outputScore: v.optional(v.number()),
+    durationMs: v.optional(v.number()),
+    error: v.optional(v.string()),
+    startedAt: v.number(),
+    completedAt: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.insert("creExecutions", {
+      workflowId: args.workflowId,
+      agentAddress: args.agentAddress,
+      status: args.status,
+      inputScore: args.inputScore,
+      outputScore: args.outputScore,
+      durationMs: args.durationMs,
+      error: args.error,
+      startedAt: args.startedAt,
+      completedAt: args.completedAt,
+    });
+
+    // Update workflow stats
+    const workflow = await ctx.db
+      .query("creWorkflows")
+      .withIndex("by_workflow_id", (q) => q.eq("workflowId", args.workflowId))
+      .unique();
+
+    if (workflow) {
+      const newTotal = workflow.totalRuns + 1;
+      const successDelta = args.status === "completed" ? 0 : -1;
+      const newSuccessRate = Math.max(0, Math.min(100,
+        ((workflow.successRate * workflow.totalRuns) + (args.status === "completed" ? 100 : 0)) / newTotal
+      ));
+      await ctx.db.patch(workflow._id, {
+        lastRunAt: Date.now(),
+        totalRuns: newTotal,
+        successRate: Math.round(newSuccessRate),
+        avgDurationMs: args.durationMs
+          ? Math.round(((workflow.avgDurationMs ?? 0) * workflow.totalRuns + args.durationMs) / newTotal)
+          : workflow.avgDurationMs,
+      });
+    }
+  },
+});
+
 /** Update workflow status (active/paused). Requires authentication. */
 export const updateWorkflowStatus = mutation({
   args: {

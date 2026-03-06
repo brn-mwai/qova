@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { api } from "../../../../convex/_generated/api";
 import { BudgetUsage } from "@/components/charts/budget-usage";
 import { EmptyState } from "@/components/data/empty-state";
-import { useAgentList } from "@/hooks/use-convex-data";
+import { useFilteredAgentList } from "@/hooks/use-convex-data";
 import { PageHeader } from "@/components/shared/page-header";
 import { useConvexAvailable } from "@/components/providers/convex-provider";
 
@@ -16,7 +16,7 @@ function isValidAddress(addr: string): boolean {
 
 export default function BudgetsPage(): React.ReactElement {
 	const available = useConvexAvailable();
-	const agents = useAgentList();
+	const agents = useFilteredAgentList();
 	const upsertAgent = useMutation(api.mutations.agents.upsertAgent);
 
 	// Form state

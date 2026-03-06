@@ -8,7 +8,7 @@ import {
   TrendUp,
   TrendDown,
 } from "@phosphor-icons/react"
-import { useAgentList, useChainDistribution, useCurrencyBreakdown } from "@/hooks/use-convex-data"
+import { useFilteredAgentList, useChainDistribution, useCurrencyBreakdown } from "@/hooks/use-convex-data"
 import { NumberTicker } from "@/components/ui/number-ticker"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -28,7 +28,7 @@ import { getChain } from "@/lib/chains"
 import { getGrade } from "@/lib/constants"
 
 export function SectionCards(): React.ReactElement {
-  const agents = useAgentList()
+  const agents = useFilteredAgentList()
   const chainDist = useChainDistribution()
   const currencyBreakdown = useCurrencyBreakdown()
 

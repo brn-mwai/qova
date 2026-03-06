@@ -10,7 +10,7 @@ import {
 	CardTitle,
 } from "@/components/ui/card"
 import { ScoreBadge } from "@/components/scores/score-badge"
-import { useAgentList } from "@/hooks/use-convex-data"
+import { useFilteredAgentList } from "@/hooks/use-convex-data"
 import { SCORE_GRADES } from "@/lib/constants"
 
 function getGradeForScore(score: number): string {
@@ -31,7 +31,7 @@ interface AgentDelta {
 }
 
 export function ScoreAlerts(): React.ReactElement {
-	const agents = useAgentList()
+	const agents = useFilteredAgentList()
 
 	const deltas: AgentDelta[] = agents
 		.filter((a) => a.previousScore !== undefined && a.previousScore !== a.score)

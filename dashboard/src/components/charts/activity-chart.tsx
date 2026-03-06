@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
-import { useRecentActivity } from "@/hooks/use-convex-data"
+import { useFilteredRecentActivity } from "@/hooks/use-convex-data"
 import {
   Card,
   CardAction,
@@ -40,7 +40,7 @@ const chartConfig = {
 export function ActivityChart(): React.ReactElement {
   const isMobile = useIsMobile()
   const [timeRange, setTimeRange] = React.useState("30d")
-  const activity = useRecentActivity(500)
+  const activity = useFilteredRecentActivity(500)
 
   React.useEffect(() => {
     if (isMobile) setTimeRange("7d")

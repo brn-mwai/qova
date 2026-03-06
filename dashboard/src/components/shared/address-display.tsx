@@ -31,16 +31,16 @@ export function AddressDisplay({
     <button
       onClick={handleCopy}
       className={cn(
-        "inline-flex items-center gap-1.5 font-mono text-[13px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors",
+        "group/addr inline-flex items-center gap-1.5 font-mono text-[13px] text-muted-foreground hover:text-foreground transition-colors",
         className
       )}
-      title={address}
+      title={`Click to copy: ${address}`}
     >
       {displayAddress}
       {copied ? (
-        <Check className="size-3.5 text-[var(--status-green-text)]" />
+        <Check className="size-3.5 text-score-green" />
       ) : (
-        <Copy className="size-3.5" />
+        <Copy className="size-3.5 opacity-0 group-hover/addr:opacity-100 transition-opacity" />
       )}
     </button>
   )

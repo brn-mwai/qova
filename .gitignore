@@ -13,3 +13,5 @@ contracts/cache/
 .convex/
 .claude/settings.local.json
 .vercel
+
+.vercel

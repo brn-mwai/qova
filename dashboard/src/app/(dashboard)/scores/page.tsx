@@ -12,7 +12,7 @@ import { ScoreRing } from "@/components/scores/score-ring";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/shared/page-header";
-import { useAgentByAddress, useLeaderboard, useScoreHistory } from "@/hooks/use-convex-data";
+import { useAgentByAddress, useFilteredLeaderboard, useScoreHistory } from "@/hooks/use-convex-data";
 
 function isValidAddress(addr: string): boolean {
 	return /^0x[a-fA-F0-9]{40}$/.test(addr);
@@ -135,7 +135,7 @@ const leaderboardColumns: ColumnDef<LeaderboardRow>[] = [
 ];
 
 export default function ScoresPage(): React.ReactElement {
-	const leaderboard = useLeaderboard(50);
+	const leaderboard = useFilteredLeaderboard(50);
 	const [lookupAddress, setLookupAddress] = useState("");
 	const [activeAddress, setActiveAddress] = useState("");
 	const [addressError, setAddressError] = useState<string | null>(null);

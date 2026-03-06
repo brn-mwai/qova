@@ -45,6 +45,7 @@ export const getLeaderboard = query({
 		agents.sort((a, b) => b.score - a.score);
 		return agents.slice(0, cap).map((a, i) => ({
 			rank: i + 1,
+			name: a.name,
 			address: a.address,
 			addressShort: a.addressShort,
 			score: a.score,

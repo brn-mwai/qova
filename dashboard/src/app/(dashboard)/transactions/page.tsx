@@ -27,7 +27,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { useAgentList, useRecentActivity } from "@/hooks/use-convex-data";
+import { useFilteredAgentList, useFilteredRecentActivity } from "@/hooks/use-convex-data";
 import { useConvexAvailable } from "@/components/providers/convex-provider";
 import { PageHeader } from "@/components/shared/page-header";
 import { TX_TYPES } from "@/lib/constants";
@@ -111,8 +111,8 @@ const txColumns: ColumnDef<TxRow>[] = [
 
 export default function TransactionsPage(): React.ReactElement {
 	const available = useConvexAvailable();
-	const agents = useAgentList();
-	const recentActivity = useRecentActivity(50);
+	const agents = useFilteredAgentList();
+	const recentActivity = useFilteredRecentActivity(50);
 	const logActivity = useMutation(api.mutations.activity.logActivity);
 
 	// Form state
