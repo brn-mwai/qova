@@ -1,0 +1,26 @@
+---
+title: Transaction Monitor
+description: Event-driven anomaly detection for agent transactions.
+---
+
+Triggers on every `TransactionRecorded` event. Runs 4-factor anomaly detection and penalizes scores if risk exceeds threshold.
+
+## Pipeline
+
+```
+EVM Log Trigger (TransactionRecorded)
+  -> Decode event data
+  -> 4-Factor Anomaly Detection
+  -> Risk Score > 0.7?
+      -> Yes: Penalize score + Webhook alert
+      -> No: No action
+```
+
+## Risk Factors
+
+| Factor | Weight | What It Detects |
+|:-------|:------:|:----------------|
+| Frequency Anomaly | 30% | Unusually rapid transactions |
+| Large Value | 25% | Transactions far above agent average |
+| Failure Rate | 25% | Spike in failed transactions |
+| Flagged Contracts | 20% | Interaction with known-bad addresses |

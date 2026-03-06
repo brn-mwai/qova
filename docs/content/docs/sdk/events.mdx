@@ -1,0 +1,51 @@
+---
+title: Events
+description: Real-time event watching for transactions, scores, and actions.
+---
+
+Watch on-chain events in real-time.
+
+## watchTransactions
+
+```typescript
+import { watchTransactions } from "@qova/core";
+
+const unwatch = watchTransactions(client, (event) => {
+  console.log(`Agent ${event.agent} - ${event.amount} wei`);
+});
+
+// Stop watching
+unwatch();
+```
+
+## watchScoreUpdates
+
+```typescript
+import { watchScoreUpdates } from "@qova/core";
+
+watchScoreUpdates(client, (event) => {
+  console.log(`${event.agent}: ${event.oldScore} -> ${event.newScore}`);
+});
+```
+
+## watchAgentActions
+
+```typescript
+import { watchAgentActions } from "@qova/core";
+
+watchAgentActions(client, (event) => {
+  console.log(`Action: ${event.agent} spent ${event.amount}`);
+});
+```
+
+## Event Types
+
+```typescript
+import type {
+  TransactionRecordedEvent,
+  ScoreUpdatedEvent,
+  AgentActionExecutedEvent,
+  QovaEvent,
+  WatchConfig,
+} from "@qova/core";
+```

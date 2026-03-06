@@ -1,0 +1,78 @@
+---
+title: Reputation
+description: Score queries, agent registration, and score updates.
+---
+
+Methods for reading and writing agent reputation data.
+
+## getScore
+
+Returns the agent's reputation score (0-1000).
+
+```typescript
+const score = await client.getScore("0x1234...");
+// 750
+```
+
+## getAgentDetails
+
+Returns full agent details.
+
+```typescript
+const details = await client.getAgentDetails("0x1234...");
+// {
+//   score: 750,
+//   isRegistered: true,
+//   lastUpdated: 1709942400n,
+//   registeredAt: 1709856000n,
+//   owner: "0xOwner..."
+// }
+```
+
+## isAgentRegistered
+
+Checks if an agent is registered.
+
+```typescript
+const registered = await client.isAgentRegistered("0x1234...");
+// true
+```
+
+## registerAgent
+
+Registers a new agent. **Requires wallet.**
+
+```typescript
+const txHash = await client.registerAgent("0xNewAgent...");
+```
+
+## updateScore
+
+Updates an agent's score. **Requires UPDATER_ROLE.**
+
+```typescript
+const txHash = await client.updateScore(
+  "0xAgent...",
+  800,
+  "0x00" // reason bytes
+);
+```
+
+## batchUpdateScores
+
+Batch update scores for multiple agents. **Requires UPDATER_ROLE.**
+
+```typescript
+const txHash = await client.batchUpdateScores(
+  ["0xAgent1...", "0xAgent2..."],
+  [750, 820],
+  ["0x00", "0x00"]
+);
+```
+
+## Types
+
+```typescript
+import type { AgentDetails, AgentScore, ScoreGrade } from "@qova/core";
+import { AgentDetailsSchema, AgentScoreSchema, SCORE_GRADES } from "@qova/core";
+```

@@ -1,0 +1,4 @@
+{
+  "title": "Chainlink CRE",
+  "pages": ["index", "reputation-oracle", "transaction-monitor", "budget-alert", "agent-verify"]
+}

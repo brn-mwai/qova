@@ -1,0 +1,40 @@
+---
+title: ReputationRegistry
+description: Score storage, agent registration, and update history.
+---
+
+Stores agent reputation scores (0-1000), registration status, and score update history.
+
+## Functions
+
+| Function | Access | Description |
+|:---------|:-------|:-----------|
+| `registerAgent(address)` | Public | Register a new agent |
+| `updateScore(address, uint256, bytes)` | UPDATER_ROLE | Update score with reason |
+| `batchUpdateScores(address[], uint256[], bytes[])` | UPDATER_ROLE | Batch update |
+| `getScore(address)` | View | Get current score |
+| `getAgentDetails(address)` | View | Full agent struct |
+| `isRegistered(address)` | View | Check registration |
+
+## Events
+
+```solidity
+event AgentRegistered(address indexed agent, address indexed owner);
+event ScoreUpdated(address indexed agent, uint256 oldScore, uint256 newScore, bytes reason);
+```
+
+## Storage
+
+```solidity
+struct AgentDetails {
+    uint256 score;
+    bool isRegistered;
+    uint256 lastUpdated;
+    uint256 registeredAt;
+    address owner;
+}
+```
+
+## Address
+
+**Base Sepolia:** [`0x0b2466b01E6d73A24D9C716A9072ED3923563fBB`](https://sepolia.basescan.org/address/0x0b2466b01E6d73A24D9C716A9072ED3923563fBB)

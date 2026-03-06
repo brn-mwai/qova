@@ -1,0 +1,26 @@
+---
+title: Environment Variables
+description: All required and optional environment variables.
+---
+
+## Dashboard (`dashboard/.env.local`)
+
+| Variable | Required | Description |
+|:---------|:--------:|:-----------|
+| `CONVEX_DEPLOYMENT` | Yes | Convex deployment ID |
+| `NEXT_PUBLIC_CONVEX_URL` | Yes | Convex HTTP endpoint |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Yes | Clerk publishable key |
+| `CLERK_SECRET_KEY` | Yes | Clerk secret key |
+| `NEXT_PUBLIC_CHAIN_ID` | No | Default chain (84532) |
+| `NEXT_PUBLIC_EXPLORER_URL` | No | Block explorer URL |
+| `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | No | WalletConnect ID |
+| `NEXT_PUBLIC_CDP_API_KEY` | No | Coinbase Dev Platform key |
+| `NEXT_PUBLIC_WORLDCOIN_APP_ID` | No | World ID app ID |
+
+## API (`api/.env`)
+
+| Variable | Required | Description |
+|:---------|:--------:|:-----------|
+| `RPC_URL` | Yes | Base Sepolia RPC |
+| `DEPLOYER_PRIVATE_KEY` | Yes | Contract deployer key |
+| `PORT` | No | Server port (3001) |

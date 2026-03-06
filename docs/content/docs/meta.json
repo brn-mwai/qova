@@ -1,0 +1,13 @@
+{
+  "title": "Documentation",
+  "pages": [
+    "get-started",
+    "sdk",
+    "api",
+    "contracts",
+    "cre",
+    "dashboard",
+    "integrations",
+    "reference"
+  ]
+}

@@ -1,0 +1,70 @@
+---
+title: Budget Endpoints
+description: Set limits, check compliance, and record spending.
+---
+
+## GET /api/budgets/:address
+
+Get budget status for an agent. **Rate limit:** 100/min
+
+```bash
+curl https://api.qova.cc/api/budgets/0x1234...
+```
+
+```json
+{
+  "success": true,
+  "data": {
+    "dailyLimit": "1000000000000000000",
+    "dailySpent": "250000000000000000",
+    "monthlyLimit": "10000000000000000000",
+    "monthlySpent": "3000000000000000000",
+    "perTxLimit": "100000000000000000"
+  }
+}
+```
+
+## POST /api/budgets/:address/set
+
+Set spending limits. **Rate limit:** 100/min
+
+```bash
+curl -X POST https://api.qova.cc/api/budgets/0xAgent.../set \
+  -H "Content-Type: application/json" \
+  -d '{
+    "dailyLimit": "1000000000000000000",
+    "monthlyLimit": "10000000000000000000",
+    "perTxLimit": "100000000000000000"
+  }'
+```
+
+## POST /api/budgets/:address/check
+
+Check if a spend amount is within budget. **Rate limit:** 100/min
+
+```bash
+curl -X POST https://api.qova.cc/api/budgets/0xAgent.../check \
+  -H "Content-Type: application/json" \
+  -d '{"amount": "50000000"}'
+```
+
+```json
+{
+  "success": true,
+  "data": {
+    "allowed": true,
+    "dailyRemaining": "750000000000000000",
+    "monthlyRemaining": "7000000000000000000"
+  }
+}
+```
+
+## POST /api/budgets/:address/spend
+
+Record a spend against budget. **Rate limit:** 100/min
+
+```bash
+curl -X POST https://api.qova.cc/api/budgets/0xAgent.../spend \
+  -H "Content-Type: application/json" \
+  -d '{"amount": "50000000"}'
+```

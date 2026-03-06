@@ -1,0 +1,37 @@
+---
+title: Installation
+description: Install the @qova/core SDK in your project.
+---
+
+## Using Bun
+
+```bash
+bun add @qova/core
+```
+
+## Using npm
+
+```bash
+npm install @qova/core
+```
+
+## Using pnpm
+
+```bash
+pnpm add @qova/core
+```
+
+## Requirements
+
+- **Runtime:** Bun 1.3+ or Node.js 20+
+- **TypeScript:** 5.7+ recommended (strict mode)
+- **Module system:** ESM only (set `"type": "module"` in package.json)
+
+## Verify Installation
+
+```typescript
+import { createQovaClient } from "@qova/core";
+
+const client = createQovaClient({ chain: "base-sepolia" });
+console.log("Qova client created successfully");
+```

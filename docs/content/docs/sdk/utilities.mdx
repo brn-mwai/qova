@@ -1,0 +1,97 @@
+---
+title: Utilities
+description: Formatting, grading, address helpers, and constants.
+---
+
+Helper functions and constants exported from the SDK.
+
+## Score Utilities
+
+```typescript
+import { getGrade, formatScore, getScoreColor, scoreToPercentage } from "@qova/core";
+
+getGrade(750);          // "BBB"
+formatScore(750);       // "750"
+getScoreColor(750);     // "#22C55E"
+scoreToPercentage(750); // 75
+```
+
+## Address Utilities
+
+```typescript
+import { shortenAddress, isValidAddress, checksumAddress } from "@qova/core";
+
+shortenAddress("0x1234567890abcdef1234567890abcdef12345678");
+// "0x1234...5678"
+
+isValidAddress("0x1234...");  // true
+checksumAddress("0x1234..."); // "0x1234..." (checksummed)
+```
+
+## Format Utilities
+
+```typescript
+import { formatWei, formatBasisPoints, formatTimestamp } from "@qova/core";
+
+formatWei(1000000000000000000n); // "1.0"
+formatBasisPoints(3000);         // "30%"
+formatTimestamp(1709942400n);    // formatted date string
+```
+
+## Constants
+
+```typescript
+import {
+  CHAIN_IDS,         // { BASE_SEPOLIA: 84532, BASE_MAINNET: 8453, SKALE_EUROPA: 2046399126 }
+  CONTRACTS,         // Deployed contract addresses per chain
+  DEFAULT_CHAIN_ID,  // 84532
+  DEFAULT_RPC_URLS,  // Default RPC endpoints per chain
+  BLOCK_EXPLORERS,   // Explorer URLs per chain
+  MAX_SCORE,         // 1000
+  MIN_SCORE,         // 0
+  SCORE_GRADE_THRESHOLDS,
+} from "@qova/core";
+```
+
+## ABIs
+
+For direct viem usage without the client wrapper:
+
+```typescript
+import {
+  reputationRegistryAbi,
+  transactionValidatorAbi,
+  budgetEnforcerAbi,
+  qovaCoreAbi,
+} from "@qova/core";
+```
+
+## Zod Schemas
+
+All types have runtime validation schemas:
+
+```typescript
+import {
+  AgentDetailsSchema,
+  AgentScoreSchema,
+  BudgetConfigSchema,
+  BudgetStatusSchema,
+  TransactionStatsSchema,
+  QovaClientConfigSchema,
+  ContractAddressesSchema,
+  ChainSchema,
+} from "@qova/core";
+```
+
+## Error Types
+
+```typescript
+import {
+  QovaError,
+  AgentNotRegisteredError,
+  AgentAlreadyRegisteredError,
+  InvalidScoreError,
+  BudgetExceededError,
+  UnauthorizedError,
+} from "@qova/core";
+```

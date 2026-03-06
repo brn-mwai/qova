@@ -1,0 +1,54 @@
+---
+title: Transactions
+description: Recording transactions and querying stats.
+---
+
+Methods for recording and querying agent transactions.
+
+## recordTransaction
+
+Records a transaction. **Requires wallet.**
+
+```typescript
+import { TransactionType } from "@qova/core";
+
+const txHash = await client.recordTransaction(
+  "0xAgent...",   // agent address
+  "0xTxHash...", // transaction hash
+  5000000000n,   // amount in wei
+  TransactionType.PAYMENT,
+);
+```
+
+### Transaction Types
+
+| Value | Enum | Label |
+|:-----:|:-----|:------|
+| `0` | `TransactionType.PAYMENT` | Payment |
+| `1` | `TransactionType.TRANSFER` | Transfer |
+| `2` | `TransactionType.SWAP` | Swap |
+| `3` | `TransactionType.BRIDGE` | Bridge |
+| `4` | `TransactionType.STAKE` | Stake |
+| `5` | `TransactionType.OTHER` | Other |
+
+## getTransactionStats
+
+Returns aggregate statistics for an agent.
+
+```typescript
+const stats = await client.getTransactionStats("0x1234...");
+// {
+//   totalCount: 142,
+//   successCount: 138,
+//   failedCount: 4,
+//   totalVolume: 5000000000n,
+//   lastTransactionTime: 1709942400n
+// }
+```
+
+## Types
+
+```typescript
+import type { TransactionStats } from "@qova/core";
+import { TransactionStatsSchema, TransactionType, TRANSACTION_TYPE_LABELS } from "@qova/core";
+```

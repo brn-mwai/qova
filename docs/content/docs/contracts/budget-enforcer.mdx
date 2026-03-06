@@ -1,0 +1,26 @@
+---
+title: BudgetEnforcer
+description: Per-agent spending limits with daily, monthly, and per-transaction caps.
+---
+
+Per-agent spending limits with daily, monthly, and per-transaction caps.
+
+## Functions
+
+| Function | Access | Description |
+|:---------|:-------|:-----------|
+| `setBudget(address, uint256, uint256, uint256)` | BUDGET_MANAGER_ROLE | Set limits |
+| `checkBudget(address, uint256)` | View | Check compliance |
+| `recordSpend(address, uint256)` | BUDGET_MANAGER_ROLE | Record spend |
+| `getBudgetStatus(address)` | View | Current utilization |
+
+## Events
+
+```solidity
+event BudgetSet(address indexed agent, uint256 dailyLimit, uint256 monthlyLimit, uint256 perTxLimit);
+event SpendRecorded(address indexed agent, uint256 amount, uint256 dailySpent, uint256 monthlySpent);
+```
+
+## Address
+
+**Base Sepolia:** [`0x271618781040dc358e4F6B66561b65A839b0C76E`](https://sepolia.basescan.org/address/0x271618781040dc358e4F6B66561b65A839b0C76E)

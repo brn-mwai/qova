@@ -1,0 +1,93 @@
+---
+title: Agent Endpoints
+description: List agents, get details, scores, and register new agents.
+---
+
+## GET /api/agents
+
+List all registered agents. **Rate limit:** 100/min
+
+```bash
+curl https://api.qova.cc/api/agents
+```
+
+```json
+{
+  "success": true,
+  "data": {
+    "agents": [
+      { "address": "0x1234...", "score": 750, "grade": "BBB", "isRegistered": true }
+    ],
+    "total": 42
+  }
+}
+```
+
+## GET /api/agents/:address
+
+Get agent details with enriched score data. **Rate limit:** 100/min
+
+```bash
+curl https://api.qova.cc/api/agents/0x1234...abcd
+```
+
+```json
+{
+  "success": true,
+  "data": {
+    "address": "0x1234...",
+    "score": 750,
+    "grade": "BBB",
+    "color": "#22C55E",
+    "isRegistered": true,
+    "lastUpdated": 1709942400,
+    "transactionCount": 142,
+    "totalVolume": "5000000000"
+  }
+}
+```
+
+## GET /api/agents/:address/score
+
+Get score, grade, and color. **Rate limit:** 100/min
+
+```bash
+curl https://api.qova.cc/api/agents/0x1234.../score
+```
+
+```json
+{ "success": true, "data": { "score": 750, "grade": "BBB", "color": "#22C55E" } }
+```
+
+## POST /api/agents/register
+
+Register a new agent. **Rate limit:** 20/min
+
+```bash
+curl -X POST https://api.qova.cc/api/agents/register \
+  -H "Content-Type: application/json" \
+  -d '{"address": "0xNewAgent..."}'
+```
+
+## POST /api/agents/:address/score
+
+Update an agent's score. **Rate limit:** 100/min
+
+| Field | Type | Required | Description |
+|:------|:-----|:--------:|:-----------|
+| `score` | `number` | Yes | New score (0-1000) |
+| `reason` | `string` | Yes | Hex-encoded reason bytes |
+
+## POST /api/agents/batch-scores
+
+Batch update scores. **Rate limit:** 10/min
+
+```bash
+curl -X POST https://api.qova.cc/api/agents/batch-scores \
+  -H "Content-Type: application/json" \
+  -d '{
+    "agents": ["0xAgent1...", "0xAgent2..."],
+    "scores": [750, 820],
+    "reasons": ["0x00", "0x00"]
+  }'
+```

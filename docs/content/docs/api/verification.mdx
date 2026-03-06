@@ -1,0 +1,56 @@
+---
+title: Verification Endpoints
+description: Agent verification and sanctions screening.
+---
+
+## POST /api/verify
+
+Run 8 verification checks on an agent. **Rate limit:** 100/min
+
+```bash
+curl -X POST https://api.qova.cc/api/verify \
+  -H "Content-Type: application/json" \
+  -d '{"address": "0xAgent..."}'
+```
+
+```json
+{
+  "success": true,
+  "data": {
+    "status": "VERIFIED",
+    "grade": "BBB",
+    "score": 750,
+    "checks": {
+      "registration": true,
+      "contractExists": true,
+      "accountAge": true,
+      "ownerConsistency": true,
+      "activityLevel": true,
+      "ownershipStability": true,
+      "sanctionsScreening": true,
+      "minimumScore": true
+    },
+    "passed": 8,
+    "total": 8
+  }
+}
+```
+
+### Verification Statuses
+
+| Status | Checks Passed | Meaning |
+|:-------|:------------:|:--------|
+| `VERIFIED` | 8/8 | Fully verified, trustworthy |
+| `PARTIALLY_VERIFIED` | 5-7/8 | Some checks passed |
+| `UNVERIFIED` | 2-4/8 | Most checks failed |
+| `SUSPICIOUS` | 0-1/8 | Likely malicious |
+
+## POST /api/verify/sanctions
+
+Sanctions screening endpoint. **Rate limit:** 100/min
+
+```bash
+curl -X POST https://api.qova.cc/api/verify/sanctions \
+  -H "Content-Type: application/json" \
+  -d '{"address": "0xAgent..."}'
+```

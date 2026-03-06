@@ -1,0 +1,25 @@
+---
+title: Budget Alert
+description: Budget utilization monitoring with alert levels.
+---
+
+Triggers on `SpendRecorded` events. Computes utilization and classifies alert level.
+
+## Pipeline
+
+```
+EVM Log Trigger (SpendRecorded)
+  -> Compute daily utilization %
+  -> Compute monthly utilization %
+  -> Classify alert level
+  -> If CRITICAL: apply score penalty
+```
+
+## Alert Levels
+
+| Level | Utilization | Action |
+|:------|:----------:|:-------|
+| GREEN | < 60% | No action |
+| YELLOW | 60-80% | Log warning |
+| RED | 80-95% | Webhook alert |
+| CRITICAL | > 95% | Score penalty + webhook alert |

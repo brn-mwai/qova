@@ -1,0 +1,36 @@
+---
+title: CrewAI
+description: Trust-based task delegation between crew members.
+---
+
+Trust-based task delegation for CrewAI crews. Higher-scored agents get delegated more valuable tasks.
+
+## Install
+
+```bash
+bun add @qova/crewai @qova/core
+```
+
+## Usage
+
+```typescript
+import { QovaTrustDelegation } from "@qova/crewai";
+
+const delegation = new QovaTrustDelegation({
+  chain: "base-sepolia",
+  scoreThresholds: {
+    highValue: 800,
+    standard: 650,
+    lowValue: 450,
+  },
+});
+
+const assignedAgent = await delegation.assignTask(task, availableAgents);
+```
+
+## Features
+
+- Score-based task assignment
+- Tiered delegation thresholds
+- Score updates after task completion
+- Crew-level reputation aggregation

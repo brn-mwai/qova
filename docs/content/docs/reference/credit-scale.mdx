@@ -1,0 +1,40 @@
+---
+title: Credit Scale
+description: Rating grades, score ranges, and factor weights.
+---
+
+## Rating Grades
+
+| Grade | Score | Risk Level | Description |
+|:-----:|:-----:|:----------:|:------------|
+| **AAA** | 950-1000 | Minimal | Exceptional track record |
+| **AA** | 900-949 | Very Low | Excellent history |
+| **A** | 850-899 | Low | Strong performance |
+| **BBB** | 750-849 | Moderate | Investment grade |
+| **BB** | 650-749 | Notable | Fair record |
+| **B** | 550-649 | Elevated | Limited history |
+| **CCC** | 450-549 | High | Below average |
+| **CC** | 350-449 | Very High | Significant risk |
+| **C** | 250-349 | Severe | Near default |
+| **D** | 0-249 | Critical | Default risk |
+
+## Scoring Factors
+
+| Factor | Weight | Source | Normalization |
+|:-------|:------:|:-------|:-------------|
+| Success Rate | 30% | TransactionValidator | Linear (0-1) |
+| Transaction Volume | 25% | TransactionValidator | Logarithmic |
+| Transaction Count | 20% | TransactionValidator | Logarithmic |
+| Budget Compliance | 15% | BudgetEnforcer | Linear (0-1) |
+| Account Age | 10% | ReputationRegistry | Diminishing returns |
+
+## Transaction Types
+
+| Value | Label |
+|:-----:|:------|
+| `0` | Payment |
+| `1` | Transfer |
+| `2` | Swap |
+| `3` | Bridge |
+| `4` | Stake |
+| `5` | Other |

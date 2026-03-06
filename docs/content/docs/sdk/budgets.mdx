@@ -1,0 +1,58 @@
+---
+title: Budgets
+description: Setting and checking agent spending limits.
+---
+
+Methods for managing per-agent spending limits.
+
+## setBudget
+
+Sets daily, monthly, and per-transaction limits. **Requires wallet.**
+
+```typescript
+await client.setBudget(
+  "0xAgent...",
+  1000000000000000000n,  // 1 ETH daily
+  10000000000000000000n, // 10 ETH monthly
+  100000000000000000n,   // 0.1 ETH per-tx
+);
+```
+
+## checkBudget
+
+Checks if a spend amount is within limits.
+
+```typescript
+const allowed = await client.checkBudget("0xAgent...", 50000000n);
+// true
+```
+
+## recordSpend
+
+Records a spend against an agent's budget. **Requires wallet.**
+
+```typescript
+await client.recordSpend("0xAgent...", 50000000n);
+```
+
+## getBudgetStatus
+
+Returns current budget utilization.
+
+```typescript
+const budget = await client.getBudgetStatus("0xAgent...");
+// {
+//   dailyLimit: 1000000000000000000n,
+//   dailySpent: 250000000000000000n,
+//   monthlyLimit: 10000000000000000000n,
+//   monthlySpent: 3000000000000000000n,
+//   perTxLimit: 100000000000000000n
+// }
+```
+
+## Types
+
+```typescript
+import type { BudgetConfig, BudgetStatus } from "@qova/core";
+import { BudgetConfigSchema, BudgetStatusSchema } from "@qova/core";
+```

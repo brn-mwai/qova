@@ -1,0 +1,4 @@
+{
+  "title": "Integrations",
+  "pages": ["index", "langgraph", "crewai", "n8n", "custom"]
+}

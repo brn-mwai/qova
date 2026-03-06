@@ -1,0 +1,49 @@
+---
+title: Supported Chains
+description: Networks where Qova contracts are deployed.
+---
+
+Qova contracts are deployed on multiple networks.
+
+| Chain | Chain ID | Currency | Gas | Status |
+|:------|:---------|:---------|:----|:------:|
+| **Base Sepolia** | `84532` | ETH | Standard | Active |
+| **SKALE Europa** | `2046399126` | sFUEL | Zero (free) | Active |
+| **Base Mainnet** | `8453` | ETH | Standard | Coming soon |
+
+## Selecting a Chain
+
+```typescript
+// Base Sepolia (default testnet)
+const client = createQovaClient({ chain: "base-sepolia" });
+
+// SKALE Europa (zero gas fees)
+const client = createQovaClient({ chain: "skale-europa" });
+
+// Base Mainnet
+const client = createQovaClient({ chain: "base" });
+```
+
+## Custom RPC Endpoints
+
+```typescript
+const client = createQovaClient({
+  chain: "base-sepolia",
+  rpcUrl: "https://your-rpc-endpoint.com",
+});
+```
+
+## Block Explorers
+
+| Chain | Explorer |
+|:------|:---------|
+| Base Sepolia | [sepolia.basescan.org](https://sepolia.basescan.org) |
+| SKALE Europa | [explorer.skalenodes.com](https://elated-tan-skat.explorer.mainnet.skalenodes.com) |
+| Base Mainnet | [basescan.org](https://basescan.org) |
+
+## Why SKALE Europa?
+
+SKALE Europa offers **zero gas fees** (sFUEL is free to obtain). This makes it ideal for:
+- High-frequency score updates
+- Development and testing
+- Agent platforms that want to minimize costs

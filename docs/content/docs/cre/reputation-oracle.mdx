@@ -1,0 +1,40 @@
+---
+title: Reputation Oracle
+description: Scheduled workflow computing 5-factor weighted scores.
+---
+
+The core scoring workflow. Runs on a cron schedule, reads data from all three contracts, computes a weighted score, and writes it back on-chain.
+
+## Pipeline
+
+```
+Cron Trigger
+  -> Read ReputationRegistry (score, age, registration)
+  -> Read TransactionValidator (count, volume, success rate)
+  -> Read BudgetEnforcer (compliance, utilization)
+  -> HTTP Consensus (off-chain enrichment via API)
+  -> 5-Factor Score Computation
+  -> Write Score On-Chain
+```
+
+## Scoring Factors
+
+| Factor | Weight | Source | What It Measures |
+|:-------|:------:|:-------|:-----------------|
+| Success Rate | 30% | TransactionValidator | % of successful transactions |
+| Transaction Volume | 25% | TransactionValidator | Total value transacted |
+| Transaction Count | 20% | TransactionValidator | Number of transactions |
+| Budget Compliance | 15% | BudgetEnforcer | Staying within limits |
+| Account Age | 10% | ReputationRegistry | Time since registration |
+
+## Score Computation
+
+```
+score = (successRate * 300) +
+        (volumeNormalized * 250) +
+        (countNormalized * 200) +
+        (budgetCompliance * 150) +
+        (ageNormalized * 100)
+```
+
+Each factor is normalized to 0-1 range. Volume and count use logarithmic scaling. Age uses diminishing returns.

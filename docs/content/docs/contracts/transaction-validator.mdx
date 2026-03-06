@@ -1,0 +1,40 @@
+---
+title: TransactionValidator
+description: Transaction recording and aggregate statistics.
+---
+
+Records transactions and maintains aggregate statistics per agent.
+
+## Functions
+
+| Function | Access | Description |
+|:---------|:-------|:-----------|
+| `recordTransaction(address, bytes32, uint256, uint8)` | RECORDER_ROLE | Record a transaction |
+| `getTransactionStats(address)` | View | Aggregate statistics |
+
+## Events
+
+```solidity
+event TransactionRecorded(
+    address indexed agent,
+    bytes32 indexed txHash,
+    uint256 amount,
+    uint8 txType,
+    uint256 timestamp
+);
+```
+
+## Transaction Types
+
+| Value | Label |
+|:-----:|:------|
+| `0` | Payment |
+| `1` | Transfer |
+| `2` | Swap |
+| `3` | Bridge |
+| `4` | Stake |
+| `5` | Other |
+
+## Address
+
+**Base Sepolia:** [`0x5d7a7AEAb26D2F0076892D1C9A28F230EbB3e900`](https://sepolia.basescan.org/address/0x5d7a7AEAb26D2F0076892D1C9A28F230EbB3e900)

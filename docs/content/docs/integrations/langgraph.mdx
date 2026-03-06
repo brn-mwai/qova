@@ -1,0 +1,37 @@
+---
+title: LangGraph
+description: Score-gated tool execution in LangChain agents.
+---
+
+Score-gated tool execution within LangChain/LangGraph agents.
+
+## Install
+
+```bash
+bun add @qova/langgraph @qova/core
+```
+
+## Usage
+
+```typescript
+import { QovaScoreGate } from "@qova/langgraph";
+
+const gate = new QovaScoreGate({
+  chain: "base-sepolia",
+  minimumScore: 650,
+  minimumGrade: "BB",
+});
+
+const graph = new StateGraph({ channels })
+  .addNode("score_check", gate.checkNode())
+  .addNode("execute_tool", toolNode)
+  .addEdge("score_check", "execute_tool")
+  .compile();
+```
+
+## Features
+
+- Automatic score checking before tool execution
+- Configurable minimum score and grade thresholds
+- Transaction recording after successful tool calls
+- Budget enforcement per agent

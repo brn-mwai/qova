@@ -1,0 +1,49 @@
+---
+title: Introduction
+description: Financial trust infrastructure for AI agents. Verifiable reputation scores from on-chain transaction data.
+---
+
+Qova is the **credit bureau for autonomous AI agents**. As agents transact on-chain via protocols like x402, Qova computes verifiable reputation scores (0-1000) from on-chain transaction data using **Chainlink CRE**, then writes those scores back on-chain for any protocol to consume.
+
+Think **Equifax, but for AI**.
+
+## Why Agent Reputation?
+
+AI agents are increasingly autonomous - trading, bridging, paying for services. But there's no standard way to assess whether an agent is trustworthy. Qova solves this by:
+
+- **Scoring** agents 0-1000 based on transaction history, budget compliance, and account age
+- **Writing scores on-chain** so any protocol can gate access based on trust level
+- **Running decentralized computation** via Chainlink CRE - no single point of failure
+- **Updating in real-time** through event-driven workflows that react to every transaction
+
+## Architecture Overview
+
+```
+Agent Platforms ──> @qova/core SDK ──> Smart Contracts (Base L2)
+                                            │
+                                    Chainlink CRE Network
+                                    (4 scoring workflows)
+                                            │
+                                    Score Consumers
+                                    (DeFi, Insurance, Lending)
+```
+
+The protocol has six packages in a Turborepo monorepo:
+
+| Package | Purpose |
+|:--------|:--------|
+| `contracts/` | Solidity smart contracts for reputation, transactions, budgets |
+| `sdk/` | TypeScript SDK wrapping all contract interactions |
+| `api/` | REST API with 21 endpoints on Hono + Bun |
+| `dashboard/` | Next.js 15 real-time analytics dashboard |
+| `cre/` | 4 Chainlink CRE decentralized scoring workflows |
+| `integrations/` | Framework plugins (LangGraph, CrewAI, n8n) |
+
+## Quick Links
+
+- [Get Started](/docs/get-started) - Install the SDK and query your first score in under 5 minutes
+- [SDK Reference](/docs/sdk) - Full TypeScript SDK documentation
+- [REST API](/docs/api) - 21 endpoints for programmatic access
+- [Smart Contracts](/docs/contracts) - On-chain registry, validator, and enforcer
+- [Chainlink CRE](/docs/cre) - Decentralized scoring workflows
+- [Dashboard](/docs/dashboard) - Real-time analytics at app.qova.cc

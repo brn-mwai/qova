@@ -1,0 +1,4 @@
+{
+  "title": "Smart Contracts",
+  "pages": ["index", "reputation-registry", "transaction-validator", "budget-enforcer", "qova-core"]
+}

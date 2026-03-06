@@ -1,0 +1,28 @@
+---
+title: Agent Verify
+description: On-demand 8-check verification workflow.
+---
+
+On-demand verification via HTTP POST. Runs 8 independent checks.
+
+## Checks
+
+| # | Check | What It Validates |
+|:--|:------|:-----------------|
+| 1 | Registration | Registered in ReputationRegistry |
+| 2 | Contract Exists | Address has deployed code |
+| 3 | Account Age | Minimum age threshold |
+| 4 | Owner Consistency | Owner hasn't changed unexpectedly |
+| 5 | Activity Level | Minimum transaction count |
+| 6 | Ownership Stability | No recent transfers |
+| 7 | Sanctions Screening | Not on sanctions lists |
+| 8 | Minimum Score | Above minimum threshold |
+
+## Results
+
+| Status | Passed | Meaning |
+|:-------|:------:|:--------|
+| `VERIFIED` | 8/8 | Fully verified |
+| `PARTIALLY_VERIFIED` | 5-7/8 | Review recommended |
+| `UNVERIFIED` | 2-4/8 | Most checks failed |
+| `SUSPICIOUS` | 0-1/8 | Likely malicious |

@@ -1,0 +1,56 @@
+---
+title: Score Endpoints
+description: CRE-compatible scoring and enrichment endpoints.
+---
+
+These endpoints are designed to work with Chainlink CRE scoring workflows.
+
+## GET /api/scores/agents
+
+List agents in CRE-compatible format. **Rate limit:** 100/min
+
+## GET /api/scores/:address
+
+Full score breakdown with factor weights. **Rate limit:** 100/min
+
+```json
+{
+  "success": true,
+  "data": {
+    "agent": "0x1234...",
+    "score": 750,
+    "grade": "BBB",
+    "factors": {
+      "successRate": { "value": 0.97, "weight": 0.30, "contribution": 291 },
+      "volume": { "value": 5000000000, "weight": 0.25, "contribution": 200 },
+      "count": { "value": 142, "weight": 0.20, "contribution": 150 },
+      "budgetCompliance": { "value": 0.95, "weight": 0.15, "contribution": 85 },
+      "accountAge": { "value": 86400, "weight": 0.10, "contribution": 24 }
+    }
+  }
+}
+```
+
+## POST /api/scores/enrich
+
+Off-chain enrichment endpoint used by CRE workflows. **Rate limit:** 100/min
+
+## POST /api/scores/anomaly-check
+
+Anomaly detection endpoint for the Transaction Monitor workflow. **Rate limit:** 100/min
+
+## POST /api/scores/compute
+
+Stateless score computation. Send raw data, get a score back.
+
+```bash
+curl -X POST https://api.qova.cc/api/scores/compute \
+  -H "Content-Type: application/json" \
+  -d '{
+    "successRate": 0.97,
+    "totalVolume": "5000000000",
+    "transactionCount": 142,
+    "budgetCompliance": 0.95,
+    "accountAge": 86400
+  }'
+```

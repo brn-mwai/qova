@@ -1,0 +1,49 @@
+---
+title: Custom Integration
+description: Build your own integration using the SDK.
+---
+
+Build integrations for any framework using `@qova/core` directly.
+
+## Pattern
+
+```typescript
+import { createQovaClient, type QovaClient } from "@qova/core";
+
+class MyIntegration {
+  private client: QovaClient;
+
+  constructor(chain: "base-sepolia" | "base" | "skale-europa") {
+    this.client = createQovaClient({ chain });
+  }
+
+  async checkAgent(address: string): Promise<{
+    allowed: boolean;
+    score: number;
+  }> {
+    const score = await this.client.getScore(address);
+    return { allowed: score >= 650, score };
+  }
+
+  async executeWithTrust(
+    agentAddress: string,
+    action: () => Promise<void>,
+    amount: bigint,
+  ): Promise<void> {
+    const score = await this.client.getScore(agentAddress);
+    if (score < 650) throw new Error(`Score too low: ${score}`);
+
+    const allowed = await this.client.checkBudget(agentAddress, amount);
+    if (!allowed) throw new Error("Budget exceeded");
+
+    await action();
+  }
+}
+```
+
+## Guidelines
+
+- Check scores before high-value operations
+- Record all transactions for accurate scoring
+- Use budget enforcement to prevent overspending
+- Cache scores locally (30s TTL) to reduce RPC calls

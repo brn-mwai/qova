@@ -1,0 +1,22 @@
+---
+title: CRE Overview
+description: 4 decentralized scoring workflows running on the Chainlink CRE Network.
+---
+
+Qova uses Chainlink CRE to run 4 decentralized scoring workflows. All computation is **pure and deterministic** for BFT consensus. **90 unit tests** across 6 test files.
+
+## Workflows
+
+| Workflow | Trigger | Purpose |
+|:---------|:--------|:--------|
+| [Reputation Oracle](/docs/cre/reputation-oracle) | Cron schedule | Compute 5-factor scores |
+| [Transaction Monitor](/docs/cre/transaction-monitor) | EVM log event | Detect anomalies |
+| [Budget Alert](/docs/cre/budget-alert) | EVM log event | Monitor utilization |
+| [Agent Verify](/docs/cre/agent-verify) | HTTP POST | On-demand 8-check verification |
+
+## Why CRE?
+
+- **No single point of failure** - scores computed across multiple nodes
+- **BFT consensus** - nodes must agree before writing on-chain
+- **Verifiable** - anyone can audit the scoring logic
+- **Event-driven** - workflows react to on-chain events in real-time

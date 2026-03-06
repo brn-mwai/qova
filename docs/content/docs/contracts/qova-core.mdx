@@ -1,0 +1,32 @@
+---
+title: QovaCore
+description: Facade contract coordinating cross-contract operations.
+---
+
+Facade contract that coordinates operations across ReputationRegistry, TransactionValidator, and BudgetEnforcer.
+
+## Functions
+
+| Function | Access | Description |
+|:---------|:-------|:-----------|
+| `executeAgentAction(address, bytes32, uint256, uint8)` | Public | Record tx + check budget in one call |
+
+## Events
+
+```solidity
+event AgentActionExecuted(address indexed agent, bytes32 indexed txHash, uint256 amount, uint8 txType);
+```
+
+## Access Control
+
+QovaCore holds privileged roles on all three core contracts:
+
+| Role | Contract |
+|:-----|:---------|
+| `UPDATER_ROLE` | ReputationRegistry |
+| `RECORDER_ROLE` | TransactionValidator |
+| `BUDGET_MANAGER_ROLE` | BudgetEnforcer |
+
+## Address
+
+**Base Sepolia:** [`0x9Ee4ae0bD93E95498fB6AB444ae6205d56fEf76a`](https://sepolia.basescan.org/address/0x9Ee4ae0bD93E95498fB6AB444ae6205d56fEf76a)

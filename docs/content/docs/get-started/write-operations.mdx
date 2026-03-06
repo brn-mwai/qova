@@ -1,0 +1,70 @@
+---
+title: Write Operations
+description: Register agents, record transactions, and set budgets on-chain.
+---
+
+Write operations require a wallet client with testnet funds.
+
+## Setup a Wallet Client
+
+```typescript
+import { createWalletClient, http } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
+import { baseSepolia } from "viem/chains";
+import { createQovaClient } from "@qova/core";
+
+const wallet = createWalletClient({
+  account: privateKeyToAccount(process.env.PRIVATE_KEY as `0x${string}`),
+  chain: baseSepolia,
+  transport: http(),
+});
+
+const client = createQovaClient({
+  chain: "base-sepolia",
+  walletClient: wallet,
+});
+```
+
+## Register an Agent
+
+```typescript
+const txHash = await client.registerAgent("0xAgent...");
+console.log(`Registered: ${txHash}`);
+```
+
+## Record a Transaction
+
+```typescript
+import { TransactionType } from "@qova/core";
+
+await client.recordTransaction(
+  "0xAgent...",
+  "0xTxHash...",
+  5000000000n,
+  TransactionType.PAYMENT,
+);
+```
+
+## Set Budget Limits
+
+```typescript
+await client.setBudget(
+  "0xAgent...",
+  1000000000000000000n,  // 1 ETH daily limit
+  10000000000000000000n, // 10 ETH monthly limit
+  100000000000000000n,   // 0.1 ETH per-transaction limit
+);
+```
+
+## Execute Agent Action (Combined)
+
+Record a transaction and update the budget in a single call:
+
+```typescript
+await client.executeAgentAction(
+  "0xAgent...",
+  "0xTxHash...",
+  5000000000n,
+  TransactionType.PAYMENT,
+);
+```

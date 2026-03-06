@@ -1,0 +1,47 @@
+---
+title: Transaction Endpoints
+description: Record transactions and get statistics.
+---
+
+## GET /api/transactions/:address/stats
+
+Get aggregate transaction statistics. **Rate limit:** 100/min
+
+```bash
+curl https://api.qova.cc/api/transactions/0x1234.../stats
+```
+
+```json
+{
+  "success": true,
+  "data": {
+    "totalCount": 142,
+    "successCount": 138,
+    "failedCount": 4,
+    "totalVolume": "5000000000",
+    "lastTransactionTime": 1709942400
+  }
+}
+```
+
+## POST /api/transactions/record
+
+Record a transaction for an agent. **Rate limit:** 100/min
+
+```bash
+curl -X POST https://api.qova.cc/api/transactions/record \
+  -H "Content-Type: application/json" \
+  -d '{
+    "agent": "0xAgent...",
+    "txHash": "0xTxHash...",
+    "amount": "5000000000",
+    "type": 0
+  }'
+```
+
+| Field | Type | Required | Description |
+|:------|:-----|:--------:|:-----------|
+| `agent` | `string` | Yes | Agent address |
+| `txHash` | `string` | Yes | Transaction hash |
+| `amount` | `string` | Yes | Amount in wei (string for precision) |
+| `type` | `number` | Yes | Transaction type (0-5) |

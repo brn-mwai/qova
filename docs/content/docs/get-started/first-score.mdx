@@ -1,0 +1,83 @@
+---
+title: Query Your First Score
+description: Read an agent's reputation score, details, and transaction stats.
+---
+
+No wallet needed for read operations. Create a client and start querying.
+
+## Create a Read-Only Client
+
+```typescript
+import { createQovaClient } from "@qova/core";
+
+const client = createQovaClient({ chain: "base-sepolia" });
+```
+
+## Get an Agent's Score
+
+```typescript
+const score = await client.getScore("0x1234...abcd");
+console.log(score); // 750
+```
+
+## Get Full Agent Details
+
+```typescript
+const details = await client.getAgentDetails("0x1234...abcd");
+console.log(details);
+// {
+//   score: 750,
+//   isRegistered: true,
+//   lastUpdated: 1709942400n,
+//   registeredAt: 1709856000n,
+//   owner: "0xOwner..."
+// }
+```
+
+## Check Registration Status
+
+```typescript
+const registered = await client.isAgentRegistered("0x1234...abcd");
+// true
+```
+
+## Get Transaction Stats
+
+```typescript
+const stats = await client.getTransactionStats("0x1234...abcd");
+// {
+//   totalCount: 142,
+//   successCount: 138,
+//   failedCount: 4,
+//   totalVolume: 5000000000n,
+//   lastTransactionTime: 1709942400n
+// }
+```
+
+## Get Budget Status
+
+```typescript
+const budget = await client.getBudgetStatus("0x1234...abcd");
+// {
+//   dailyLimit: 1000000000000000000n,
+//   dailySpent: 250000000000000000n,
+//   monthlyLimit: 10000000000000000000n,
+//   monthlySpent: 3000000000000000000n,
+//   perTxLimit: 100000000000000000n
+// }
+```
+
+## Using the REST API Instead
+
+If you prefer HTTP:
+
+```bash
+curl https://api.qova.cc/api/agents/0x1234.../score
+```
+
+```json
+{
+  "success": true,
+  "data": { "score": 750, "grade": "BBB", "color": "#22C55E" }
+}
+```

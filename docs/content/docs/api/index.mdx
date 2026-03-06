@@ -1,0 +1,48 @@
+---
+title: API Overview
+description: 21 endpoints for programmatic access to scores, transactions, budgets, and verification.
+---
+
+The Qova REST API runs on Hono + Bun with **21 endpoints**. All responses are JSON. Rate-limited, cached, and validated with Zod.
+
+**Base URL:** `https://api.qova.cc`
+
+## Response Format
+
+```json
+{
+  "success": true,
+  "data": { ... }
+}
+```
+
+Error responses:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "AGENT_NOT_FOUND",
+    "message": "Agent 0x1234... is not registered"
+  }
+}
+```
+
+## Endpoint Groups
+
+- [Agent Endpoints](/docs/api/agents) - 6 endpoints for agent CRUD and scoring
+- [Transaction Endpoints](/docs/api/transactions) - 2 endpoints for recording and stats
+- [Budget Endpoints](/docs/api/budgets) - 4 endpoints for spending limits
+- [Score Endpoints](/docs/api/scores) - 5 CRE-compatible scoring endpoints
+- [Verification Endpoints](/docs/api/verification) - 2 endpoints for agent verification
+
+## Middleware
+
+| Layer | Description |
+|:------|:-----------|
+| CORS | Cross-origin enabled |
+| Body Limit | 1MB max request body |
+| Rate Limiting | Per-IP limits (see each endpoint) |
+| Cache | 30s TTL on GET requests |
+| Validation | Zod schema validation |
+| Error Handler | Structured error codes |

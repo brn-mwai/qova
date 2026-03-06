@@ -1,0 +1,78 @@
+---
+title: Client
+description: Creating and configuring the QovaClient.
+---
+
+The `QovaClient` is the main entry point for all SDK operations.
+
+## Creating a Client
+
+```typescript
+import { createQovaClient } from "@qova/core";
+
+// Read-only (no wallet needed)
+const client = createQovaClient({ chain: "base-sepolia" });
+
+// With custom RPC
+const client = createQovaClient({
+  chain: "base-sepolia",
+  rpcUrl: "https://your-rpc-endpoint.com",
+});
+```
+
+## With Wallet (Write Operations)
+
+```typescript
+import { createWalletClient, http } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
+import { baseSepolia } from "viem/chains";
+import { createQovaClient } from "@qova/core";
+
+const wallet = createWalletClient({
+  account: privateKeyToAccount("0x..."),
+  chain: baseSepolia,
+  transport: http(),
+});
+
+const client = createQovaClient({
+  chain: "base-sepolia",
+  walletClient: wallet,
+});
+```
+
+## Config Options
+
+| Option | Type | Required | Description |
+|:-------|:-----|:--------:|:-----------|
+| `chain` | `"base-sepolia" \| "base" \| "skale-europa"` | Yes | Target chain |
+| `rpcUrl` | `string` | No | Custom RPC endpoint |
+| `walletClient` | `WalletClient` | No | viem wallet for write ops |
+| `contracts` | `ContractAddresses` | No | Override contract addresses |
+
+## Client Properties
+
+```typescript
+client.publicClient;   // viem PublicClient (read operations)
+client.walletClient;   // viem WalletClient | undefined (write operations)
+client.contracts;      // Resolved contract addresses
+```
+
+## Error Handling
+
+```typescript
+import { QovaError } from "@qova/core";
+
+try {
+  const client = createQovaClient({ chain: "invalid" });
+} catch (e) {
+  if (e instanceof QovaError) {
+    console.log(e.code); // "INVALID_CONFIG"
+  }
+}
+```
+
+## Types
+
+```typescript
+import type { QovaClient, QovaClientConfig, ContractAddresses } from "@qova/core";
+```
