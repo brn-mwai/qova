@@ -228,20 +228,29 @@ export async function POST(request: Request): Promise<NextResponse> {
 				// Non-fatal
 			}
 
-			// Log CRE execution
-			try {
-				await convex.mutation(api.mutations.cre.createServerExecution, {
-					workflowId,
-					agentAddress,
-					status: "completed",
-					inputScore: Number(currentScore),
-					outputScore: newScore,
-					durationMs,
-					startedAt,
-					completedAt,
-				});
-			} catch {
-				// Non-fatal: Convex log failure shouldn't block the response
+			// Log CRE execution for each sub-workflow that contributes to the composite score
+			const subWorkflows = [
+				{ id: "payment-volume", weight: 0.35 },
+				{ id: "longevity", weight: 0.25 },
+				{ id: "sanctions", weight: 0.20 },
+				{ id: "volatility", weight: 0.20 },
+			];
+			for (const sub of subWorkflows) {
+				try {
+					const subScore = Math.round(newScore * sub.weight);
+					await convex.mutation(api.mutations.cre.createServerExecution, {
+						workflowId: sub.id,
+						agentAddress,
+						status: "completed",
+						inputScore: Number(currentScore),
+						outputScore: newScore,
+						durationMs: Math.round(durationMs * sub.weight),
+						startedAt,
+						completedAt,
+					});
+				} catch {
+					// Non-fatal
+				}
 			}
 		}
 
@@ -276,21 +285,24 @@ export async function POST(request: Request): Promise<NextResponse> {
 	} catch (err) {
 		const completedAt = Date.now();
 
-		// Log failed execution to Convex
+		// Log failed execution to Convex for each sub-workflow
 		const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
 		if (convexUrl) {
 			const convex = new ConvexHttpClient(convexUrl);
-			try {
-				await convex.mutation(api.mutations.cre.createServerExecution, {
-					workflowId,
-					agentAddress,
-					status: "failed",
-					durationMs: completedAt - startedAt,
-					error: err instanceof Error ? err.message : "Unknown error",
-					startedAt,
-				});
-			} catch {
-				// Non-fatal
+			const failedSubWorkflows = ["payment-volume", "longevity", "sanctions", "volatility"];
+			for (const subId of failedSubWorkflows) {
+				try {
+					await convex.mutation(api.mutations.cre.createServerExecution, {
+						workflowId: subId,
+						agentAddress,
+						status: "failed",
+						durationMs: completedAt - startedAt,
+						error: err instanceof Error ? err.message : "Unknown error",
+						startedAt,
+					});
+				} catch {
+					// Non-fatal
+				}
 			}
 		}
 
