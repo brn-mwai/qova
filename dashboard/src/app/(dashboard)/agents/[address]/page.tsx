@@ -37,6 +37,8 @@ import {
 } from "@/components/ui/table";
 import { useAgentByAddress, useScoreHistory, useChainCurrency } from "@/hooks/use-convex-data";
 import { useConvexAvailable } from "@/components/providers/convex-provider";
+import { useChainFilter } from "@/components/providers/chain-provider";
+import { getChain } from "@/lib/chains";
 import { cn } from "@/lib/utils";
 
 function timeAgo(iso: string): string {
@@ -159,7 +161,12 @@ export default function AgentDetailPage({
 	const { address } = use(params);
 	const agent = useAgentByAddress(address);
 	const scoreHistory = useScoreHistory(address, 30);
-	const currency = useChainCurrency();
+	const globalCurrency = useChainCurrency();
+	const { selectedChainId } = useChainFilter();
+
+	// Use agent's own chain for currency when available, otherwise fall back to global filter
+	const agentChain = agent?.chainId ? getChain(agent.chainId) : null;
+	const currency = agentChain?.nativeCurrency.symbol ?? globalCurrency;
 
 	if (!agent) {
 		return (
@@ -247,6 +254,15 @@ export default function AgentDetailPage({
 								<StatusBadge
 									status={agent.isRegistered ? "verified" : "unverified"}
 								/>
+								{agentChain && (
+									<span className="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium text-muted-foreground">
+										<span
+											className="inline-block size-2 rounded-full"
+											style={{ backgroundColor: agentChain.brandColor }}
+										/>
+										{agentChain.name}
+									</span>
+								)}
 								<span className="text-xs text-muted-foreground">
 									Last updated {timeAgo(agent.lastUpdated)}
 								</span>

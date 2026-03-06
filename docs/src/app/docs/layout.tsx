@@ -21,8 +21,8 @@ export default function Layout({
               height={28}
               className="invert dark:invert-0"
             />
-            <span className="font-bold tracking-tight text-sm">
-              Qova <span className="text-neutral-500 font-normal text-xs ml-0.5">docs</span>
+            <span className="font-semibold tracking-tight text-base leading-none">
+              Qova <span className="text-neutral-500 font-normal text-sm ml-0.5">docs</span>
             </span>
           </div>
         ),
