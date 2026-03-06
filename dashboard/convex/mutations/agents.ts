@@ -258,3 +258,60 @@ export const removeAgent = mutation({
 		return true;
 	},
 });
+
+/**
+ * Server-side sync: update agent score and stats from CRE on-chain data.
+ * No auth required -- called by the /api/cre/execute API route via ConvexHttpClient.
+ */
+export const syncFromChain = mutation({
+	args: {
+		address: v.string(),
+		score: v.number(),
+		totalTxCount: v.optional(v.number()),
+		totalVolume: v.optional(v.string()),
+		successRate: v.optional(v.string()),
+		dailySpent: v.optional(v.string()),
+		monthlySpent: v.optional(v.string()),
+	},
+	handler: async (ctx, args): Promise<boolean> => {
+		const normalized = args.address.toLowerCase();
+		const all = await ctx.db.query("agents").withIndex("by_address", (q) => q.eq("address", args.address)).collect();
+		const found = all.find((a) => a.address.toLowerCase() === normalized);
+		if (!found) return false;
+
+		const grade = computeGrade(args.score);
+		const gradeColor = computeGradeColor(args.score);
+		const previousScore = found.score;
+		const previousGrade = found.grade;
+
+		await ctx.db.patch(found._id, {
+			score: args.score,
+			grade,
+			gradeColor,
+			scoreFormatted: String(Math.max(0, Math.min(1000, Math.round(args.score)))).padStart(4, "0"),
+			scorePercentage: args.score / 10,
+			lastUpdated: new Date().toISOString(),
+			updateCount: found.updateCount + 1,
+			previousScore,
+			previousGrade,
+			...(args.totalTxCount !== undefined && { totalTxCount: args.totalTxCount }),
+			...(args.totalVolume !== undefined && { totalVolume: args.totalVolume }),
+			...(args.successRate !== undefined && { successRate: args.successRate }),
+			...(args.dailySpent !== undefined && { dailySpent: args.dailySpent }),
+			...(args.monthlySpent !== undefined && { monthlySpent: args.monthlySpent }),
+			lastActivity: new Date().toISOString(),
+		});
+
+		// Add score snapshot
+		await ctx.db.insert("scoreSnapshots", {
+			agent: args.address,
+			score: args.score,
+			grade,
+			gradeColor,
+			timestamp: Date.now(),
+			ownerId: found.ownerId,
+		});
+
+		return true;
+	},
+});

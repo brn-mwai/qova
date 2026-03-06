@@ -204,10 +204,31 @@ export async function POST(request: Request): Promise<NextResponse> {
 		const completedAt = Date.now();
 		const durationMs = completedAt - startedAt;
 
-		// Step 8: Log execution to Convex
+		// Step 8: Sync score + stats to Convex and log execution
 		const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
 		if (convexUrl) {
 			const convex = new ConvexHttpClient(convexUrl);
+
+			// Sync agent score and on-chain stats to dashboard
+			const volumeEth = (Number(totalVolume) / 1e18).toFixed(4);
+			const successPct = `${(Number(successRate) / 100).toFixed(1)}%`;
+			const dailySpentEth = `${(Number(budgetStatus.dailySpent) / 1e18).toFixed(4)} ETH`;
+			const monthlySpentEth = `${(Number(budgetStatus.monthlySpent) / 1e18).toFixed(4)} ETH`;
+			try {
+				await convex.mutation(api.mutations.agents.syncFromChain, {
+					address: agentAddress,
+					score: newScore,
+					totalTxCount: Number(totalCount),
+					totalVolume: `${volumeEth} ETH`,
+					successRate: successPct,
+					dailySpent: dailySpentEth,
+					monthlySpent: monthlySpentEth,
+				});
+			} catch {
+				// Non-fatal
+			}
+
+			// Log CRE execution
 			try {
 				await convex.mutation(api.mutations.cre.createServerExecution, {
 					workflowId,
