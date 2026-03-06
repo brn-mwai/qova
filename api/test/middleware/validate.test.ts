@@ -20,7 +20,8 @@ describe("validateAddress", () => {
 		const res = await app.request("/not-an-address");
 		expect(res.status).toBe(400);
 		const body = await res.json();
-		expect(body.error).toContain("Invalid Ethereum address");
+		expect(body.code).toBe("INVALID_ADDRESS");
+		expect(body.type).toContain("INVALID_ADDRESS");
 	});
 
 	it("rejects short address", async () => {
@@ -59,8 +60,10 @@ describe("validateBody", () => {
 		});
 		expect(res.status).toBe(400);
 		const body = await res.json();
-		expect(body.error).toBe("Validation failed");
-		expect(body.details).toBeInstanceOf(Array);
+		expect(body.code).toBe("VALIDATION_ERROR");
+		expect(body.errors).toBeInstanceOf(Array);
+		expect(body.errors[0].field).toBeDefined();
+		expect(body.errors[0].message).toBeDefined();
 	});
 
 	it("rejects non-JSON body", async () => {

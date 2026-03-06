@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation, internalQuery } from "../_generated/server";
+import { mutation } from "../_generated/server";
 
 /**
  * Upsert user from Clerk webhook.
@@ -64,30 +64,15 @@ export const deleteUser = mutation({
   },
 });
 
-/** Internal query for dispatch action -- lookup user by Clerk subject ID. */
-export const getByClerkId = internalQuery({
-	args: { clerkId: v.string() },
-	handler: async (ctx, { clerkId }) => {
-		return await ctx.db
-			.query("users")
-			.withIndex("by_clerk_id", (q) => q.eq("clerkId", clerkId))
-			.first();
-	},
-});
-
 export const linkWallet = mutation({
   args: { walletAddress: v.string() },
   handler: async (ctx, { walletAddress }) => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      // Auth not available (JWT template may not be configured).
-      // Return silently to prevent infinite retry loops.
-      return;
-    }
+    if (!identity) throw new Error("Not authenticated");
 
     // Validate Ethereum address format
     if (!/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
-      return;
+      throw new Error("Invalid Ethereum address");
     }
 
     const user = await ctx.db
@@ -95,20 +80,7 @@ export const linkWallet = mutation({
       .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
       .first();
 
-    if (!user) {
-      // User record not created yet (Clerk webhook may not have fired).
-      // Create a minimal record so the wallet link isn't lost.
-      await ctx.db.insert("users", {
-        clerkId: identity.subject,
-        email: identity.email ?? "",
-        name: identity.name,
-        role: "owner",
-        walletAddress,
-        onboardingComplete: false,
-        createdAt: Date.now(),
-      });
-      return;
-    }
+    if (!user) throw new Error("User not found");
 
     await ctx.db.patch(user._id, { walletAddress });
   },
@@ -122,7 +94,7 @@ export const completeOnboarding = mutation({
   args: {},
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity) return;
+    if (!identity) throw new Error("Unauthenticated");
 
     const user = await ctx.db
       .query("users")

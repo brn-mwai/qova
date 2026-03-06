@@ -21,22 +21,3 @@ export const listByUser = query({
     }));
   },
 });
-
-/** List recent deliveries for a specific webhook. */
-export const deliveries = query({
-  args: { webhookId: v.id("webhooks"), limit: v.optional(v.number()) },
-  handler: async (ctx, { webhookId, limit }) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) return [];
-
-    // Verify the webhook belongs to the caller
-    const webhook = await ctx.db.get(webhookId);
-    if (!webhook || webhook.userId !== identity.subject) return [];
-
-    return await ctx.db
-      .query("webhookDeliveries")
-      .withIndex("by_webhook", (q) => q.eq("webhookId", webhookId))
-      .order("desc")
-      .take(limit ?? 10);
-  },
-});

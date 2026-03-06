@@ -1,367 +1,287 @@
-# @brnmwai/qova-core
+# @qova/core
 
-TypeScript SDK for the **Qova protocol** -- financial trust infrastructure for AI agents.
+Financial trust infrastructure for AI agents. Check reputation scores, enforce budgets, and verify trust before your agents transact.
 
-Qova computes on-chain credit scores (0--1000) for autonomous AI agents by analyzing their transaction history, budget adherence, and behavioral patterns. Think of it as a credit bureau, but for AI agents operating in DeFi.
-
-[![npm](https://img.shields.io/npm/v/@brnmwai/qova-core)](https://www.npmjs.com/package/@brnmwai/qova-core)
-[![License: MIT](https://img.shields.io/badge/License-MIT-black.svg)](https://github.com/brn-mwai/qova/blob/main/LICENSE)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.7+-blue.svg)](https://www.typescriptlang.org/)
-
-## Features
-
-- **Full type safety** -- strict TypeScript with Zod runtime validation
-- **Tree-shakeable** -- ESM-only, named exports, side-effect free
-- **viem-native** -- built on [viem](https://viem.sh), not ethers.js
-- **Multi-chain** -- Base Sepolia (testnet), Base Mainnet, SKALE Europa
-- **4 contract modules** -- ReputationRegistry, TransactionValidator, BudgetEnforcer, QovaCore
-- **Event watchers** -- real-time subscription to on-chain events
-- **Zero config** -- deployed contract addresses baked in, just pick a chain
-
-## Installation
+## Install
 
 ```bash
-npm install @brnmwai/qova-core viem
+npm install @qova/core
+# or
+bun add @qova/core
 ```
-
-```bash
-bun add @brnmwai/qova-core viem
-```
-
-```bash
-pnpm add @brnmwai/qova-core viem
-```
-
-> `viem` is a peer dependency and must be installed alongside.
 
 ## Quick Start
 
-### Read an agent's credit score
-
 ```ts
-import { createQovaClient } from "@brnmwai/qova-core";
+import Qova from "@qova/core";
 
-const qova = createQovaClient({ chain: "base-sepolia" });
+const qova = new Qova("qova_your_api_key");
 
-const score = await qova.getScore("0x1234...abcd");
-console.log(score); // 847
-```
+// Check an agent's reputation score
+const { score, grade } = await qova.agents.score("0xAGENT_ADDRESS");
+console.log(`Score: ${score}/1000 (${grade})`);
 
-### Register an agent and record a transaction
+// Verify trust before a transaction
+const { verified, sanctionsClean } = await qova.verify("0xAGENT_ADDRESS");
 
-```ts
-import { createQovaClient, TransactionType } from "@brnmwai/qova-core";
-import { createWalletClient, http } from "viem";
-import { privateKeyToAccount } from "viem/accounts";
-import { baseSepolia } from "viem/chains";
-
-const account = privateKeyToAccount("0x...");
-const walletClient = createWalletClient({
-  account,
-  chain: baseSepolia,
-  transport: http(),
-});
-
-const qova = createQovaClient({
-  chain: "base-sepolia",
-  walletClient,
-});
-
-// Register the agent on-chain
-const regTx = await qova.registerAgent(account.address);
-
-// Record a payment transaction
-const recTx = await qova.recordTransaction(
-  account.address,
-  "0xabc...def", // transaction hash
-  1000000n, // amount in wei
-  TransactionType.PAYMENT,
-);
-
-// Check the score after CRE workflow runs
-const score = await qova.getScore(account.address);
-```
-
-### Set budget limits
-
-```ts
-import { parseEther } from "viem";
-
-// Set daily, monthly, and per-transaction limits
-await qova.setBudget(
-  agentAddress,
-  parseEther("1"), // 1 ETH daily
-  parseEther("10"), // 10 ETH monthly
-  parseEther("0.5"), // 0.5 ETH per tx
-);
-
-// Check if a spend is within limits
-const allowed = await qova.checkBudget(agentAddress, parseEther("0.3"));
-
-// Get full budget status
-const status = await qova.getBudgetStatus(agentAddress);
-console.log(status);
-// { dailyLimit, monthlyLimit, perTxLimit, dailySpent, monthlySpent, ... }
-```
-
-### Watch events in real-time
-
-```ts
-import { watchScoreUpdates, watchTransactions } from "@brnmwai/qova-core";
-
-// Watch all score changes
-const unwatch = watchScoreUpdates(
-  { chain: "base-sepolia" },
-  (event) => {
-    console.log(`${event.agent}: ${event.oldScore} -> ${event.newScore}`);
-  },
-);
-
-// Watch transactions for a specific agent
-const unwatchTx = watchTransactions(
-  { chain: "base-sepolia", agent: "0x1234...abcd" },
-  (event) => {
-    console.log(`Tx recorded: ${event.txHash} (${event.amount} wei)`);
-  },
-);
-
-// Stop watching
-unwatch();
-unwatchTx();
+if (verified && sanctionsClean) {
+  // Safe to transact
+}
 ```
 
 ## API Reference
 
-### `createQovaClient(config)`
+### `new Qova(apiKey, options?)`
 
-Creates a typed client with all protocol methods.
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `baseUrl` | `string` | `https://api.qova.cc` | API base URL |
+| `timeout` | `number` | `30000` | Request timeout (ms) |
+| `maxRetries` | `number` | `2` | Retry count on 5xx/network errors |
+| `retryDelay` | `number` | `1000` | Base retry delay (ms, exponential backoff) |
+| `headers` | `Record<string, string>` | `{}` | Custom headers on every request |
+
+### Agents — `qova.agents`
 
 ```ts
-type QovaClientConfig = {
-  chain: "base-sepolia" | "base" | "skale-europa";
-  rpcUrl?: string; // Override default RPC
-  walletClient?: WalletClient; // Required for write operations
-  contracts?: Partial<ContractAddresses>; // Override deployed addresses
-};
+// List all registered agents
+const { agents, total } = await qova.agents.list();
+
+// Get full details for an agent
+const details = await qova.agents.get("0x...");
+
+// Get score with grade
+const { score, grade, gradeColor } = await qova.agents.score("0x...");
+
+// Check registration status
+const { isRegistered } = await qova.agents.isRegistered("0x...");
+
+// Register a new agent (write)
+const { txHash } = await qova.agents.register("0x...");
+
+// Update an agent's score (write)
+const { txHash } = await qova.agents.updateScore("0x...", 750, "0xREASON");
+
+// Batch update scores
+const { txHash, count } = await qova.agents.batchUpdateScores(
+  ["0xA", "0xB"],
+  [800, 650],
+  ["0xR1", "0xR2"],
+);
 ```
 
-**Returns** a `QovaClient` with these methods:
-
-#### Reputation
-
-| Method | Type | Description |
-|--------|------|-------------|
-| `getScore(agent)` | read | Get score (0--1000) |
-| `getAgentDetails(agent)` | read | Full agent struct (score, grade, tx count, timestamps) |
-| `isAgentRegistered(agent)` | read | Check registration status |
-| `registerAgent(agent)` | write | Register a new agent |
-| `updateScore(agent, score, reason)` | write | Update an agent's score |
-| `batchUpdateScores(agents[], scores[], reasons[])` | write | Batch score update |
-
-#### Transactions
-
-| Method | Type | Description |
-|--------|------|-------------|
-| `recordTransaction(agent, txHash, amount, txType)` | write | Record a transaction |
-| `getTransactionStats(agent)` | read | Aggregate stats (count, volume, success rate) |
-
-#### Budget
-
-| Method | Type | Description |
-|--------|------|-------------|
-| `setBudget(agent, daily, monthly, perTx)` | write | Set spending limits |
-| `checkBudget(agent, amount)` | read | Check if spend is within limits |
-| `recordSpend(agent, amount)` | write | Record a spend against budget |
-| `getBudgetStatus(agent)` | read | Get remaining allowances |
-
-#### Core
-
-| Method | Type | Description |
-|--------|------|-------------|
-| `executeAgentAction(agent, txHash, amount, txType)` | write | Execute action through QovaCore orchestrator |
-
-### Score Grades
-
-Scores map to letter grades following a credit rating system:
-
-| Grade | Score Range | Meaning |
-|-------|------------|---------|
-| AAA | 950--1000 | Exceptional |
-| AA | 900--949 | Excellent |
-| A | 850--899 | Very Good |
-| BBB | 750--849 | Good |
-| BB | 650--749 | Fair |
-| B | 550--649 | Adequate |
-| CCC | 450--549 | Below Average |
-| CC | 350--449 | Poor |
-| C | 250--349 | Very Poor |
-| D | 0--249 | Default Risk |
-
-### Transaction Types
+### Scores — `qova.scores`
 
 ```ts
-import { TransactionType } from "@brnmwai/qova-core";
+// Full score breakdown with per-factor contributions
+const breakdown = await qova.scores.breakdown("0x...");
+// => { score, grade, factors: { transactionVolume, transactionCount, ... } }
 
-TransactionType.PAYMENT; // 0
-TransactionType.SWAP; // 1
-TransactionType.TRANSFER; // 2
-TransactionType.CONTRACT_CALL; // 3
-TransactionType.BRIDGE; // 4
+// Compute a score from raw metrics (stateless, no chain read)
+const { score, grade } = await qova.scores.compute({
+  totalVolume: "5000000000000000000",
+  transactionCount: 150,
+  successRate: 9800,
+  dailySpent: "100000000000000000",
+  dailyLimit: "1000000000000000000",
+  accountAgeSeconds: 2592000,
+});
+
+// Off-chain enrichment data
+const enrichment = await qova.scores.enrich("0x...");
+
+// Anomaly detection
+const { anomalyDetected, riskScore } = await qova.scores.anomalyCheck(
+  "0x...", "0xTXHASH", "1000000000000000000", 0,
+);
 ```
 
-## Sub-path Exports
-
-The SDK exposes granular imports for tree-shaking:
+### Budgets — `qova.budgets`
 
 ```ts
-// Contract ABIs only
-import { reputationRegistryAbi, budgetEnforcerAbi } from "@brnmwai/qova-core/abi";
+// Get current budget status
+const status = await qova.budgets.get("0x...");
 
-// Type definitions and Zod schemas
-import type { AgentDetails, BudgetStatus } from "@brnmwai/qova-core/types";
-import { AgentDetailsSchema, TransactionType } from "@brnmwai/qova-core/types";
+// Set spending limits (amounts in wei strings)
+await qova.budgets.set("0x...", {
+  dailyLimit: "1000000000000000000",
+  monthlyLimit: "10000000000000000000",
+  perTxLimit: "500000000000000000",
+});
 
-// Utility functions
-import { getGrade, getScoreColor, formatScore } from "@brnmwai/qova-core/utils";
-import { shortenAddress, isValidAddress } from "@brnmwai/qova-core/utils";
-import { formatWei, formatBasisPoints } from "@brnmwai/qova-core/utils";
+// Check if a spend is within budget
+const { withinBudget } = await qova.budgets.check("0x...", "100000000000000000");
+
+// Record a spend
+await qova.budgets.recordSpend("0x...", "100000000000000000");
 ```
 
-## Utilities
-
-### Score Utilities
+### Transactions — `qova.transactions`
 
 ```ts
-import { getGrade, getScoreColor, formatScore, scoreToPercentage } from "@brnmwai/qova-core";
+// Get aggregate stats
+const stats = await qova.transactions.stats("0x...");
 
-getGrade(950); // "AAA"
-getGrade(720); // "BB"
-getScoreColor(800); // "#22C55E" (green)
-getScoreColor(500); // "#FACC15" (yellow)
-getScoreColor(200); // "#EF4444" (red)
-formatScore(42); // "0042"
-scoreToPercentage(750); // 75
+// Record a transaction
+await qova.transactions.record({
+  agent: "0x...",
+  txHash: "0x...",
+  amount: "1000000000000000000",
+  txType: 0,  // 0=Transfer, 1=Swap, 2=Stake, 3=Governance
+});
 ```
 
-### Address Utilities
+### Verification — `qova.verify(agent)`
 
 ```ts
-import { shortenAddress, isValidAddress, checksumAddress } from "@brnmwai/qova-core";
+// One-call trust check (score + registration + sanctions)
+const result = await qova.verify("0xAGENT");
+// => { verified, score, grade, isRegistered, sanctionsClean, timestamp }
 
-shortenAddress("0x0a3AF9a104Bd2B5d96C7E24fe95Cc03432431158"); // "0x0a3A...1158"
-isValidAddress("0x0a3AF9a104Bd2B5d96C7E24fe95Cc03432431158"); // true
-checksumAddress("0x0a3af9a104bd2b5d96c7e24fe95cc03432431158"); // "0x0a3A..."
+// Standalone sanctions screening
+const { clean } = await qova.sanctionsCheck("0xAGENT");
 ```
 
-### Format Utilities
+### API Keys — `qova.keys`
 
 ```ts
-import { formatWei, formatTimestamp, formatBasisPoints } from "@brnmwai/qova-core";
+// Create a new key (requires admin scope)
+const { key } = await qova.keys.create({
+  name: "Production",
+  scopes: ["agents:read", "scores:read"],
+});
 
-formatWei(1500000000000000000n); // "1.5"
-formatWei(1000000n, 6); // "1.0" (USDC)
-formatTimestamp(1709000000n); // Date object
-formatBasisPoints(9750); // "97.50%"
+// List all keys
+const { keys } = await qova.keys.list();
+
+// Revoke a key
+await qova.keys.revoke("key_id");
+```
+
+### Health — `qova.health()`
+
+```ts
+const { status, chain, contracts } = await qova.health();
+// status: "ok" | "degraded"
+```
+
+## CLI
+
+The SDK includes a command-line tool for debugging during development.
+
+```bash
+# Set your key
+export QOVA_API_KEY=qova_your_api_key
+
+# Check a score
+qova score 0xAGENT
+
+# Verify trust
+qova verify 0xAGENT
+
+# Full score breakdown with visual bars
+qova breakdown 0xAGENT
+
+# Budget status
+qova budget 0xAGENT
+
+# API health
+qova health
+
+# Manage keys
+qova keys list
+qova keys create --name "My Key" --scopes agents:read,scores:read
+qova keys revoke <id>
+```
+
+Or pass the key inline:
+
+```bash
+qova score 0xAGENT --key qova_your_api_key
 ```
 
 ## Error Handling
 
-The SDK throws typed errors that map to Solidity custom errors:
+Every error is typed so you can handle specific failures:
 
 ```ts
-import {
-  QovaError,
-  AgentNotRegisteredError,
-  BudgetExceededError,
-  InvalidScoreError,
-} from "@brnmwai/qova-core";
+import Qova, { QovaAuthError, QovaApiError, QovaRateLimitError, QovaNetworkError } from "@qova/core";
 
 try {
-  await qova.getScore("0x...");
+  await qova.agents.score("0x...");
 } catch (error) {
-  if (error instanceof AgentNotRegisteredError) {
-    console.log(error.code); // "AGENT_NOT_REGISTERED"
-  }
-  if (error instanceof BudgetExceededError) {
-    console.log(error.requested); // bigint
-    console.log(error.available); // bigint
+  if (error instanceof QovaAuthError) {
+    // 401/403 — bad key or missing scope
+  } else if (error instanceof QovaRateLimitError) {
+    // 429 — retry after error.retryAfterMs
+    await sleep(error.retryAfterMs);
+  } else if (error instanceof QovaApiError) {
+    // 4xx — error.status, error.code, error.body
+  } else if (error instanceof QovaNetworkError) {
+    // DNS failure, timeout, ECONNREFUSED
   }
 }
 ```
 
-All error classes extend `QovaError` with a `.code` string:
+| Error Class | When | Properties |
+|-------------|------|-----------|
+| `QovaAuthError` | Invalid/expired key, insufficient scope | `status`, `code` |
+| `QovaRateLimitError` | Rate limit exceeded | `retryAfterMs` |
+| `QovaApiError` | Any 4xx/5xx from API | `status`, `code`, `body` |
+| `QovaNetworkError` | Timeout, DNS, connection failure | `cause` |
+| `QovaConfigError` | Missing/invalid config at init | — |
 
-| Error Class | Code | Trigger |
-|------------|------|---------|
-| `AgentNotRegisteredError` | `AGENT_NOT_REGISTERED` | Operating on unregistered agent |
-| `AgentAlreadyRegisteredError` | `AGENT_ALREADY_REGISTERED` | Double registration |
-| `BudgetExceededError` | `BUDGET_EXCEEDED` | Spend exceeds limits |
-| `InvalidScoreError` | `INVALID_SCORE` | Score outside 0--1000 |
-| `UnauthorizedError` | `UNAUTHORIZED` | Missing required role |
+## Advanced: On-Chain SDK
 
-## Deployed Contracts
+For direct smart contract interaction (requires a wallet):
 
-### Base Sepolia (Chain ID: 84532)
+```ts
+import { createQovaClient } from "@qova/core/chain";
+import { createWalletClient, http } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
+import { baseSepolia } from "viem/chains";
+
+const wallet = createWalletClient({
+  account: privateKeyToAccount("0xPRIVATE_KEY"),
+  chain: baseSepolia,
+  transport: http(),
+});
+
+const client = createQovaClient({
+  chain: "base-sepolia",
+  walletClient: wallet,
+});
+
+const score = await client.getScore("0xAGENT");
+const txHash = await client.registerAgent("0xNEW_AGENT");
+```
+
+See the [chain SDK reference](./examples/quickstart.ts) for all available methods.
+
+## Score Grades
+
+| Grade | Range | Meaning |
+|-------|-------|---------|
+| AAA | 900-1000 | Exceptional trust |
+| AA | 800-899 | Very high trust |
+| A | 700-799 | High trust |
+| BBB | 600-699 | Good trust |
+| BB | 500-599 | Moderate trust |
+| B | 400-499 | Below average |
+| CCC | 300-399 | Low trust |
+| CC | 200-299 | Very low trust |
+| C | 100-199 | Poor trust |
+| D | 0-99 | No trust / unrated |
+
+## Deployed Contracts (Base Sepolia)
 
 | Contract | Address |
 |----------|---------|
-| ReputationRegistry | `0x0b2466b01E6d73A24D9C716A9072ED3923563fBB` |
-| TransactionValidator | `0x5d7a7AEAb26D2F0076892D1C9A28F230EbB3e900` |
-| BudgetEnforcer | `0x271618781040dc358e4F6B66561b65A839b0C76E` |
-| QovaCore | `0x9Ee4ae0bD93E95498fB6AB444ae6205d56fEf76a` |
-
-## Architecture
-
-```
-@brnmwai/qova-core
-  |-- client.ts          # createQovaClient factory
-  |-- constants.ts       # Chain IDs, contract addresses, score thresholds
-  |-- events.ts          # Real-time event watchers
-  |-- contracts/
-  |   |-- reputation.ts  # ReputationRegistry interactions
-  |   |-- transactions.ts# TransactionValidator interactions
-  |   |-- budget.ts      # BudgetEnforcer interactions
-  |   |-- core.ts        # QovaCore orchestrator
-  |-- types/
-  |   |-- agent.ts       # AgentDetails, ScoreGrade
-  |   |-- budget.ts      # BudgetConfig, BudgetStatus
-  |   |-- config.ts      # QovaClientConfig, ContractAddresses
-  |   |-- errors.ts      # Typed error classes
-  |   |-- events.ts      # Event types
-  |   |-- transaction.ts # TransactionType, TransactionStats
-  |-- abi/               # Contract ABIs (auto-generated from Foundry)
-  |-- utils/
-      |-- score.ts       # Grade, color, formatting
-      |-- address.ts     # Shorten, validate, checksum
-      |-- format.ts      # Wei, timestamps, basis points
-```
-
-## How Qova Works
-
-1. **Register** -- AI agents are registered on-chain via `ReputationRegistry`
-2. **Transact** -- Agent transactions are recorded via `TransactionValidator`
-3. **Budget** -- Spending limits are enforced via `BudgetEnforcer`
-4. **Score** -- Chainlink CRE workflows analyze on-chain + off-chain data and compute a weighted credit score (0--1000), written back on-chain
-5. **Consume** -- Anyone can read an agent's score from the contract. DeFi protocols, lenders, and insurance providers use scores for underwriting decisions.
-
-## Requirements
-
-- Node.js 18+
-- TypeScript 5.7+ (for strict mode)
-- `viem` ^2.21.0
-
-## Contributing
-
-This SDK is part of the [Qova monorepo](https://github.com/brn-mwai/qova). To develop locally:
-
-```bash
-git clone https://github.com/brn-mwai/qova.git
-cd qova/sdk
-bun install
-bun run build
-bun run test
-```
+| ReputationRegistry | `0xe577C...` |
+| TransactionValidator | `0x8f89B...` |
+| BudgetEnforcer | `0x2543e...` |
+| QovaCore | `0xd2BC2...` |
 
 ## License
 
-MIT -- see [LICENSE](https://github.com/brn-mwai/qova/blob/main/LICENSE)
+MIT

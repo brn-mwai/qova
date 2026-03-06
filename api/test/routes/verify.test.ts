@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { AUTH_HEADERS, authedHeaders } from "../helpers.js";
 
 vi.mock("../../src/services/chain", () => ({
 	getQovaClient: () => ({
@@ -15,7 +16,7 @@ describe("POST /api/verify", () => {
 	it("verifies a registered agent", async () => {
 		const res = await app.request("/api/verify", {
 			method: "POST",
-			headers: { "Content-Type": "application/json" },
+			headers: authedHeaders({ "Content-Type": "application/json" }),
 			body: JSON.stringify({ agent: VALID_ADDRESS }),
 		});
 		expect(res.status).toBe(200);
@@ -30,7 +31,7 @@ describe("POST /api/verify", () => {
 	it("returns 400 for invalid agent address", async () => {
 		const res = await app.request("/api/verify", {
 			method: "POST",
-			headers: { "Content-Type": "application/json" },
+			headers: authedHeaders({ "Content-Type": "application/json" }),
 			body: JSON.stringify({ agent: "bad" }),
 		});
 		expect(res.status).toBe(400);
@@ -41,7 +42,7 @@ describe("POST /api/verify/sanctions", () => {
 	it("returns sanctions screening result", async () => {
 		const res = await app.request("/api/verify/sanctions", {
 			method: "POST",
-			headers: { "Content-Type": "application/json" },
+			headers: authedHeaders({ "Content-Type": "application/json" }),
 			body: JSON.stringify({ agent: VALID_ADDRESS }),
 		});
 		expect(res.status).toBe(200);

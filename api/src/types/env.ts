@@ -7,5 +7,7 @@
 export type AppEnv = {
 	Variables: {
 		body: unknown;
+		apiKey: import("../middleware/auth.js").ApiKeyInfo | undefined;
+		userId: string | undefined;
 	};
 };

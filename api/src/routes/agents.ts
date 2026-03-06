@@ -19,15 +19,67 @@ import type { AppEnv } from "../types/env.js";
 
 export const agentRoutes = new Hono<AppEnv>();
 
-/** GET /api/agents -- List agents (mock data for hackathon) */
+/** GET /api/agents -- List agents with cursor pagination, filtering, sorting, field selection */
 agentRoutes.get("/", (c) => {
+	const limit = Math.min(Math.max(Number(c.req.query("limit")) || 20, 1), 100);
+	const cursor = c.req.query("cursor");
+	const sort = c.req.query("sort") === "asc" ? "asc" : "desc";
+	const fields = c.req.query("fields")?.split(",").map((f) => f.trim());
+	const registered = c.req.query("registered"); // "true" | "false" | undefined
+	const minScore = c.req.query("min_score") ? Number(c.req.query("min_score")) : undefined;
+	const maxScore = c.req.query("max_score") ? Number(c.req.query("max_score")) : undefined;
+
+	// Mock data — in production this would query the chain/database with filters
+	const allAgents = [
+		{ address: "0x0a3AF9a104Bd2B5d96C7E24fe95Cc03432431158", score: 850, isRegistered: true },
+		{ address: "0x0000000000000000000000000000000000000001", score: 720, isRegistered: true },
+		{ address: "0x0000000000000000000000000000000000000002", score: 450, isRegistered: false },
+		{ address: "0x0000000000000000000000000000000000000003", score: 930, isRegistered: true },
+		{ address: "0x0000000000000000000000000000000000000004", score: 310, isRegistered: false },
+		{ address: "0x0000000000000000000000000000000000000005", score: 680, isRegistered: true },
+	];
+
+	// Apply filters
+	let filtered = allAgents;
+	if (registered === "true") filtered = filtered.filter((a) => a.isRegistered);
+	if (registered === "false") filtered = filtered.filter((a) => !a.isRegistered);
+	if (minScore !== undefined) filtered = filtered.filter((a) => a.score >= minScore);
+	if (maxScore !== undefined) filtered = filtered.filter((a) => a.score <= maxScore);
+
+	// Sort
+	const sorted = sort === "asc"
+		? [...filtered].sort((a, b) => a.score - b.score)
+		: [...filtered].sort((a, b) => b.score - a.score);
+
+	// Apply cursor
+	let startIndex = 0;
+	if (cursor) {
+		const cursorIndex = sorted.findIndex((a) => a.address === cursor);
+		if (cursorIndex !== -1) startIndex = cursorIndex + 1;
+	}
+
+	const page = sorted.slice(startIndex, startIndex + limit);
+	const hasMore = startIndex + limit < sorted.length;
+	const nextCursor = hasMore ? page[page.length - 1]?.address : null;
+
+	// Field selection — only return requested fields
+	const data = page.map((agent) => {
+		if (!fields || fields.length === 0) return agent;
+		const picked: Record<string, unknown> = {};
+		for (const field of fields) {
+			if (field in agent) picked[field] = (agent as Record<string, unknown>)[field];
+		}
+		return picked;
+	});
+
 	return c.json({
-		agents: [
-			"0x0a3AF9a104Bd2B5d96C7E24fe95Cc03432431158",
-			"0x0000000000000000000000000000000000000001",
-			"0x0000000000000000000000000000000000000002",
-		],
-		total: 3,
+		data,
+		pagination: {
+			total: filtered.length,
+			limit,
+			hasMore,
+			nextCursor,
+		},
 	});
 });
 

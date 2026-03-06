@@ -59,6 +59,9 @@ describe("errorHandler", () => {
 		const app = createTestApp(new Error("unknown"));
 		const res = await app.request("/test");
 		expect(res.status).toBe(500);
-		expect((await res.json()).error).toBe("Internal server error");
+		const body = await res.json();
+		expect(body.code).toBe("INTERNAL_ERROR");
+		expect(body.type).toContain("INTERNAL_ERROR");
+		expect(body.status).toBe(500);
 	});
 });
