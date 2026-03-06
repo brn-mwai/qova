@@ -16,11 +16,17 @@ import Link from "next/link";
 import { use, useCallback, useState } from "react";
 import { api } from "../../../../../convex/_generated/api";
 import { BudgetUsage } from "@/components/charts/budget-usage";
-import { StatCard } from "@/components/data/stat-card";
 import { ScoreBadge } from "@/components/scores/score-badge";
 import { ScoreRing } from "@/components/scores/score-ring";
 import { StatusBadge } from "@/components/data/status-badge";
 import { Button } from "@/components/ui/button";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import {
 	Table,
 	TableBody,
@@ -29,7 +35,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { useAgentByAddress, useScoreHistory } from "@/hooks/use-convex-data";
+import { useAgentByAddress, useScoreHistory, useChainCurrency } from "@/hooks/use-convex-data";
 import { useConvexAvailable } from "@/components/providers/convex-provider";
 import { cn } from "@/lib/utils";
 
@@ -70,7 +76,10 @@ function VerifyButton({ address }: { address: string }): React.ReactElement {
 	const available = useConvexAvailable();
 	const verifyAction = useAction(api.actions.chain.verifyAgent);
 	const [loading, setLoading] = useState(false);
-	const [result, setResult] = useState<{ verified: boolean; score: number } | null>(null);
+	const [result, setResult] = useState<{
+		verified: boolean;
+		score: number;
+	} | null>(null);
 
 	const handleVerify = useCallback(async (): Promise<void> => {
 		if (!available) return;
@@ -79,7 +88,7 @@ function VerifyButton({ address }: { address: string }): React.ReactElement {
 			const res = await verifyAction({ agent: address });
 			setResult({ verified: res.verified, score: res.score });
 		} catch {
-			// Action failed (API may be unavailable)
+			// Action failed
 		} finally {
 			setLoading(false);
 		}
@@ -102,12 +111,7 @@ function VerifyButton({ address }: { address: string }): React.ReactElement {
 	}
 
 	return (
-		<Button
-			variant="outline"
-			size="sm"
-			onClick={handleVerify}
-			disabled={loading}
-		>
+		<Button variant="outline" size="sm" onClick={handleVerify} disabled={loading}>
 			{loading ? (
 				<SpinnerGap size={14} className="animate-spin" />
 			) : (
@@ -115,6 +119,35 @@ function VerifyButton({ address }: { address: string }): React.ReactElement {
 			)}
 			Verify Agent
 		</Button>
+	);
+}
+
+/* ---------- Inline stat for the detail page ---------- */
+function DetailStat({
+	label,
+	value,
+	icon,
+}: {
+	label: string;
+	value: string;
+	icon: React.ReactNode;
+}): React.ReactElement {
+	return (
+		<Card>
+			<CardContent className="p-5">
+				<div className="flex items-start justify-between">
+					<p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+						{label}
+					</p>
+					<div className="flex size-8 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+						{icon}
+					</div>
+				</div>
+				<p className="mt-2 font-heading text-2xl font-semibold tabular-nums">
+					{value}
+				</p>
+			</CardContent>
+		</Card>
 	);
 }
 
@@ -126,31 +159,31 @@ export default function AgentDetailPage({
 	const { address } = use(params);
 	const agent = useAgentByAddress(address);
 	const scoreHistory = useScoreHistory(address, 30);
+	const currency = useChainCurrency();
 
 	if (!agent) {
 		return (
-			<div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 px-4 lg:px-6">
-				<div className="space-y-6">
-					<div className="h-60 animate-pulse rounded-lg border bg-muted" />
-					<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-						{[1, 2, 3, 4].map((i) => (
-							<div key={i} className="h-28 animate-pulse rounded-lg border bg-muted" />
-						))}
-					</div>
-					<div className="grid gap-6 lg:grid-cols-2">
-						<div className="h-64 animate-pulse rounded-lg border bg-muted" />
-						<div className="h-64 animate-pulse rounded-lg border bg-muted" />
-					</div>
+			<div className="flex flex-col gap-6 py-4 md:py-6 px-4 lg:px-6">
+				<div className="h-52 animate-pulse rounded-xl border bg-muted" />
+				<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+					{[1, 2, 3, 4].map((i) => (
+						<div key={i} className="h-24 animate-pulse rounded-xl border bg-muted" />
+					))}
+				</div>
+				<div className="grid gap-6 lg:grid-cols-2">
+					<div className="h-64 animate-pulse rounded-xl border bg-muted" />
+					<div className="h-64 animate-pulse rounded-xl border bg-muted" />
 				</div>
 			</div>
 		);
 	}
 
-	const dailyLimit = agent.dailyLimit ?? "0 ETH";
-	const monthlyLimit = agent.monthlyLimit ?? "0 ETH";
-	const dailySpent = agent.dailySpent ?? "0 ETH";
-	const monthlySpent = agent.monthlySpent ?? "0 ETH";
-	const perTxLimit = agent.perTxLimit ?? "0 ETH";
+	const zeroVal = `0 ${currency}`;
+	const dailyLimit = agent.dailyLimit ?? zeroVal;
+	const monthlyLimit = agent.monthlyLimit ?? zeroVal;
+	const dailySpent = agent.dailySpent ?? zeroVal;
+	const monthlySpent = agent.monthlySpent ?? zeroVal;
+	const perTxLimit = agent.perTxLimit ?? zeroVal;
 
 	function parseEthValue(val: string): number {
 		const match = val.match(/([\d.]+)/);
@@ -161,166 +194,220 @@ export default function AgentDetailPage({
 	const dailySpentNum = parseEthValue(dailySpent);
 	const monthlyLimitNum = parseEthValue(monthlyLimit);
 	const monthlySpentNum = parseEthValue(monthlySpent);
-	const dailyPct = dailyLimitNum > 0 ? (dailySpentNum / dailyLimitNum) * 100 : 0;
-	const monthlyPct = monthlyLimitNum > 0 ? (monthlySpentNum / monthlyLimitNum) * 100 : 0;
+	const dailyPct =
+		dailyLimitNum > 0 ? (dailySpentNum / dailyLimitNum) * 100 : 0;
+	const monthlyPct =
+		monthlyLimitNum > 0 ? (monthlySpentNum / monthlyLimitNum) * 100 : 0;
 
 	return (
-		<div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 px-4 lg:px-6">
+		<div className="flex flex-col gap-6 py-4 md:py-6 px-4 lg:px-6">
 			{/* Breadcrumb */}
-			<div className="mb-4 flex items-center gap-2 text-sm text-muted-foreground">
-				<Link href="/agents" className="hover:text-foreground transition-colors">
+			<div className="flex items-center gap-2 text-sm text-muted-foreground">
+				<Link
+					href="/agents"
+					className="hover:text-foreground transition-colors"
+				>
 					Agents
 				</Link>
-				<span>/</span>
+				<span className="text-muted-foreground/50">/</span>
 				<span className="font-mono text-foreground">{agent.addressShort}</span>
 			</div>
 
-			{/* Hero */}
-			<div className="rounded-lg border bg-card p-6">
-				<div className="flex flex-col items-center gap-6 md:flex-row md:items-start">
-					<ScoreRing score={agent.score} grade={agent.grade} size={180} />
+			{/* Hero Card */}
+			<Card>
+				<CardContent className="p-6 sm:p-8">
+					<div className="flex flex-col items-center gap-8 sm:flex-row sm:items-start">
+						<ScoreRing score={agent.score} grade={agent.grade} size={160} />
 
-					<div className="flex-1 space-y-4">
-						<div className="flex flex-wrap items-center gap-2">
-							<span className="font-mono text-sm text-foreground">{agent.address}</span>
-							<CopyButton text={agent.address} />
-							<a
-								href={agent.explorerUrl}
-								target="_blank"
-								rel="noopener noreferrer"
-								className="text-muted-foreground hover:text-foreground transition-colors"
-							>
-								<ArrowSquareOut size={14} />
-							</a>
-						</div>
-
-						<div className="flex flex-wrap items-center gap-3">
-							<ScoreBadge grade={agent.grade} score={agent.score} showScore size="lg" />
-							<StatusBadge status={agent.isRegistered ? "verified" : "unverified"} />
-							<span className="text-xs text-muted-foreground">
-								Last updated {timeAgo(agent.lastUpdated)}
-							</span>
-							<span className="text-xs text-muted-foreground">
-								{agent.updateCount} updates
-							</span>
-						</div>
-
-						<div className="space-y-1">
-							<div className="flex items-center justify-between text-xs text-muted-foreground">
-								<span>Score Progress</span>
-								<span className="font-mono">{agent.score}/1000</span>
-							</div>
-							<div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-								<div
-									className="h-full rounded-full transition-all duration-700 ease-out"
-									style={{
-										width: `${agent.scorePercentage}%`,
-										backgroundColor: agent.gradeColor,
-									}}
-								/>
-							</div>
-						</div>
-
-						<div className="flex flex-wrap items-center gap-2 pt-1">
-							<VerifyButton address={address} />
-							<Button variant="outline" size="sm" asChild>
+						<div className="flex-1 min-w-0 space-y-5">
+							{/* Address row */}
+							<div className="flex flex-wrap items-center gap-2">
+								<span className="font-mono text-sm text-foreground truncate max-w-[360px]">
+									{agent.address}
+								</span>
+								<CopyButton text={agent.address} />
 								<a
 									href={agent.explorerUrl}
 									target="_blank"
 									rel="noopener noreferrer"
+									className="text-muted-foreground hover:text-foreground transition-colors"
 								>
 									<ArrowSquareOut size={14} />
-									View on Explorer
 								</a>
-							</Button>
+							</div>
+
+							{/* Badges row */}
+							<div className="flex flex-wrap items-center gap-3">
+								<ScoreBadge
+									grade={agent.grade}
+									score={agent.score}
+									showScore
+									size="lg"
+								/>
+								<StatusBadge
+									status={agent.isRegistered ? "verified" : "unverified"}
+								/>
+								<span className="text-xs text-muted-foreground">
+									Last updated {timeAgo(agent.lastUpdated)}
+								</span>
+								<span className="text-xs text-muted-foreground">
+									{agent.updateCount} updates
+								</span>
+							</div>
+
+							{/* Score progress */}
+							<div className="space-y-1.5">
+								<div className="flex items-center justify-between text-xs text-muted-foreground">
+									<span>Score Progress</span>
+									<span className="font-mono">{agent.score}/1000</span>
+								</div>
+								<div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+									<div
+										className="h-full rounded-full transition-all duration-700 ease-out"
+										style={{
+											width: `${agent.scorePercentage}%`,
+											backgroundColor: agent.gradeColor,
+										}}
+									/>
+								</div>
+							</div>
+
+							{/* Action buttons */}
+							<div className="flex flex-wrap items-center gap-2 pt-1">
+								<VerifyButton address={address} />
+								<Button variant="outline" size="sm" asChild>
+									<a
+										href={agent.explorerUrl}
+										target="_blank"
+										rel="noopener noreferrer"
+									>
+										<ArrowSquareOut size={14} />
+										View on Explorer
+									</a>
+								</Button>
+							</div>
 						</div>
 					</div>
-				</div>
-			</div>
+				</CardContent>
+			</Card>
 
-			{/* Transaction Stats Cards */}
+			{/* Transaction Stats */}
 			<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-				<StatCard
+				<DetailStat
 					label="Transactions"
 					value={String(agent.totalTxCount ?? 0)}
-					icon={<Lightning size={20} />}
-					accentColor="var(--foreground)"
+					icon={<Lightning size={18} />}
 				/>
-				<StatCard
+				<DetailStat
 					label="Total Volume"
-					value={agent.totalVolume ?? "0 ETH"}
-					icon={<CurrencyEth size={20} />}
-					accentColor="var(--score-green)"
+					value={agent.totalVolume ?? zeroVal}
+					icon={<CurrencyEth size={18} />}
 				/>
-				<StatCard
+				<DetailStat
 					label="Success Rate"
 					value={agent.successRate ?? "0%"}
-					icon={<Percent size={20} />}
-					accentColor="var(--score-yellow)"
+					icon={<Percent size={18} />}
 				/>
-				<StatCard
+				<DetailStat
 					label="Last Activity"
 					value={agent.lastActivity ? timeAgo(agent.lastActivity) : "N/A"}
-					icon={<ClockCounterClockwise size={20} />}
-					accentColor="var(--muted-foreground)"
+					icon={<ClockCounterClockwise size={18} />}
 				/>
 			</div>
 
 			{/* Details grid */}
 			<div className="grid gap-6 lg:grid-cols-2">
 				{/* Score History */}
-				<div className="rounded-lg border bg-card p-5">
-					<h2 className="mb-4 text-sm font-medium text-foreground">Score History</h2>
-					{scoreHistory.length > 0 ? (
-						<div className="overflow-hidden rounded-lg border">
-							<Table>
-								<TableHeader>
-									<TableRow className="bg-muted hover:bg-muted">
-										<TableHead className="px-4 py-2.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">Grade</TableHead>
-										<TableHead className="px-4 py-2.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">Score</TableHead>
-										<TableHead className="px-4 py-2.5 text-xs font-medium uppercase tracking-wider text-muted-foreground text-right">Date</TableHead>
-									</TableRow>
-								</TableHeader>
-								<TableBody>
-									{scoreHistory.slice(0, 10).map((s) => (
-										<TableRow key={s._id}>
-											<TableCell className="px-4 py-2.5">
-												<ScoreBadge grade={s.grade} size="xs" />
-											</TableCell>
-											<TableCell className="px-4 py-2.5 font-mono text-sm tabular-nums">
-												{s.score}
-											</TableCell>
-											<TableCell className="px-4 py-2.5 text-right text-xs text-muted-foreground">
-												{new Date(s.timestamp).toLocaleDateString()}
-											</TableCell>
+				<Card>
+					<CardHeader>
+						<CardTitle className="text-sm font-medium">Score History</CardTitle>
+						<CardDescription className="text-xs">
+							Last {Math.min(scoreHistory.length, 10)} score updates
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						{scoreHistory.length > 0 ? (
+							<div className="overflow-hidden rounded-lg border">
+								<Table>
+									<TableHeader>
+										<TableRow className="bg-muted/50 hover:bg-muted/50">
+											<TableHead className="h-9 px-4 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+												Grade
+											</TableHead>
+											<TableHead className="h-9 px-4 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+												Score
+											</TableHead>
+											<TableHead className="h-9 px-4 text-[11px] font-medium uppercase tracking-wider text-muted-foreground text-right">
+												Date
+											</TableHead>
 										</TableRow>
-									))}
-								</TableBody>
-							</Table>
-						</div>
-					) : (
-						<p className="text-xs text-muted-foreground">No score history available</p>
-					)}
-				</div>
+									</TableHeader>
+									<TableBody>
+										{scoreHistory.slice(0, 10).map((s) => (
+											<TableRow key={s._id}>
+												<TableCell className="px-4 py-3">
+													<ScoreBadge grade={s.grade} size="xs" />
+												</TableCell>
+												<TableCell className="px-4 py-3 font-mono text-sm tabular-nums">
+													{s.score}
+												</TableCell>
+												<TableCell className="px-4 py-3 text-right text-xs text-muted-foreground">
+													{new Date(s.timestamp).toLocaleDateString()}
+												</TableCell>
+											</TableRow>
+										))}
+									</TableBody>
+								</Table>
+							</div>
+						) : (
+							<p className="text-sm text-muted-foreground py-8 text-center">
+								No score history available
+							</p>
+						)}
+					</CardContent>
+				</Card>
 
-				{/* Budget */}
-				<div className="rounded-lg border bg-card p-5">
-					<h2 className="mb-4 text-sm font-medium text-foreground">Budget Utilization</h2>
-					{dailyLimitNum > 0 || monthlyLimitNum > 0 ? (
-						<div className="space-y-4">
-							<BudgetUsage label="Daily" percentage={dailyPct} used={dailySpent} total={dailyLimit} />
-							<BudgetUsage label="Monthly" percentage={monthlyPct} used={monthlySpent} total={monthlyLimit} />
-							<div className="border-t pt-3">
-								<div className="flex items-center justify-between text-xs text-muted-foreground">
-									<span>Per-transaction limit</span>
-									<span className="font-mono">{perTxLimit}</span>
+				{/* Budget Utilization */}
+				<Card>
+					<CardHeader>
+						<CardTitle className="text-sm font-medium">
+							Budget Utilization
+						</CardTitle>
+						<CardDescription className="text-xs">
+							Spending limits and current usage
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						{dailyLimitNum > 0 || monthlyLimitNum > 0 ? (
+							<div className="space-y-5">
+								<BudgetUsage
+									label="Daily"
+									percentage={dailyPct}
+									used={dailySpent}
+									total={dailyLimit}
+								/>
+								<BudgetUsage
+									label="Monthly"
+									percentage={monthlyPct}
+									used={monthlySpent}
+									total={monthlyLimit}
+								/>
+								<div className="rounded-lg bg-muted/50 px-4 py-3">
+									<div className="flex items-center justify-between text-xs">
+										<span className="text-muted-foreground">
+											Per-transaction limit
+										</span>
+										<span className="font-mono font-medium">{perTxLimit}</span>
+									</div>
 								</div>
 							</div>
-						</div>
-					) : (
-						<p className="text-xs text-muted-foreground">No budget data</p>
-					)}
-				</div>
+						) : (
+							<p className="text-sm text-muted-foreground py-8 text-center">
+								No budget limits configured
+							</p>
+						)}
+					</CardContent>
+				</Card>
 			</div>
 		</div>
 	);

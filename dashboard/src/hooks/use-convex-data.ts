@@ -5,6 +5,7 @@ import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { useConvexAvailable } from "@/components/providers/convex-provider";
 import { useChainFilter } from "@/components/providers/chain-provider";
+import { getChain, DEFAULT_CHAIN_ID } from "@/lib/chains";
 
 /** All agents sorted by score descending. */
 export function useAgentList(): Array<{
@@ -317,6 +318,18 @@ export function useFilteredGradeDistribution(): Record<string, number> {
 		}
 		return counts;
 	}, [agents]);
+}
+
+/**
+ * Returns the native currency symbol for the currently selected chain.
+ * "All Chains" defaults to the default chain's currency (sFUEL).
+ */
+export function useChainCurrency(): string {
+	const { selectedChainId } = useChainFilter();
+	const chain = selectedChainId !== 0
+		? getChain(selectedChainId)
+		: getChain(DEFAULT_CHAIN_ID);
+	return chain?.nativeCurrency.symbol ?? "ETH";
 }
 
 /** Leaderboard filtered by chain. */

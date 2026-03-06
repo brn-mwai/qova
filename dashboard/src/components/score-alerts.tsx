@@ -66,7 +66,7 @@ export function ScoreAlerts(): React.ReactElement {
 					</p>
 				) : deltas.length === 0 ? (
 					<p className="text-sm text-muted-foreground py-6 text-center">
-						All agents stable -- no recent changes
+						All agents stable - no recent changes
 					</p>
 				) : (
 					<div className="flex flex-col gap-2.5">

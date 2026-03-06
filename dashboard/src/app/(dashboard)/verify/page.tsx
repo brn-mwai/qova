@@ -77,6 +77,13 @@ export default function VerifyPage(): React.ReactElement {
 				breadcrumb="Intelligence"
 				title="Verify an Agent"
 				subtitle="Check any AI agent's on-chain reputation score"
+				info={{
+					description: "Publicly verify any agent's trust score and registration status. Enter an address to check its score, grade, and sanctions status.",
+					sections: [
+						{ title: "Verify Agent", description: "Enter a wallet address to look up an agent's trust score and verification status." },
+						{ title: "Score Badge", description: "Get a shareable badge you can embed in your website to display an agent's trust score." },
+					],
+				}}
 			/>
 
 			<div className="mx-auto max-w-2xl space-y-6">

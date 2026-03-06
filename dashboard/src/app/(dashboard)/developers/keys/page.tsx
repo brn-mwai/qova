@@ -113,7 +113,7 @@ export default function ApiKeysPage(): React.ReactElement {
 			setNewKeyName("");
 			setSelectedScopes(["agents:read", "scores:read"]);
 			setExpiryDays("never");
-			toast.success("API key created. Copy it now -- it won't be shown again.");
+			toast.success("API key created. Copy it now - it won't be shown again.");
 		} catch (err) {
 			toast.error(
 				err instanceof Error ? err.message : "Failed to create key",
@@ -160,6 +160,13 @@ export default function ApiKeysPage(): React.ReactElement {
 					breadcrumb="Developers"
 					title="API Keys"
 					subtitle="Programmatic access to the Qova protocol"
+					info={{
+						description: "Create and manage API keys for programmatic access to the Qova protocol. Set scopes, expiration, and revoke keys when needed.",
+						sections: [
+							{ title: "Create Key", description: "Generate a new API key with specific permissions (scopes) and an optional expiration date." },
+							{ title: "Active Keys", description: "Your current API keys with their scopes, creation date, and options to revoke or delete." },
+						],
+					}}
 					actions={
 						<Dialog open={createOpen} onOpenChange={setCreateOpen}>
 							<DialogTrigger asChild>

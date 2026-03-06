@@ -63,6 +63,14 @@ export default function SettingsPage(): React.ReactElement {
           breadcrumb="Settings"
           title="Settings"
           subtitle="Dashboard preferences and account management"
+          info={{
+            description: "Manage your account, verify your identity, and review system health and network configuration.",
+            sections: [
+              { title: "Profile", description: "Your display name, email, and user ID." },
+              { title: "Identity Verification", description: "Verify your identity with World ID to boost your agents' trust scores." },
+              { title: "System Status", description: "Health checks for database, authentication, and blockchain connections." },
+            ],
+          }}
         />
 
         {/* Profile */}

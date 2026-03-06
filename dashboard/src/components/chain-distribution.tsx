@@ -32,10 +32,11 @@ export function ChainDistributionChart(): React.ReactElement {
 	const filteredTotal = selectedChainId === 0
 		? total
 		: data.filter((d) => d.isSelected).reduce((s, d) => s + d.value, 0)
+	const centerValue = selectedChainId === 0 ? total : filteredTotal
 
 	return (
-		<Card>
-			<CardHeader className="pb-3">
+		<Card className="flex flex-col">
+			<CardHeader className="pb-2">
 				<CardTitle className="text-sm font-medium">Chain Distribution</CardTitle>
 				<CardDescription className="text-xs">
 					{selectedChainId === 0
@@ -43,23 +44,23 @@ export function ChainDistributionChart(): React.ReactElement {
 						: `${filteredTotal} agents on selected chain`}
 				</CardDescription>
 			</CardHeader>
-			<CardContent>
+			<CardContent className="flex-1 flex flex-col items-center justify-center">
 				{total === 0 ? (
 					<p className="text-sm text-muted-foreground py-6 text-center">
 						No agents registered yet
 					</p>
 				) : (
-					<div className="flex items-center gap-6">
-						<div className="h-[140px] w-[140px] shrink-0">
+					<div className="flex flex-col items-center gap-3 w-full">
+						<div className="w-full aspect-square max-w-[180px]">
 							<ResponsiveContainer width="100%" height="100%">
 								<PieChart>
 									<Pie
 										data={data}
 										cx="50%"
 										cy="50%"
-										innerRadius={40}
-										outerRadius={65}
-										paddingAngle={2}
+										innerRadius="52%"
+										outerRadius="82%"
+										paddingAngle={data.length > 1 ? 2 : 0}
 										dataKey="value"
 										stroke="none"
 									>
@@ -79,22 +80,43 @@ export function ChainDistributionChart(): React.ReactElement {
 											fontSize: "12px",
 										}}
 									/>
+									<text
+										x="50%"
+										y="50%"
+										textAnchor="middle"
+										dominantBaseline="central"
+									>
+										<tspan
+											x="50%"
+											dy="-0.4em"
+											className="fill-foreground font-mono text-2xl font-bold"
+										>
+											{centerValue}
+										</tspan>
+										<tspan
+											x="50%"
+											dy="1.5em"
+											className="fill-muted-foreground text-[10px]"
+										>
+											agents
+										</tspan>
+									</text>
 								</PieChart>
 							</ResponsiveContainer>
 						</div>
-						<div className="flex flex-col gap-2">
+						<div className="flex flex-wrap justify-center gap-x-4 gap-y-1.5 w-full">
 							{data.map((entry) => (
 								<div
 									key={entry.name}
-									className="flex items-center gap-2 text-sm"
+									className="flex items-center gap-1.5 text-xs"
 									style={{ opacity: entry.isSelected ? 1 : 0.4 }}
 								>
 									<span
-										className="inline-block size-2.5 rounded-full shrink-0"
+										className="inline-block size-2 rounded-full shrink-0"
 										style={{ backgroundColor: entry.color }}
 									/>
 									<span className="text-muted-foreground">{entry.name}</span>
-									<span className="font-mono font-medium ml-auto tabular-nums">
+									<span className="font-mono font-medium tabular-nums">
 										{entry.value}
 									</span>
 								</div>

@@ -12,6 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { NumberTicker } from "@/components/ui/number-ticker"
 import { ScoreBadge } from "@/components/scores/score-badge"
+import { AddressDisplay } from "@/components/shared/address-display"
 import {
   Card,
   CardContent,
@@ -147,6 +148,15 @@ export default function EcosystemPage(): React.ReactElement {
           breadcrumb="Intelligence"
           title="Ecosystem"
           subtitle="The state of the autonomous agent economy on Base"
+          info={{
+            description: "See the big picture of the Qova ecosystem. View overall statistics, grade distribution, trending agents, and those at risk.",
+            sections: [
+              { title: "Macro Stats", description: "Total agents, average trust score, investment-grade count, and distressed agents in the ecosystem." },
+              { title: "Grade Distribution", description: "How agents are spread across trust grades, broken into investment, speculative, and distressed tiers." },
+              { title: "Top Movers", description: "The most active agents recently, ranked by transaction count." },
+              { title: "Risk Watchlist", description: "Agents with low trust scores flagged as Watch or Critical risk." },
+            ],
+          }}
         />
       </div>
 
@@ -222,7 +232,7 @@ export default function EcosystemPage(): React.ReactElement {
                   </span>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  AAA, AA, A, BBB -- Eligible for automated credit lines
+                  AAA, AA, A, BBB - Eligible for automated credit lines
                 </p>
                 <div className="h-1.5 rounded-full bg-muted mt-2 overflow-hidden">
                   <div
@@ -249,7 +259,7 @@ export default function EcosystemPage(): React.ReactElement {
                   </span>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  BB, B, CCC -- Require enhanced monitoring
+                  BB, B, CCC - Require enhanced monitoring
                 </p>
                 <div className="h-1.5 rounded-full bg-muted mt-2 overflow-hidden">
                   <div
@@ -276,7 +286,7 @@ export default function EcosystemPage(): React.ReactElement {
                   </span>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  CC, C, D -- High default risk, restricted operations
+                  CC, C, D - High default risk, restricted operations
                 </p>
                 <div className="h-1.5 rounded-full bg-muted mt-2 overflow-hidden">
                   <div
@@ -315,23 +325,28 @@ export default function EcosystemPage(): React.ReactElement {
                   {topMovers.map((agent) => (
                     <TableRow key={agent.address}>
                       <TableCell className="pl-6">
-                        <Link
-                          href={`/agents/${agent.address}`}
-                          className="font-mono text-xs hover:underline"
-                        >
-                          {agent.addressShort}
-                        </Link>
+                        <div className="flex flex-col gap-0.5">
+                          {agent.name && (
+                            <Link
+                              href={`/agents/${agent.address}`}
+                              className="text-sm font-medium hover:underline"
+                            >
+                              {agent.name}
+                            </Link>
+                          )}
+                          <AddressDisplay address={agent.address} className="text-[11px]" />
+                        </div>
                       </TableCell>
                       <TableCell>
                         <ScoreBadge grade={agent.grade} size="xs" />
                       </TableCell>
-                      <TableCell className="text-right font-mono text-xs tabular-nums">
+                      <TableCell className="text-right font-mono text-sm font-medium tabular-nums">
                         {agent.score}
                       </TableCell>
                       <TableCell className="pr-6 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <TrendUp className="size-3 text-score-green" />
-                          <span className="font-mono text-xs tabular-nums">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <TrendUp className="size-3 text-score-green" weight="bold" />
+                          <span className="font-mono text-xs font-medium tabular-nums text-score-green">
                             {agent.activityCount} txns
                           </span>
                         </div>
@@ -374,18 +389,24 @@ export default function EcosystemPage(): React.ReactElement {
                   {riskAgents.map((agent) => (
                     <TableRow key={agent.address}>
                       <TableCell className="pl-6">
-                        <Link
-                          href={`/agents/${agent.address}`}
-                          className="font-mono text-xs hover:underline"
-                        >
-                          {agent.addressShort}
-                        </Link>
+                        <AddressDisplay address={agent.address} className="text-xs" />
                       </TableCell>
                       <TableCell>
                         <ScoreBadge grade={agent.grade} size="xs" />
                       </TableCell>
-                      <TableCell className="text-right font-mono text-xs tabular-nums">
-                        {agent.score}
+                      <TableCell className="text-right">
+                        <div className="flex flex-col items-end gap-0.5">
+                          <span className="font-mono text-sm font-medium tabular-nums">{agent.score}</span>
+                          <div className="h-1 w-12 overflow-hidden rounded-full bg-muted">
+                            <div
+                              className="h-full rounded-full"
+                              style={{
+                                width: `${agent.score / 10}%`,
+                                backgroundColor: agent.score < 300 ? "var(--score-red)" : "var(--score-yellow)",
+                              }}
+                            />
+                          </div>
+                        </div>
                       </TableCell>
                       <TableCell className="pr-6 text-right">
                         <Badge

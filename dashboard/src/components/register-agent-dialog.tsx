@@ -29,8 +29,10 @@ import {
 } from "@/components/ui/select"
 import { useConvexAvailable } from "@/components/providers/convex-provider"
 import { toast } from "sonner"
-import { SUPPORTED_CHAINS, DEFAULT_CHAIN_ID } from "@/lib/chains"
+import { SUPPORTED_CHAINS, DEFAULT_CHAIN_ID, getChain } from "@/lib/chains"
 import { getTokensForChain } from "@/lib/tokens"
+
+const DEFAULT_CURRENCY = getChain(DEFAULT_CHAIN_ID)?.nativeCurrency.symbol ?? "ETH"
 
 const AGENT_TYPES = [
   { value: "trading", label: "Trading Bot" },
@@ -70,7 +72,7 @@ export function RegisterAgentDialog({
     type: "trading",
     description: "",
     chainId: DEFAULT_CHAIN_ID,
-    budgetCurrency: "ETH",
+    budgetCurrency: DEFAULT_CURRENCY,
     dailyLimit: "1",
     monthlyLimit: "10",
     perTxLimit: "0.5",
@@ -104,7 +106,7 @@ export function RegisterAgentDialog({
       type: "trading",
       description: "",
       chainId: DEFAULT_CHAIN_ID,
-      budgetCurrency: "ETH",
+      budgetCurrency: DEFAULT_CURRENCY,
       dailyLimit: "1",
       monthlyLimit: "10",
       perTxLimit: "0.5",
@@ -115,7 +117,7 @@ export function RegisterAgentDialog({
   const handleChainChange = useCallback((chainIdStr: string): void => {
     const chainId = Number(chainIdStr)
     const tokens = getTokensForChain(chainId)
-    const defaultCurrency = tokens[0]?.symbol ?? "ETH"
+    const defaultCurrency = tokens[0]?.symbol ?? getChain(chainId)?.nativeCurrency.symbol ?? DEFAULT_CURRENCY
     setForm((prev) => ({
       ...prev,
       chainId,

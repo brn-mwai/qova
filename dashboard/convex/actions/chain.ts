@@ -188,7 +188,7 @@ export const verifyAgent = action({
       await ctx.runMutation(api.mutations.activity.logActivity, {
         agent,
         type: "Verification",
-        description: "Verification failed -- agent not found",
+        description: "Verification failed - agent not found",
       });
 
       return result;
@@ -211,7 +211,7 @@ export const verifyAgent = action({
     await ctx.runMutation(api.mutations.activity.logActivity, {
       agent,
       type: "Verification",
-      description: `Verification ${verified ? "passed" : "failed"} -- Grade: ${grade}, Score: ${existing.score}`,
+      description: `Verification ${verified ? "passed" : "failed"} - Grade: ${grade}, Score: ${existing.score}`,
     });
 
     return result;

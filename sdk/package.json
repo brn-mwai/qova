@@ -1,6 +1,7 @@
 {
   "name": "@qova/core",
-  "version": "0.1.0",
+  "version": "0.2.0",
+  "description": "TypeScript SDK for the Qova protocol -- financial trust infrastructure for AI agents on Base L2",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -22,7 +23,7 @@
       "types": "./dist/utils/index.d.ts"
     }
   },
-  "files": ["dist"],
+  "files": ["dist", "README.md"],
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
@@ -31,6 +32,35 @@
     "check": "bunx biome check src/",
     "check:fix": "bunx biome check --write src/"
   },
+  "keywords": [
+    "qova",
+    "ai-agents",
+    "reputation",
+    "credit-score",
+    "blockchain",
+    "base",
+    "viem",
+    "defi",
+    "x402",
+    "smart-contracts",
+    "typescript",
+    "web3"
+  ],
+  "author": "Qova Engineering <eng@qova.cc> (https://qova.cc)",
+  "license": "MIT",
+  "homepage": "https://github.com/brn-mwai/qova/tree/main/sdk#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/brn-mwai/qova.git",
+    "directory": "sdk"
+  },
+  "bugs": {
+    "url": "https://github.com/brn-mwai/qova/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "sideEffects": false,
   "dependencies": {
     "viem": "^2.21.0",
     "zod": "^3.24.0"

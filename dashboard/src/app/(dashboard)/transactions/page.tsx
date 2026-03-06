@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowsLeftRight, Funnel, Plus, Receipt } from "@phosphor-icons/react";
+import { ArrowsLeftRight, ArrowSquareOut, Funnel, Plus, Receipt } from "@phosphor-icons/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useMutation } from "convex/react";
 import Link from "next/link";
@@ -8,10 +8,13 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "../../../../convex/_generated/api";
 import { DataTable } from "@/components/data/data-table";
 import { EmptyState } from "@/components/data/empty-state";
+import { TxTypeBadge } from "@/components/data/tx-type-badge";
+import { AddressDisplay } from "@/components/shared/address-display";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
 	Select,
 	SelectContent,
@@ -27,10 +30,12 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { useFilteredAgentList, useFilteredRecentActivity } from "@/hooks/use-convex-data";
+import { useFilteredAgentList, useFilteredRecentActivity, useChainCurrency } from "@/hooks/use-convex-data";
 import { useConvexAvailable } from "@/components/providers/convex-provider";
+import { useChainFilter } from "@/components/providers/chain-provider";
 import { PageHeader } from "@/components/shared/page-header";
 import { TX_TYPES } from "@/lib/constants";
+import { getChain, getExplorerTxUrl } from "@/lib/chains";
 
 function isValidAddress(addr: string): boolean {
 	return /^0x[a-fA-F0-9]{40}$/.test(addr);
@@ -60,22 +65,31 @@ interface TxRow {
 	lastActivity: string;
 }
 
+function parseRate(rate: string): number {
+	const match = rate.match(/([\d.]+)/);
+	return match ? Number.parseFloat(match[1]) : 0;
+}
+
+function getRateColor(rate: number): string {
+	if (rate >= 90) return "var(--score-green)";
+	if (rate >= 70) return "var(--score-yellow)";
+	return "var(--score-red)";
+}
+
 const txColumns: ColumnDef<TxRow>[] = [
 	{
 		accessorKey: "addressShort",
 		header: "Agent",
 		enableSorting: false,
 		cell: ({ row }) => (
-			<Link href={`/agents/${row.original.agent}`} className="font-mono text-sm hover:underline">
-				{row.original.addressShort}
-			</Link>
+			<AddressDisplay address={row.original.agent} className="text-sm" />
 		),
 	},
 	{
 		accessorKey: "totalTxCount",
-		header: "Total Count",
+		header: "Transactions",
 		cell: ({ row }) => (
-			<span className="font-mono text-sm tabular-nums">{row.original.totalTxCount}</span>
+			<span className="font-mono text-sm font-medium tabular-nums">{row.original.totalTxCount}</span>
 		),
 	},
 	{
@@ -83,18 +97,30 @@ const txColumns: ColumnDef<TxRow>[] = [
 		header: "Volume",
 		enableSorting: false,
 		cell: ({ row }) => (
-			<span className="font-mono text-sm">{row.original.totalVolume}</span>
+			<span className="font-mono text-sm font-medium tabular-nums">{row.original.totalVolume}</span>
 		),
 	},
 	{
 		id: "successRate",
 		header: "Success Rate",
 		enableSorting: false,
-		cell: ({ row }) => (
-			<Badge variant="outline" className="font-mono tabular-nums">
-				{row.original.successRate}
-			</Badge>
-		),
+		cell: ({ row }) => {
+			const rate = parseRate(row.original.successRate);
+			const color = getRateColor(rate);
+			return (
+				<div className="flex items-center gap-2">
+					<div className="h-1.5 w-14 overflow-hidden rounded-full bg-muted">
+						<div
+							className="h-full rounded-full transition-all"
+							style={{ width: `${rate}%`, backgroundColor: color }}
+						/>
+					</div>
+					<span className="font-mono text-xs tabular-nums" style={{ color }}>
+						{row.original.successRate}
+					</span>
+				</div>
+			);
+		},
 	},
 	{
 		accessorKey: "lastActivity",
@@ -114,6 +140,8 @@ export default function TransactionsPage(): React.ReactElement {
 	const agents = useFilteredAgentList();
 	const recentActivity = useFilteredRecentActivity(50);
 	const logActivity = useMutation(api.mutations.activity.logActivity);
+	const currency = useChainCurrency();
+	const { selectedChainId } = useChainFilter();
 
 	// Form state
 	const [agentAddr, setAgentAddr] = useState("");
@@ -134,11 +162,11 @@ export default function TransactionsPage(): React.ReactElement {
 				agent: a.address,
 				addressShort: a.addressShort,
 				totalTxCount: a.totalTxCount ?? 0,
-				totalVolume: a.totalVolume ?? "0 ETH",
+				totalVolume: a.totalVolume ?? `0 ${currency}`,
 				successRate: a.successRate ?? "0%",
 				lastActivity: a.lastActivity ?? new Date().toISOString(),
 			}));
-	}, [agents]);
+	}, [agents, currency]);
 
 	const filteredActivity = useMemo(() => {
 		if (activityTypeFilter === "all") return recentActivity;
@@ -152,6 +180,14 @@ export default function TransactionsPage(): React.ReactElement {
 		}
 		return Array.from(types).sort();
 	}, [recentActivity]);
+
+	/** Resolve the explorer TX URL based on the agent's chain or selected chain. */
+	function getTxExplorerUrl(txHashVal: string, agentAddr: string): string {
+		const agent = agents.find((a) => a.address.toLowerCase() === agentAddr.toLowerCase());
+		const chainId = agent?.chainId ?? selectedChainId;
+		if (chainId && chainId !== 0) return getExplorerTxUrl(chainId, txHashVal);
+		return getExplorerTxUrl(0, txHashVal);
+	}
 
 	async function handleSubmit(): Promise<void> {
 		setFormError(null);
@@ -200,8 +236,8 @@ export default function TransactionsPage(): React.ReactElement {
 			await logActivity({
 				agent: trimmedAgent,
 				type: typeName,
-				description: `${typeName} of ${trimmedAmount} ETH`,
-				amount: `${trimmedAmount} ETH`,
+				description: `${typeName} of ${trimmedAmount} ${currency}`,
+				amount: `${trimmedAmount} ${currency}`,
 				txHash: trimmedHash,
 			});
 
@@ -232,6 +268,14 @@ export default function TransactionsPage(): React.ReactElement {
 				breadcrumb="Operations"
 				title="Transactions"
 				subtitle="On-chain transaction records across your agents"
+				info={{
+					description: "Record and track on-chain transactions for your agents. Log transaction hashes and amounts, and monitor activity filtered by type.",
+					sections: [
+						{ title: "Record Transaction", description: "Log a new transaction with the agent's address, transaction hash, amount, and type." },
+						{ title: "Transaction Stats", description: "See each agent's total transaction count, volume traded, and success rate." },
+						{ title: "Recent Activity", description: "A filterable log of all transactions with agent, type, description, amount, and timestamp." },
+					],
+				}}
 			/>
 
 			{/* Record Transaction */}
@@ -291,7 +335,7 @@ export default function TransactionsPage(): React.ReactElement {
 					</div>
 					<div className="space-y-2">
 						<Label className="text-xs uppercase tracking-wider text-muted-foreground">
-							Amount (ETH)
+							Amount ({currency})
 						</Label>
 						<Input
 							value={amount}
@@ -399,6 +443,7 @@ export default function TransactionsPage(): React.ReactElement {
 						)}
 					</div>
 					<div className="overflow-hidden rounded-lg border">
+						<TooltipProvider delayDuration={200}>
 						<Table>
 							<TableHeader>
 								<TableRow className="bg-muted hover:bg-muted">
@@ -412,30 +457,44 @@ export default function TransactionsPage(): React.ReactElement {
 							<TableBody>
 								{filteredActivity.length > 0 ? (
 									filteredActivity.map((tx) => (
-										<TableRow key={tx._id}>
+										<TableRow key={tx._id} className="group">
 											<TableCell className="px-4 py-3">
-												<Link
-													href={`/agents/${tx.agent}`}
-													className="font-mono text-xs text-muted-foreground hover:text-foreground transition-colors"
-												>
-													{tx.addressShort}
-												</Link>
+												<AddressDisplay address={tx.agent} className="text-xs" />
 											</TableCell>
 											<TableCell className="px-4 py-3">
-												<Badge variant="outline">{tx.type}</Badge>
+												<TxTypeBadge type={tx.type} />
 											</TableCell>
 											<TableCell className="px-4 py-3 max-w-[200px]">
-												<span className="truncate text-xs text-muted-foreground">
+												<span className="truncate block text-xs text-muted-foreground">
 													{tx.description}
 												</span>
 											</TableCell>
 											<TableCell className="px-4 py-3 text-right">
-												{tx.amount && <span className="font-mono text-xs">{tx.amount}</span>}
+												{tx.amount && <span className="font-mono text-xs font-medium tabular-nums">{tx.amount}</span>}
 											</TableCell>
 											<TableCell className="px-4 py-3 text-right">
-												<span className="text-xs text-muted-foreground">
-													{timeAgo(tx.timestamp)}
-												</span>
+												<div className="flex items-center justify-end gap-1.5">
+													<Tooltip>
+														<TooltipTrigger asChild>
+															<span className="text-xs text-muted-foreground cursor-default">
+																{timeAgo(tx.timestamp)}
+															</span>
+														</TooltipTrigger>
+														<TooltipContent side="left" className="font-mono text-xs">
+															{new Date(tx.timestamp).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
+														</TooltipContent>
+													</Tooltip>
+													{tx.txHash && (
+														<a
+															href={getTxExplorerUrl(tx.txHash, tx.agent)}
+															target="_blank"
+															rel="noopener noreferrer"
+															className="text-muted-foreground hover:text-foreground transition-colors opacity-0 group-hover:opacity-100"
+														>
+															<ArrowSquareOut size={12} />
+														</a>
+													)}
+												</div>
 											</TableCell>
 										</TableRow>
 									))
@@ -448,6 +507,7 @@ export default function TransactionsPage(): React.ReactElement {
 								)}
 							</TableBody>
 						</Table>
+						</TooltipProvider>
 					</div>
 				</div>
 			)}

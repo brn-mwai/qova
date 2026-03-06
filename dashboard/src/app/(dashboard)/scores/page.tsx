@@ -9,6 +9,7 @@ import { DataTable } from "@/components/data/data-table";
 import { EmptyState } from "@/components/data/empty-state";
 import { ScoreBadge } from "@/components/scores/score-badge";
 import { ScoreRing } from "@/components/scores/score-ring";
+import { AddressDisplay } from "@/components/shared/address-display";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/shared/page-header";
@@ -41,7 +42,7 @@ function ScoreLookupPanel({ address }: { address: string }): React.ReactElement 
 			<div className="flex-1 space-y-4">
 				<div className="flex items-center gap-3">
 					<ScoreBadge grade={agent.grade} score={agent.score} showScore size="lg" />
-					<span className="font-mono text-sm text-muted-foreground">{agent.addressShort}</span>
+					<AddressDisplay address={address} className="text-sm" />
 				</div>
 				<div className="space-y-1">
 					<div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -91,21 +92,28 @@ const leaderboardColumns: ColumnDef<LeaderboardRow>[] = [
 	{
 		accessorKey: "rank",
 		header: "Rank",
-		cell: ({ row }) => (
-			<span className="font-mono text-xs font-bold text-muted-foreground">#{row.original.rank}</span>
-		),
+		cell: ({ row }) => {
+			const rank = row.original.rank;
+			const medal = rank === 1 ? "text-yellow-500" : rank === 2 ? "text-zinc-400" : rank === 3 ? "text-amber-700" : "text-muted-foreground";
+			return (
+				<span className={`font-mono text-xs font-bold ${medal}`}>#{rank}</span>
+			);
+		},
 	},
 	{
 		accessorKey: "addressShort",
 		header: "Agent",
 		enableSorting: false,
 		cell: ({ row }) => (
-			<Link
-				href={`/agents/${row.original.address}`}
-				className="font-mono text-sm hover:underline"
-			>
-				{row.original.addressShort}
-			</Link>
+			<div className="flex flex-col gap-0.5">
+				<Link
+					href={`/agents/${row.original.address}`}
+					className="text-sm font-medium hover:underline"
+				>
+					{row.original.addressShort}
+				</Link>
+				<AddressDisplay address={row.original.address} className="text-[11px]" />
+			</div>
 		),
 	},
 	{
@@ -113,7 +121,7 @@ const leaderboardColumns: ColumnDef<LeaderboardRow>[] = [
 		header: "Score",
 		cell: ({ row }) => (
 			<div className="flex items-center gap-3">
-				<span className="font-mono text-sm tabular-nums w-10">{row.original.score}</span>
+				<span className="font-mono text-sm font-medium tabular-nums w-10">{row.original.score}</span>
 				<div className="hidden sm:block h-1.5 w-20 overflow-hidden rounded-full bg-muted">
 					<div
 						className="h-full rounded-full transition-all"
@@ -163,6 +171,14 @@ export default function ScoresPage(): React.ReactElement {
 				breadcrumb="Intelligence"
 				title="Score Analytics"
 				subtitle="Distribution, trends, and leaderboard of agent reputation scores"
+				info={{
+					description: "Explore trust score analytics across your agents and the wider Qova ecosystem. Look up individual agents or see the overall score distribution.",
+					sections: [
+						{ title: "Score Distribution", description: "A chart showing how many agents fall into each trust grade, from AAA (highest) to D (lowest)." },
+						{ title: "Score Lookup", description: "Search for any agent by wallet address to see its detailed trust score and verification status." },
+						{ title: "Leaderboard", description: "A ranked list of top-performing agents sorted by trust score." },
+					],
+				}}
 			/>
 
 			{/* Score Distribution Chart */}

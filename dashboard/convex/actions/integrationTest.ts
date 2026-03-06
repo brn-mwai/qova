@@ -45,7 +45,7 @@ export const testSlack = action({
 
 		const config = parseSlackConfig(integration.config);
 		if (!config)
-			return { success: false, message: "Invalid Slack config -- check webhook URL and channel", duration: Date.now() - start };
+			return { success: false, message: "Invalid Slack config - check webhook URL and channel", duration: Date.now() - start };
 
 		try {
 			const payload = buildSlackPayload(config.channel, {
@@ -79,7 +79,7 @@ export const testTelegram = action({
 
 		const config = parseTelegramConfig(integration.config);
 		if (!config)
-			return { success: false, message: "Invalid Telegram config -- check bot token and chat ID", duration: Date.now() - start };
+			return { success: false, message: "Invalid Telegram config - check bot token and chat ID", duration: Date.now() - start };
 
 		try {
 			const res = await fetch(
@@ -116,7 +116,7 @@ export const testX402 = action({
 
 		const config = parseX402Config(integration.config);
 		if (!config)
-			return { success: false, message: "Invalid x402 config -- missing facilitator address", duration: Date.now() - start };
+			return { success: false, message: "Invalid x402 config - missing facilitator address", duration: Date.now() - start };
 
 		const valid = /^0x[0-9a-fA-F]{40}$/.test(config.facilitator);
 		const duration = Date.now() - start;
@@ -136,7 +136,7 @@ export const testCoinbase = action({
 
 		const config = parseCoinbaseConfig(integration.config);
 		if (!config)
-			return { success: false, message: "Invalid Coinbase config -- missing API key", duration: Date.now() - start };
+			return { success: false, message: "Invalid Coinbase config - missing API key", duration: Date.now() - start };
 
 		try {
 			const res = await fetch(
@@ -152,7 +152,7 @@ export const testCoinbase = action({
 			);
 			const duration = Date.now() - start;
 			if (res.ok) return { success: true, message: "Coinbase API key is valid", duration };
-			if (res.status === 401 || res.status === 403) return { success: false, message: "Invalid API key -- authentication failed", duration };
+			if (res.status === 401 || res.status === 403) return { success: false, message: "Invalid API key - authentication failed", duration };
 			return { success: false, message: `Coinbase returned HTTP ${res.status}`, duration };
 		} catch (err: unknown) {
 			return { success: false, message: err instanceof Error ? err.message : "Request failed", duration: Date.now() - start };
@@ -171,7 +171,7 @@ export const testOpenAI = action({
 
 		const config = parseOpenAIConfig(integration.config);
 		if (!config)
-			return { success: false, message: "Invalid OpenAI config -- missing API key", duration: Date.now() - start };
+			return { success: false, message: "Invalid OpenAI config - missing API key", duration: Date.now() - start };
 
 		try {
 			const res = await fetch("https://api.openai.com/v1/models", {
@@ -181,7 +181,7 @@ export const testOpenAI = action({
 			});
 			const duration = Date.now() - start;
 			if (res.ok) return { success: true, message: "OpenAI API key is valid", duration };
-			if (res.status === 401) return { success: false, message: "Invalid API key -- authentication failed", duration };
+			if (res.status === 401) return { success: false, message: "Invalid API key - authentication failed", duration };
 			return { success: false, message: `OpenAI returned HTTP ${res.status}`, duration };
 		} catch (err: unknown) {
 			return { success: false, message: err instanceof Error ? err.message : "Request failed", duration: Date.now() - start };

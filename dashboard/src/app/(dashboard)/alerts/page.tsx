@@ -105,6 +105,13 @@ export default function AlertsPage(): React.ReactElement {
 					breadcrumb="Alerts"
 					title="Alerts"
 					subtitle="Notifications about score changes, budget warnings, and anomalies"
+					info={{
+						description: "Stay informed with notifications about score changes, budget warnings, verification events, and system updates.",
+						sections: [
+							{ title: "Filters", description: "Filter alerts by type: Score, Budget, Verification, or System. Toggle between all and unread." },
+							{ title: "Notification List", description: "Each alert shows what happened, when, and links to the relevant agent if applicable." },
+						],
+					}}
 					actions={
 						(unreadCount ?? 0) > 0 ? (
 							<Button

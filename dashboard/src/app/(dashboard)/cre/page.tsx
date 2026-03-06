@@ -224,6 +224,15 @@ export default function CrePage(): React.ReactElement {
           breadcrumb="Intelligence"
           title="Scoring Engine"
           subtitle="How Qova computes reputation scores using Chainlink CRE"
+          info={{
+            description: "Understand how trust scores are computed and run the scoring pipeline manually. Qova uses Chainlink CRE to calculate scores from four independent workflows.",
+            sections: [
+              { title: "Run Scoring", description: "Manually trigger the scoring pipeline for any agent and see the result immediately." },
+              { title: "Methodology", description: "How the composite trust score (0-1000) is built from four weighted scoring workflows." },
+              { title: "Workflow Status", description: "Status, completion rate, and runtime for each scoring workflow." },
+              { title: "Execution History", description: "A log of recent scoring runs showing input/output scores and duration." },
+            ],
+          }}
         />
       </div>
 

@@ -8,7 +8,7 @@ import {
 	CardTitle,
 } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import { useFilteredAgentList } from "@/hooks/use-convex-data"
+import { useFilteredAgentList, useChainCurrency } from "@/hooks/use-convex-data"
 import { shortenAddress } from "@/lib/constants"
 
 function parseNumeric(value: string | undefined): number {
@@ -31,6 +31,7 @@ function barColor(pct: number): string {
 
 export function BudgetHealth(): React.ReactElement {
 	const agents = useFilteredAgentList()
+	const chainCurrency = useChainCurrency()
 
 	const withBudget = agents
 		.filter((a) => a.monthlyLimit)
@@ -38,7 +39,7 @@ export function BudgetHealth(): React.ReactElement {
 			const limit = parseNumeric(a.monthlyLimit)
 			const spent = parseNumeric(a.monthlySpent)
 			const pct = limit > 0 ? Math.min(100, Math.round((spent / limit) * 100)) : 0
-			const currency = (a as { budgetCurrency?: string }).budgetCurrency ?? "ETH"
+			const currency = (a as { budgetCurrency?: string }).budgetCurrency ?? chainCurrency
 			return {
 				address: a.address,
 				addressShort: a.addressShort,

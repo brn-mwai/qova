@@ -84,7 +84,7 @@ export function ScoreDistribution(): React.ReactElement {
                   const data = payload[0].payload as (typeof chartData)[number]
                   return (
                     <div className="rounded-md border bg-card px-3 py-2 text-xs">
-                      <p className="font-semibold">{data.grade} -- {data.tier}</p>
+                      <p className="font-semibold">{data.grade} - {data.tier}</p>
                       <p className="text-muted-foreground">
                         {data.count} agent{data.count !== 1 ? "s" : ""} ({data.percentage}%)
                       </p>

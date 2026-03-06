@@ -17,48 +17,50 @@ export function StatCard({
 	value,
 	trend,
 	icon,
-	accentColor = "var(--primary)",
+	accentColor,
 }: StatCardProps): React.ReactElement {
 	return (
-		<div
-			className={cn("rounded-lg border border-l-[3px] bg-[var(--card)] p-5")}
-			style={{ borderLeftColor: accentColor }}
-		>
+		<div className="rounded-lg border bg-card p-5">
 			<div className="flex items-start justify-between">
-				<div className="space-y-2">
-					<p className="text-xs font-medium uppercase tracking-wide text-[var(--muted-foreground)]">
-						{label}
-					</p>
-					<p className="font-heading text-3xl font-semibold text-[var(--card-foreground)]">
-						{value}
-					</p>
-					{trend && (
-						<div className="flex items-center gap-1">
-							{trend.direction === "up" && (
-								<TrendUp size={14} className="text-[var(--score-green)]" weight="bold" />
-							)}
-							{trend.direction === "down" && (
-								<TrendDown size={14} className="text-[var(--score-red)]" weight="bold" />
-							)}
-							{trend.direction === "flat" && (
-								<Minus size={14} className="text-[var(--muted-foreground)]" weight="bold" />
-							)}
-							<span
-								className={cn(
-									"text-xs font-medium",
-									trend.direction === "up" && "text-[var(--score-green)]",
-									trend.direction === "down" && "text-[var(--score-red)]",
-									trend.direction === "flat" && "text-[var(--muted-foreground)]",
-								)}
-							>
-								{trend.direction === "up" ? "+" : ""}
-								{trend.value}%
-							</span>
-						</div>
-					)}
-				</div>
-				{icon && <div className="text-[var(--muted-foreground)]">{icon}</div>}
+				<p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+					{label}
+				</p>
+				{icon && (
+					<div
+						className="flex size-8 items-center justify-center rounded-lg bg-muted"
+						style={accentColor ? { color: accentColor } : undefined}
+					>
+						{icon}
+					</div>
+				)}
 			</div>
+			<p className="mt-2 font-heading text-2xl font-semibold text-card-foreground tabular-nums">
+				{value}
+			</p>
+			{trend && (
+				<div className="mt-1.5 flex items-center gap-1">
+					{trend.direction === "up" && (
+						<TrendUp size={14} className="text-score-green" weight="bold" />
+					)}
+					{trend.direction === "down" && (
+						<TrendDown size={14} className="text-score-red" weight="bold" />
+					)}
+					{trend.direction === "flat" && (
+						<Minus size={14} className="text-muted-foreground" weight="bold" />
+					)}
+					<span
+						className={cn(
+							"text-xs font-medium",
+							trend.direction === "up" && "text-score-green",
+							trend.direction === "down" && "text-score-red",
+							trend.direction === "flat" && "text-muted-foreground",
+						)}
+					>
+						{trend.direction === "up" ? "+" : ""}
+						{trend.value}%
+					</span>
+				</div>
+			)}
 		</div>
 	);
 }

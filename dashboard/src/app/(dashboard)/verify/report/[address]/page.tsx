@@ -24,6 +24,7 @@ import {
   useAgentByAddress,
   useScoreHistory,
   useCreWorkflows,
+  useChainCurrency,
 } from "@/hooks/use-convex-data"
 import { toast } from "sonner"
 
@@ -101,6 +102,7 @@ export default function CreditReportPage(): React.ReactElement {
   const params = useParams()
   const address = params.address as string
   const agent = useAgentByAddress(address)
+  const currency = useChainCurrency()
   const scoreHistory = useScoreHistory(address, 30)
   const workflows = useCreWorkflows()
 
@@ -178,7 +180,7 @@ export default function CreditReportPage(): React.ReactElement {
                   </div>
                   <div>
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Volume</p>
-                    <p className="font-mono text-sm tabular-nums">{agent.totalVolume ?? "0 ETH"}</p>
+                    <p className="font-mono text-sm tabular-nums">{agent.totalVolume ?? `0 ${currency}`}</p>
                   </div>
                   <div>
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Success Rate</p>

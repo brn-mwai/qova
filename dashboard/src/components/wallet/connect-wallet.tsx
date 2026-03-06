@@ -1,21 +1,8 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { useAccount, useBalance, useDisconnect } from "wagmi"
+import { useAccount, useBalance, useConnect, useDisconnect } from "wagmi"
 import { useMutation } from "convex/react"
-import {
-  Wallet,
-  ConnectWallet,
-  WalletDropdown,
-  WalletDropdownDisconnect,
-} from "@coinbase/onchainkit/wallet"
-import {
-  Address,
-  Avatar,
-  Name,
-  Identity,
-  EthBalance,
-} from "@coinbase/onchainkit/identity"
 import {
   Wallet as WalletIcon,
   CheckCircle,
@@ -23,6 +10,10 @@ import {
   SignOut,
   SpinnerGap,
   Warning,
+  MetaLogo,
+  CurrencyBtc,
+  Globe,
+  Plugs,
 } from "@phosphor-icons/react"
 import { api } from "../../../convex/_generated/api"
 import { useConvexAvailable } from "@/components/providers/convex-provider"
@@ -41,26 +32,42 @@ function truncateAddress(address: string): string {
   return `${address.slice(0, 6)}...${address.slice(-4)}`
 }
 
+/** Map connector IDs to friendly labels and icons */
+function getConnectorInfo(id: string, name: string): { label: string; iconType: "metamask" | "coinbase" | "walletconnect" | "injected" } {
+  const lower = id.toLowerCase()
+  if (lower.includes("metamask") || name.toLowerCase().includes("metamask")) return { label: "MetaMask", iconType: "metamask" }
+  if (lower.includes("coinbase") || name.toLowerCase().includes("coinbase")) return { label: "Coinbase Wallet", iconType: "coinbase" }
+  if (lower.includes("walletconnect")) return { label: "WalletConnect", iconType: "walletconnect" }
+  return { label: name || "Browser Wallet", iconType: "injected" }
+}
+
+function ConnectorIcon({ type, className }: { type: string; className?: string }): React.ReactElement {
+  switch (type) {
+    case "metamask":
+      return <MetaLogo className={className} weight="fill" />
+    case "coinbase":
+      return <CurrencyBtc className={className} weight="fill" />
+    case "walletconnect":
+      return <Globe className={className} weight="fill" />
+    default:
+      return <Plugs className={className} weight="fill" />
+  }
+}
+
 interface ConnectWalletCardProps {
-  /** Called after wallet is linked to Convex user */
   onConnected?: (address: string) => void
-  /** Whether to show as a compact inline element vs full card */
   compact?: boolean
-  /** Show supported wallets info */
   showSupportedWallets?: boolean
 }
 
-/**
- * Full wallet connection card with Convex linkWallet integration.
- * Shows connection state, balance, chain info, and copy address button.
- */
 export function ConnectWalletCard({
   onConnected,
   compact = false,
   showSupportedWallets = false,
 }: ConnectWalletCardProps): React.ReactElement {
-  const { address, isConnected } = useAccount()
+  const { address, isConnected, connector: activeConnector } = useAccount()
   const { data: balance } = useBalance({ address })
+  const { connectors, connect, isPending: isConnecting } = useConnect()
   const { disconnect } = useDisconnect()
   const available = useConvexAvailable()
   const linkWallet = useMutation(api.mutations.users.linkWallet)
@@ -69,10 +76,19 @@ export function ConnectWalletCard({
   const [linked, setLinked] = useState(false)
   const [linkError, setLinkError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  const [connectingId, setConnectingId] = useState<string | null>(null)
 
   const chain = getChain(DEFAULT_CHAIN_ID)
 
-  // Link wallet to Convex user when connected
+  // Deduplicate connectors by name (wagmi can register duplicates)
+  const seen = new Set<string>()
+  const uniqueConnectors = connectors.filter((c) => {
+    const label = getConnectorInfo(c.id, c.name).label
+    if (seen.has(label)) return false
+    seen.add(label)
+    return true
+  })
+
   const handleLinkWallet = useCallback(async (): Promise<void> => {
     if (!address || !available) return
     setLinking(true)
@@ -88,7 +104,6 @@ export function ConnectWalletCard({
     }
   }, [address, available, linkWallet, onConnected])
 
-  // Auto-link on connect
   useEffect(() => {
     if (isConnected && address && available && !linked && !linking) {
       handleLinkWallet()
@@ -108,15 +123,28 @@ export function ConnectWalletCard({
     setLinkError(null)
   }, [disconnect])
 
+  const handleConnect = useCallback((connector: (typeof connectors)[number]): void => {
+    setConnectingId(connector.id)
+    connect(
+      { connector },
+      { onSettled: () => setConnectingId(null) },
+    )
+  }, [connect])
+
+  // Compact mode
   if (compact) {
     if (!isConnected) {
       return (
-        <Wallet>
-          <ConnectWallet className="!inline-flex !items-center !gap-2 !rounded-md !border !border-border !bg-background !px-4 !py-2 !text-sm !font-medium !text-foreground !shadow-none hover:!bg-accent">
-            <WalletIcon className="size-4" />
-            <span>Connect Wallet</span>
-          </ConnectWallet>
-        </Wallet>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => uniqueConnectors[0] && handleConnect(uniqueConnectors[0])}
+          disabled={isConnecting}
+          className="gap-2"
+        >
+          <WalletIcon className="size-4" />
+          {isConnecting ? "Connecting..." : "Connect Wallet"}
+        </Button>
       )
     }
 
@@ -133,7 +161,7 @@ export function ConnectWalletCard({
     )
   }
 
-  // Full card mode
+  // Full card - not connected
   if (!isConnected) {
     return (
       <Card>
@@ -146,27 +174,52 @@ export function ConnectWalletCard({
             Link a wallet to your Qova account for on-chain verification and transactions.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <Wallet>
-            <ConnectWallet className="!flex !items-center !justify-center !gap-2 !w-full !rounded-md !border !border-border !bg-foreground !px-4 !py-2.5 !text-sm !font-medium !text-background !shadow-none hover:!bg-foreground/90">
-              <WalletIcon className="size-4" />
-              <span>Connect Wallet</span>
-            </ConnectWallet>
-          </Wallet>
+        <CardContent className="space-y-3">
+          <div className="grid gap-2">
+            {uniqueConnectors.map((connector) => {
+              const info = getConnectorInfo(connector.id, connector.name)
+              const isLoading = connectingId === connector.id
+              return (
+                <button
+                  key={connector.id}
+                  type="button"
+                  onClick={() => handleConnect(connector)}
+                  disabled={isConnecting}
+                  className="flex items-center gap-3 rounded-lg border px-4 py-3 text-left hover:bg-accent/50 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed w-full"
+                >
+                  <div className="flex size-8 items-center justify-center rounded-lg bg-muted shrink-0">
+                    {isLoading ? (
+                      <SpinnerGap size={16} className="animate-spin text-muted-foreground" />
+                    ) : (
+                      <ConnectorIcon type={info.iconType} className="size-4 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium">{info.label}</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {info.iconType === "metamask" && "Browser extension or mobile app"}
+                      {info.iconType === "coinbase" && "Coinbase Wallet or Smart Wallet"}
+                      {info.iconType === "walletconnect" && "Scan QR code with any wallet"}
+                      {info.iconType === "injected" && "Use your browser's built-in wallet"}
+                    </p>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
 
           {showSupportedWallets && (
-            <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
-              <p className="text-xs font-medium text-muted-foreground">Supported wallets</p>
-              <div className="flex flex-wrap gap-2">
-                <Badge variant="outline" className="text-[10px]">Coinbase Smart Wallet</Badge>
-                <Badge variant="outline" className="text-[10px]">Coinbase Wallet</Badge>
-              </div>
-            </div>
+            <p className="text-[11px] text-muted-foreground text-center pt-1">
+              Supports MetaMask, Coinbase Wallet, WalletConnect, and any injected browser wallet.
+            </p>
           )}
         </CardContent>
       </Card>
     )
   }
+
+  // Full card - connected
+  const activeInfo = activeConnector ? getConnectorInfo(activeConnector.id, activeConnector.name) : null
 
   return (
     <Card>
@@ -179,12 +232,12 @@ export function ConnectWalletCard({
           )}
         </CardTitle>
         <CardDescription>
-          Your wallet is connected{chain ? ` on ${chain.name}` : ""}.
+          {activeInfo ? `Connected via ${activeInfo.label}` : "Your wallet is connected"}{chain ? ` on ${chain.name}` : ""}.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Address */}
-        <div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 p-3">
+        <div className="flex items-center justify-between rounded-lg border bg-muted/30 p-3">
           <div className="space-y-1">
             <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
               Address
@@ -202,7 +255,7 @@ export function ConnectWalletCard({
 
         {/* Balance & Chain */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-1">
+          <div className="rounded-lg border bg-muted/30 p-3 space-y-1">
             <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
               Balance
             </p>
@@ -212,7 +265,7 @@ export function ConnectWalletCard({
                 : "Loading..."}
             </p>
           </div>
-          <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-1">
+          <div className="rounded-lg border bg-muted/30 p-3 space-y-1">
             <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
               Network
             </p>

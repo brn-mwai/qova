@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { type ReactNode, useState } from "react"
 import { type State, WagmiProvider, createConfig, http } from "wagmi"
 import { base, baseSepolia } from "wagmi/chains"
-import { coinbaseWallet, metaMask } from "wagmi/connectors"
+import { coinbaseWallet, injected, metaMask, walletConnect } from "wagmi/connectors"
 import { type Chain } from "viem"
 
 const CDP_API_KEY = process.env.NEXT_PUBLIC_CDP_API_KEY ?? ""
@@ -26,15 +26,21 @@ const skaleEuropa: Chain = {
   },
 }
 
+const connectors = [
+  injected(),
+  metaMask(),
+  coinbaseWallet({
+    appName: "Qova Protocol",
+    preference: "all",
+  }),
+  ...(WALLETCONNECT_PROJECT_ID
+    ? [walletConnect({ projectId: WALLETCONNECT_PROJECT_ID })]
+    : []),
+]
+
 export const wagmiConfig = createConfig({
   chains: [skaleEuropa, base, baseSepolia],
-  connectors: [
-    coinbaseWallet({
-      appName: "Qova Protocol",
-      preference: "smartWalletOnly",
-    }),
-    metaMask(),
-  ],
+  connectors,
   ssr: true,
   transports: {
     [skaleEuropa.id]: http(),

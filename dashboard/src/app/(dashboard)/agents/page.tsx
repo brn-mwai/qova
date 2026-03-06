@@ -4,6 +4,8 @@ import {
 	ArrowSquareOut,
 	Plus,
 	Robot,
+	TrendUp,
+	TrendDown,
 } from "@phosphor-icons/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import Link from "next/link";
@@ -12,11 +14,13 @@ import { DataTable } from "@/components/data/data-table";
 import { EmptyState } from "@/components/data/empty-state";
 import { ScoreBadge } from "@/components/scores/score-badge";
 import { StatusBadge } from "@/components/data/status-badge";
+import { AddressDisplay } from "@/components/shared/address-display";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/shared/page-header";
 import { RegisterAgentDialog } from "@/components/register-agent-dialog";
 import { useFilteredAgentList } from "@/hooks/use-convex-data";
+import { getScoreColor } from "@/lib/constants";
 
 function timeAgo(iso: string): string {
 	const diff = Date.now() - new Date(iso).getTime();
@@ -45,6 +49,9 @@ interface AgentRow {
 	explorerUrl: string;
 	chainId?: number;
 	budgetCurrency?: string;
+	totalTxCount?: number;
+	successRate?: string;
+	previousScore?: number;
 }
 
 /* ------------------------------------------------------------------ */
@@ -57,24 +64,45 @@ const columns: ColumnDef<AgentRow>[] = [
 		header: "Agent",
 		enableSorting: false,
 		cell: ({ row }) => (
-			<Link href={`/agents/${row.original.address}`} className="hover:underline">
-				{row.original.name ? (
-					<div className="flex flex-col">
-						<span className="text-sm font-medium">{row.original.name}</span>
-						<span className="font-mono text-xs text-muted-foreground">{row.original.addressShort}</span>
-					</div>
-				) : (
-					<span className="font-mono text-sm">{row.original.addressShort}</span>
+			<div className="flex flex-col gap-0.5">
+				{row.original.name && (
+					<Link href={`/agents/${row.original.address}`} className="text-sm font-medium hover:underline">
+						{row.original.name}
+					</Link>
 				)}
-			</Link>
+				<AddressDisplay address={row.original.address} className="text-xs" />
+			</div>
 		),
 	},
 	{
 		accessorKey: "score",
 		header: "Score",
-		cell: ({ row }) => (
-			<span className="font-mono text-sm tabular-nums">{row.original.score}</span>
-		),
+		cell: ({ row }) => {
+			const { score, previousScore } = row.original;
+			const delta = previousScore !== undefined ? score - previousScore : 0;
+			return (
+				<div className="flex flex-col gap-1">
+					<div className="flex items-center gap-2">
+						<span className="font-mono text-sm font-medium tabular-nums">{score}</span>
+						{delta !== 0 && (
+							<span className={`inline-flex items-center gap-0.5 text-[10px] font-mono tabular-nums ${delta > 0 ? "text-score-green" : "text-score-red"}`}>
+								{delta > 0 ? <TrendUp size={10} weight="bold" /> : <TrendDown size={10} weight="bold" />}
+								{delta > 0 ? `+${delta}` : delta}
+							</span>
+						)}
+					</div>
+					<div className="h-1 w-16 overflow-hidden rounded-full bg-muted">
+						<div
+							className="h-full rounded-full transition-all"
+							style={{
+								width: `${score / 10}%`,
+								backgroundColor: getScoreColor(score),
+							}}
+						/>
+					</div>
+				</div>
+			);
+		},
 	},
 	{
 		accessorKey: "grade",
@@ -91,13 +119,20 @@ const columns: ColumnDef<AgentRow>[] = [
 		),
 	},
 	{
-		accessorKey: "updateCount",
-		header: "Updates",
-		cell: ({ row }) => (
-			<Badge variant="outline" className="font-mono tabular-nums">
-				{row.original.updateCount}
-			</Badge>
-		),
+		id: "activity",
+		header: "Activity",
+		cell: ({ row }) => {
+			const txCount = row.original.totalTxCount ?? 0;
+			const rate = row.original.successRate ?? "0%";
+			return (
+				<div className="flex flex-col gap-0.5">
+					<span className="font-mono text-xs tabular-nums">{txCount} txns</span>
+					{txCount > 0 && (
+						<span className="text-[10px] text-muted-foreground">{rate} success</span>
+					)}
+				</div>
+			);
+		},
 	},
 	{
 		accessorKey: "lastUpdated",
@@ -116,6 +151,7 @@ const columns: ColumnDef<AgentRow>[] = [
 				target="_blank"
 				rel="noopener noreferrer"
 				className="inline-flex text-muted-foreground hover:text-foreground transition-colors"
+				onClick={(e) => e.stopPropagation()}
 			>
 				<ArrowSquareOut size={14} />
 			</a>
@@ -155,6 +191,9 @@ export default function AgentsPage(): React.ReactElement {
 			explorerUrl: a.explorerUrl,
 			chainId: a.chainId,
 			budgetCurrency: a.budgetCurrency,
+			totalTxCount: a.totalTxCount,
+			successRate: a.successRate,
+			previousScore: a.previousScore,
 		}));
 	}, [agents]);
 
@@ -165,6 +204,12 @@ export default function AgentsPage(): React.ReactElement {
 					breadcrumb="Operations"
 					title="Agents"
 					subtitle="All AI agents registered on the Qova protocol"
+					info={{
+						description: "View and manage all your registered agents. Each agent is identified by its wallet address and tracked for trust scoring.",
+						sections: [
+							{ title: "Agent Table", description: "A sortable list of your agents showing their address, trust score, grade, transaction count, success rate, and when they were last active." },
+						],
+					}}
 				/>
 				<RegisterAgentDialog
 					open={registerOpen}

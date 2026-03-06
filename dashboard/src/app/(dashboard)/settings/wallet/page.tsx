@@ -54,6 +54,13 @@ export default function WalletSettingsPage(): React.ReactElement {
           breadcrumb="Settings / Wallet"
           title="Wallet"
           subtitle="Connect and manage your blockchain wallet"
+          info={{
+            description: "Connect your Ethereum wallet and manage blockchain network settings for on-chain operations.",
+            sections: [
+              { title: "Wallet Connection", description: "Link your Ethereum wallet via MetaMask or other providers." },
+              { title: "Network Configuration", description: "View the target blockchain network, chain ID, and block explorer URL." },
+            ],
+          }}
         />
 
         {/* Wallet Connection */}

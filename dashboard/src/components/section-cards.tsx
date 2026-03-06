@@ -9,6 +9,7 @@ import {
   TrendDown,
 } from "@phosphor-icons/react"
 import { useFilteredAgentList, useChainDistribution, useCurrencyBreakdown } from "@/hooks/use-convex-data"
+import { useChainFilter } from "@/components/providers/chain-provider"
 import { NumberTicker } from "@/components/ui/number-ticker"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -24,13 +25,16 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { getChain } from "@/lib/chains"
+import { getChain, DEFAULT_CHAIN_ID } from "@/lib/chains"
 import { getGrade } from "@/lib/constants"
+
+const DEFAULT_SYMBOL = getChain(DEFAULT_CHAIN_ID)?.nativeCurrency.symbol ?? "ETH"
 
 export function SectionCards(): React.ReactElement {
   const agents = useFilteredAgentList()
   const chainDist = useChainDistribution()
   const currencyBreakdown = useCurrencyBreakdown()
+  const { selectedChainId } = useChainFilter()
 
   const totalAgents = agents.length
   const avgScore = totalAgents > 0
@@ -40,15 +44,21 @@ export function SectionCards(): React.ReactElement {
   const highGrade = agents.filter((a) => a.score >= 700).length
   const registered = agents.filter((a) => a.isRegistered).length
 
-  // Determine primary currency (most agents)
+  // When a specific chain is selected, use its native currency
+  const selectedChain = selectedChainId !== 0 ? getChain(selectedChainId) : null
+  const chainSymbol = selectedChain?.nativeCurrency.symbol
+
+  // Determine primary currency (most agents) - only used when "All Chains"
   const primaryCurrency = currencyBreakdown.length > 0
     ? currencyBreakdown.sort((a, b) => b.agentCount - a.agentCount)[0]
     : null
   const volumeData = parseVolumesByCurrency(agents)
-  const primaryVolume = primaryCurrency
-    ? volumeData.get(primaryCurrency.currency) ?? 0
-    : parseVolumeNum(agents)
-  const primarySymbol = primaryCurrency?.currency ?? "ETH"
+  const primaryVolume = chainSymbol
+    ? volumeData.get(chainSymbol) ?? parseVolumeNum(agents)
+    : primaryCurrency
+      ? volumeData.get(primaryCurrency.currency) ?? 0
+      : parseVolumeNum(agents)
+  const primarySymbol = chainSymbol ?? primaryCurrency?.currency ?? DEFAULT_SYMBOL
 
   // Top grade across all agents
   const sorted = [...agents].sort((a, b) => b.score - a.score)
@@ -148,9 +158,11 @@ export function SectionCards(): React.ReactElement {
           <CardAction>
             <Badge variant="outline">
               <ArrowsLeftRight />
-              {currencyBreakdown.length > 1
-                ? `${currencyBreakdown.length} currencies`
-                : primarySymbol}
+              {chainSymbol
+                ? chainSymbol
+                : currencyBreakdown.length > 1
+                  ? `${currencyBreakdown.length} currencies`
+                  : primarySymbol}
             </Badge>
           </CardAction>
         </CardHeader>
@@ -183,7 +195,7 @@ function parseVolumesByCurrency(
   const map = new Map<string, number>()
   for (const a of agents) {
     if (!a.totalVolume) continue
-    const cur = (a as { budgetCurrency?: string }).budgetCurrency ?? "ETH"
+    const cur = (a as { budgetCurrency?: string }).budgetCurrency ?? DEFAULT_SYMBOL
     const match = a.totalVolume.match(/([\d.]+)/)
     if (match) {
       map.set(cur, (map.get(cur) ?? 0) + Number.parseFloat(match[1]))

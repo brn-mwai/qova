@@ -32,7 +32,7 @@ export const create = mutation({
         throw new Error("Webhook URL must use HTTPS");
       }
     } catch {
-      throw new Error("Invalid webhook URL -- must be a valid HTTPS URL");
+      throw new Error("Invalid webhook URL - must be a valid HTTPS URL");
     }
 
     // Validate events

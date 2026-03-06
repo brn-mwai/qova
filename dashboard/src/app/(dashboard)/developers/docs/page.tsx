@@ -122,6 +122,13 @@ export default function ApiDocsPage(): React.ReactElement {
           breadcrumb="Developers"
           title="API Reference"
           subtitle="Explore and test the Qova API"
+          info={{
+            description: "Complete API documentation for the Qova protocol. Browse endpoints, view example requests, and copy code snippets.",
+            sections: [
+              { title: "Quick Start", description: "How to authenticate with your API key and make your first request." },
+              { title: "Endpoints", description: "Browse all available API endpoints with request and response examples." },
+            ],
+          }}
         />
       </div>
 

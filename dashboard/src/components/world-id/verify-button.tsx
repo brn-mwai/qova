@@ -173,7 +173,7 @@ export function WorldIdVerifyButton({
 						{worldIdStatus.level === "orb" ? "Orb" : "Device"} verification
 						{DEMO_MODE ? " (Demo)" : ""}
 						{worldIdStatus.verifiedAt
-							? ` -- ${new Date(worldIdStatus.verifiedAt).toLocaleDateString()}`
+							? ` - ${new Date(worldIdStatus.verifiedAt).toLocaleDateString()}`
 							: ""}
 					</span>
 				</div>
@@ -187,7 +187,7 @@ export function WorldIdVerifyButton({
 				<div className="flex items-center gap-2 rounded-md border border-yellow-500/20 bg-yellow-500/5 px-3 py-2">
 					<Warning size={14} className="text-yellow-500 shrink-0" />
 					<span className="text-xs text-muted-foreground">
-						Demo mode -- set NEXT_PUBLIC_WORLD_ID_APP_ID for production verification
+						Demo mode - set NEXT_PUBLIC_WORLD_ID_APP_ID for production verification
 					</span>
 				</div>
 			)}

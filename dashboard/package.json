@@ -22,6 +22,7 @@
     "@phosphor-icons/react": "^2.1.10",
     "@tanstack/react-query": "^5.90.21",
     "@tanstack/react-table": "^8.21.3",
+    "@walletconnect/ethereum-provider": "^2.23.7",
     "@worldcoin/idkit": "^4.0.8",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

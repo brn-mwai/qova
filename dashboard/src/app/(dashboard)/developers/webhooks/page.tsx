@@ -233,6 +233,13 @@ export default function WebhooksPage(): React.ReactElement {
 					breadcrumb="Developers"
 					title="Webhooks"
 					subtitle="Real-time event notifications for your applications"
+					info={{
+						description: "Set up webhook endpoints to receive real-time notifications when events happen to your agents.",
+						sections: [
+							{ title: "Add Endpoint", description: "Configure a URL to receive event notifications, and choose which events to subscribe to." },
+							{ title: "Endpoints List", description: "Manage your webhooks - test deliveries, toggle active/disabled, and view delivery history." },
+						],
+					}}
 					actions={
 						<Dialog open={createOpen} onOpenChange={setCreateOpen}>
 							<DialogTrigger asChild>
