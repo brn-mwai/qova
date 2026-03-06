@@ -5,8 +5,23 @@ import { bodyFont, headingFont, monoFont } from "@/lib/fonts";
 import "./globals.css";
 
 export const metadata: Metadata = {
+	metadataBase: new URL("https://app.qova.cc"),
 	title: "Qova - Financial Trust Infrastructure",
-	description: "The financial credit bureau for AI agents",
+	description:
+		"The financial credit bureau for AI agents. As agentic on-chain transactions grow, Qova computes verifiable reputation scores so any protocol can assess an agent's trustworthiness.",
+	openGraph: {
+		title: "Qova - Financial Trust Infrastructure",
+		description:
+			"The financial credit bureau for AI agents. Verifiable reputation scores from on-chain transaction data.",
+		siteName: "Qova",
+		type: "website",
+	},
+	twitter: {
+		card: "summary_large_image",
+		title: "Qova - Financial Trust Infrastructure",
+		description:
+			"The financial credit bureau for AI agents. Verifiable reputation scores from on-chain transaction data.",
+	},
 };
 
 export default function RootLayout({
