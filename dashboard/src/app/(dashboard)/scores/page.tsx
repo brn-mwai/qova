@@ -14,7 +14,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/shared/page-header";
 import { useAgentByAddress, useFilteredLeaderboard, useScoreHistory } from "@/hooks/use-convex-data";
-
 function isValidAddress(addr: string): boolean {
 	return /^0x[a-fA-F0-9]{40}$/.test(addr);
 }

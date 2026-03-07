@@ -37,7 +37,6 @@ import { Badge } from "@/components/ui/badge"
 import { useConvexAvailable } from "@/components/providers/convex-provider"
 import { WorldIdVerifyButton } from "@/components/world-id/verify-button"
 import { cn } from "@/lib/utils"
-
 const TOTAL_STEPS = 6
 
 const roles = [

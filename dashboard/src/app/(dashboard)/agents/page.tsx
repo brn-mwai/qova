@@ -21,7 +21,6 @@ import { PageHeader } from "@/components/shared/page-header";
 import { RegisterAgentDialog } from "@/components/register-agent-dialog";
 import { useFilteredAgentList } from "@/hooks/use-convex-data";
 import { getScoreColor } from "@/lib/constants";
-
 function timeAgo(iso: string): string {
 	const diff = Date.now() - new Date(iso).getTime();
 	const mins = Math.floor(diff / 60000);

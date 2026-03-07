@@ -1,5 +1,5 @@
 <p align="center">
-  <img src=".github/banner.png" alt="Qova - Financial Trust Infrastructure for AI Agents" width="720" />
+  <img src=".github/banner.svg" alt="Qova" width="400" />
 </p>
 
 <p align="center">

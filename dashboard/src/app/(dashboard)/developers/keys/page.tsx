@@ -52,7 +52,6 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { PageHeader } from "@/components/shared/page-header";
 import { toast } from "sonner";
-
 const AVAILABLE_SCOPES = [
 	{ id: "agents:read", label: "Read agents" },
 	{ id: "agents:write", label: "Write agents" },

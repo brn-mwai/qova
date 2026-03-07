@@ -30,7 +30,6 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { toast } from "sonner"
-
 const CHAIN_CONFIG = {
   name: process.env.NEXT_PUBLIC_CHAIN_NAME ?? "Base",
   chainId: process.env.NEXT_PUBLIC_CHAIN_ID ?? "8453",

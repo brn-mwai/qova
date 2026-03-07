@@ -19,7 +19,6 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { getChain, DEFAULT_CHAIN_ID } from "@/lib/chains"
-
 function SettingRow({
   label,
   description,

@@ -41,7 +41,6 @@ import { useChainFilter } from "@/components/providers/chain-provider";
 import { getChain } from "@/lib/chains";
 import { isUsdPegged } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
-
 function timeAgo(iso: string): string {
 	const diff = Date.now() - new Date(iso).getTime();
 	const mins = Math.floor(diff / 60000);

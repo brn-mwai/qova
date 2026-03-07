@@ -39,7 +39,6 @@ import {
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
-
 type IntegrationCategory =
 	| "blockchain"
 	| "payment"

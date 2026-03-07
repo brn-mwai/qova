@@ -18,7 +18,6 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { PageHeader } from "@/components/shared/page-header"
 import { toast } from "sonner"
-
 interface Endpoint {
   method: "GET" | "POST" | "PUT" | "DELETE"
   path: string

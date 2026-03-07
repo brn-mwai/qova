@@ -50,7 +50,6 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { PageHeader } from "@/components/shared/page-header";
 import { toast } from "sonner";
-
 const WEBHOOK_EVENTS = [
 	"agent.registered",
 	"agent.score_updated",

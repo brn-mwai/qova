@@ -34,7 +34,6 @@ import {
   useFilteredGradeDistribution,
   useFilteredRecentActivity,
 } from "@/hooks/use-convex-data"
-
 const GRADE_ORDER = ["AAA", "AA", "A", "BBB", "BB", "B", "CCC", "CC", "C", "D"]
 
 function StatCard({

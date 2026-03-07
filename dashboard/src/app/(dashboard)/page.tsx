@@ -34,7 +34,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-
 function timeAgo(ts: number): string {
   const diff = Date.now() - ts
   const mins = Math.floor(diff / 60000)

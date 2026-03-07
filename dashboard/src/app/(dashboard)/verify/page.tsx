@@ -17,7 +17,6 @@ import { StatusBadge } from "@/components/data/status-badge";
 import { useConvexAvailable } from "@/components/providers/convex-provider";
 import { PageHeader } from "@/components/shared/page-header";
 import { getGrade } from "@/lib/constants";
-
 function isValidAddress(addr: string): boolean {
 	return /^0x[a-fA-F0-9]{40}$/.test(addr);
 }

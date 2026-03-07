@@ -16,7 +16,6 @@ import { useConvexAvailable } from "@/components/providers/convex-provider";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-
 function isValidAddress(addr: string): boolean {
 	return /^0x[a-fA-F0-9]{40}$/.test(addr);
 }

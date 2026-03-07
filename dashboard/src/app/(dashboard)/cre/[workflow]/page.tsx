@@ -43,7 +43,6 @@ import { toast } from "sonner"
 import { useCallback, useState } from "react"
 import type { ComponentType } from "react"
 import type { IconProps } from "@phosphor-icons/react"
-
 const iconMap: Record<string, ComponentType<IconProps>> = {
   CurrencyCircleDollar,
   Timer,

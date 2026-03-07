@@ -27,7 +27,6 @@ import {
   useChainCurrency,
 } from "@/hooks/use-convex-data"
 import { toast } from "sonner"
-
 function ScoreRing({
   score,
   size = 120,

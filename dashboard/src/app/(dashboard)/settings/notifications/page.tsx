@@ -32,7 +32,6 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { toast } from "sonner";
-
 interface LocalPrefs {
 	emailScoreAlerts: boolean;
 	emailBudgetAlerts: boolean;

@@ -37,7 +37,6 @@ import { PageHeader } from "@/components/shared/page-header";
 import { TX_TYPES } from "@/lib/constants";
 import { getChain, getExplorerTxUrl, DEFAULT_CHAIN_ID } from "@/lib/chains";
 import { getTokensForChain, isUsdPegged } from "@/lib/tokens";
-
 function isValidAddress(addr: string): boolean {
 	return /^0x[a-fA-F0-9]{40}$/.test(addr);
 }
