@@ -23,6 +23,7 @@ import {
 	decodeFunctionResult,
 	encodeAbiParameters,
 	parseAbiParameters,
+	getAddress,
 	zeroAddress,
 	type Address,
 } from "viem";
@@ -48,7 +49,7 @@ const onTransactionRecorded = (
 	const config = runtime.config;
 
 	const rawTopic = bytesToHex(log.topics[1] ?? new Uint8Array());
-	const agentAddress = `0x${rawTopic.slice(-40)}` as Address;
+	const agentAddress = getAddress(`0x${rawTopic.slice(-40)}`);
 	const txHash = bytesToHex(log.txHash);
 	runtime.log(`Transaction detected: agent=${agentAddress}, tx=${txHash}`);
 

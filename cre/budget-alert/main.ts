@@ -23,6 +23,7 @@ import {
 	decodeFunctionResult,
 	encodeAbiParameters,
 	parseAbiParameters,
+	getAddress,
 	zeroAddress,
 	type Address,
 } from "viem";
@@ -55,7 +56,7 @@ const onSpendRecorded = (runtime: Runtime<Config>, log: EVMLog): string => {
 	const config = runtime.config;
 
 	const rawTopic = bytesToHex(log.topics[1] ?? new Uint8Array());
-	const agentAddress = `0x${rawTopic.slice(-40)}` as Address;
+	const agentAddress = getAddress(`0x${rawTopic.slice(-40)}`);
 	runtime.log(`Spend recorded for agent: ${agentAddress}`);
 
 	const network = getNetwork({

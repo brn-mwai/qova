@@ -23,6 +23,7 @@ import {
 	decodeFunctionResult,
 	encodeAbiParameters,
 	parseAbiParameters,
+	getAddress,
 	zeroAddress,
 	type Address,
 } from "viem";
@@ -67,11 +68,12 @@ const onVerifyRequest = (
 		return JSON.stringify({ error: "Invalid JSON body" });
 	}
 
-	const agentAddress = requestBody.agent;
-	if (!agentAddress) {
+	const rawAgent = requestBody.agent;
+	if (!rawAgent) {
 		return JSON.stringify({ error: "Missing agent address" });
 	}
 
+	const agentAddress = getAddress(rawAgent);
 	runtime.log(`Verifying agent: ${agentAddress}`);
 
 	const network = getNetwork({
