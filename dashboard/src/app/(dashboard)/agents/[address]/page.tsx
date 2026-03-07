@@ -39,6 +39,7 @@ import { useAgentByAddress, useScoreHistory, useChainCurrency } from "@/hooks/us
 import { useConvexAvailable } from "@/components/providers/convex-provider";
 import { useChainFilter } from "@/components/providers/chain-provider";
 import { getChain } from "@/lib/chains";
+import { isUsdPegged } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
 function timeAgo(iso: string): string {
@@ -50,6 +51,15 @@ function timeAgo(iso: string): string {
 	if (hrs < 24) return `${hrs}h ago`;
 	const days = Math.floor(hrs / 24);
 	return `${days}d ago`;
+}
+
+/** Format volume string with $ prefix for USD-pegged tokens. */
+function formatVolume(vol: string): string {
+	const match = vol.match(/^([\d,.]+)\s+(.+)$/);
+	if (match && isUsdPegged(match[2])) {
+		return `$${match[1]}`;
+	}
+	return vol;
 }
 
 function CopyButton({ text }: { text: string }): React.ReactElement {
@@ -164,9 +174,9 @@ export default function AgentDetailPage({
 	const globalCurrency = useChainCurrency();
 	const { selectedChainId } = useChainFilter();
 
-	// Use agent's own chain for currency when available, otherwise fall back to global filter
+	// Use agent's budget currency (transaction token), not the gas token
 	const agentChain = agent?.chainId ? getChain(agent.chainId) : null;
-	const currency = agentChain?.nativeCurrency.symbol ?? globalCurrency;
+	const currency = agent?.budgetCurrency ?? globalCurrency;
 
 	if (!agent) {
 		return (
@@ -316,7 +326,7 @@ export default function AgentDetailPage({
 				/>
 				<DetailStat
 					label="Total Volume"
-					value={agent.totalVolume ?? zeroVal}
+					value={formatVolume(agent.totalVolume ?? zeroVal)}
 					icon={<Coins size={18} />}
 				/>
 				<DetailStat

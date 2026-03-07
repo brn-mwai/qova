@@ -35,7 +35,8 @@ import { useConvexAvailable } from "@/components/providers/convex-provider";
 import { useChainFilter } from "@/components/providers/chain-provider";
 import { PageHeader } from "@/components/shared/page-header";
 import { TX_TYPES } from "@/lib/constants";
-import { getChain, getExplorerTxUrl } from "@/lib/chains";
+import { getChain, getExplorerTxUrl, DEFAULT_CHAIN_ID } from "@/lib/chains";
+import { getTokensForChain, isUsdPegged } from "@/lib/tokens";
 
 function isValidAddress(addr: string): boolean {
 	return /^0x[a-fA-F0-9]{40}$/.test(addr);
@@ -96,9 +97,29 @@ const txColumns: ColumnDef<TxRow>[] = [
 		accessorKey: "totalVolume",
 		header: "Volume",
 		enableSorting: false,
-		cell: ({ row }) => (
-			<span className="font-mono text-sm font-medium tabular-nums">{row.original.totalVolume}</span>
-		),
+		cell: ({ row }) => {
+			const vol = row.original.totalVolume;
+			// Extract numeric and token parts (e.g., "42,180 USDC.e")
+			const match = vol.match(/^([\d,.]+)\s+(.+)$/);
+			if (match) {
+				const num = match[1];
+				const token = match[2];
+				if (isUsdPegged(token)) {
+					return (
+						<span className="font-mono text-sm font-medium tabular-nums">
+							<span className="text-muted-foreground">$</span>{num}
+							<span className="ml-1 text-xs text-muted-foreground font-normal">{token}</span>
+						</span>
+					);
+				}
+				return (
+					<span className="font-mono text-sm font-medium tabular-nums">
+						{num} <span className="text-xs text-muted-foreground font-normal">{token}</span>
+					</span>
+				);
+			}
+			return <span className="font-mono text-sm font-medium tabular-nums">{vol}</span>;
+		},
 	},
 	{
 		id: "successRate",
@@ -143,10 +164,15 @@ export default function TransactionsPage(): React.ReactElement {
 	const currency = useChainCurrency();
 	const { selectedChainId } = useChainFilter();
 
+	// Available tokens for the selected chain
+	const chainId = selectedChainId !== 0 ? selectedChainId : DEFAULT_CHAIN_ID;
+	const chainTokens = useMemo(() => getTokensForChain(chainId), [chainId]);
+
 	// Form state
 	const [agentAddr, setAgentAddr] = useState("");
 	const [txHash, setTxHash] = useState("");
 	const [amount, setAmount] = useState("");
+	const [txCurrency, setTxCurrency] = useState(currency);
 	const [txType, setTxType] = useState(0);
 	const [submitting, setSubmitting] = useState(false);
 	const [formError, setFormError] = useState<string | null>(null);
@@ -236,8 +262,8 @@ export default function TransactionsPage(): React.ReactElement {
 			await logActivity({
 				agent: trimmedAgent,
 				type: typeName,
-				description: `${typeName} of ${trimmedAmount} ${currency}`,
-				amount: `${trimmedAmount} ${currency}`,
+				description: `${typeName} of ${trimmedAmount} ${txCurrency}`,
+				amount: `${trimmedAmount} ${txCurrency}`,
 				txHash: trimmedHash,
 			});
 
@@ -335,18 +361,35 @@ export default function TransactionsPage(): React.ReactElement {
 					</div>
 					<div className="space-y-2">
 						<Label className="text-xs uppercase tracking-wider text-muted-foreground">
-							Amount ({currency})
+							Amount
 						</Label>
-						<Input
-							value={amount}
-							onChange={(e) => {
-								setAmount(e.target.value);
-								setFormError(null);
-							}}
-							placeholder="0.0"
-							className="font-mono text-sm"
-							aria-invalid={formError?.toLowerCase().includes("amount") ? true : undefined}
-						/>
+						<div className="flex gap-2">
+							<Input
+								value={amount}
+								onChange={(e) => {
+									setAmount(e.target.value);
+									setFormError(null);
+								}}
+								placeholder="0.0"
+								className="font-mono text-sm flex-1"
+								aria-invalid={formError?.toLowerCase().includes("amount") ? true : undefined}
+							/>
+							<Select
+								value={txCurrency}
+								onValueChange={setTxCurrency}
+							>
+								<SelectTrigger className="w-[120px]">
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									{chainTokens.map((t) => (
+										<SelectItem key={t.symbol} value={t.symbol}>
+											{t.symbol}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
 					</div>
 					<div className="space-y-2">
 						<Label className="text-xs uppercase tracking-wider text-muted-foreground">
@@ -470,7 +513,20 @@ export default function TransactionsPage(): React.ReactElement {
 												</span>
 											</TableCell>
 											<TableCell className="px-4 py-3 text-right">
-												{tx.amount && <span className="font-mono text-xs font-medium tabular-nums">{tx.amount}</span>}
+												{tx.amount && (() => {
+													const m = tx.amount.match(/^([\d,.]+)\s+(.+)$/);
+													if (m) {
+														const token = m[2];
+														return (
+															<span className="font-mono text-xs font-medium tabular-nums">
+																{isUsdPegged(token) && <span className="text-muted-foreground">$</span>}
+																{m[1]}
+																<span className="ml-1 text-muted-foreground font-normal">{token}</span>
+															</span>
+														);
+													}
+													return <span className="font-mono text-xs font-medium tabular-nums">{tx.amount}</span>;
+												})()}
 											</TableCell>
 											<TableCell className="px-4 py-3 text-right">
 												<div className="flex items-center justify-end gap-1.5">

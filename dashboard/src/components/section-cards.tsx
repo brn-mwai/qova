@@ -27,8 +27,7 @@ import {
 } from "@/components/ui/tooltip"
 import { getChain, DEFAULT_CHAIN_ID } from "@/lib/chains"
 import { getGrade } from "@/lib/constants"
-
-const DEFAULT_SYMBOL = "USDC.e"
+import { isUsdPegged } from "@/lib/tokens"
 
 export function SectionCards(): React.ReactElement {
   const agents = useFilteredAgentList()
@@ -44,21 +43,28 @@ export function SectionCards(): React.ReactElement {
   const highGrade = agents.filter((a) => a.score >= 700).length
   const registered = agents.filter((a) => a.isRegistered).length
 
-  // When a specific chain is selected, use its native currency
-  const selectedChain = selectedChainId !== 0 ? getChain(selectedChainId) : null
-  const chainSymbol = selectedChain?.nativeCurrency.symbol
+  // Parse volumes grouped by token
+  const volumeByToken = parseVolumesByCurrency(agents)
+  // Split into USD-pegged total and non-USD tokens
+  let usdVolume = 0
+  const nonUsdTokens: { symbol: string; amount: number }[] = []
+  for (const [symbol, amount] of volumeByToken.entries()) {
+    if (isUsdPegged(symbol)) {
+      usdVolume += amount
+    } else {
+      nonUsdTokens.push({ symbol, amount })
+    }
+  }
+  const hasUsdVolume = usdVolume > 0
+  const totalVolume = hasUsdVolume ? usdVolume : parseVolumeNum(agents)
 
-  // Determine primary currency (most agents) - only used when "All Chains"
-  const primaryCurrency = currencyBreakdown.length > 0
-    ? currencyBreakdown.sort((a, b) => b.agentCount - a.agentCount)[0]
-    : null
-  const volumeData = parseVolumesByCurrency(agents)
-  const primaryVolume = chainSymbol
-    ? volumeData.get(chainSymbol) ?? parseVolumeNum(agents)
-    : primaryCurrency
-      ? volumeData.get(primaryCurrency.currency) ?? 0
-      : parseVolumeNum(agents)
-  const primarySymbol = chainSymbol ?? primaryCurrency?.currency ?? DEFAULT_SYMBOL
+  // Volume footer description
+  const tokenList = [...volumeByToken.keys()]
+  const volumeFooter = tokenList.length > 1
+    ? `Across ${tokenList.join(", ")}`
+    : tokenList.length === 1
+      ? `Denominated in ${tokenList[0]}`
+      : "No volume data"
 
   // Top grade across all agents
   const sorted = [...agents].sort((a, b) => b.score - a.score)
@@ -152,17 +158,17 @@ export function SectionCards(): React.ReactElement {
         <CardHeader>
           <CardDescription>Total Volume</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums font-mono @[250px]/card:text-3xl">
-            <NumberTicker key={primaryVolume} value={primaryVolume} decimalPlaces={2} />
-            <span className="text-sm font-normal text-muted-foreground ml-1">{primarySymbol}</span>
+            {hasUsdVolume && <span className="text-muted-foreground">$</span>}
+            <NumberTicker key={totalVolume} value={totalVolume} decimalPlaces={hasUsdVolume ? 0 : 2} />
+            {!hasUsdVolume && <span className="text-sm font-normal text-muted-foreground ml-1">{tokenList[0] ?? "USD"}</span>}
+            {hasUsdVolume && <span className="text-sm font-normal text-muted-foreground ml-1">USD</span>}
           </CardTitle>
           <CardAction>
             <Badge variant="outline">
               <ArrowsLeftRight />
-              {chainSymbol
-                ? chainSymbol
-                : currencyBreakdown.length > 1
-                  ? `${currencyBreakdown.length} currencies`
-                  : primarySymbol}
+              {tokenList.length > 1
+                ? `${tokenList.length} tokens`
+                : tokenList[0] ?? "USDC.e"}
             </Badge>
           </CardAction>
         </CardHeader>
@@ -171,7 +177,7 @@ export function SectionCards(): React.ReactElement {
             Cumulative transaction volume <ArrowsLeftRight className="size-4" />
           </div>
           <div className="text-muted-foreground">
-            All tracked agents
+            {volumeFooter}
           </div>
         </CardFooter>
       </Card>
@@ -183,8 +189,8 @@ function parseVolumeNum(agents: { totalVolume?: string }[]): number {
   let sum = 0
   for (const a of agents) {
     if (!a.totalVolume) continue
-    const match = a.totalVolume.match(/([\d.]+)/)
-    if (match) sum += Number.parseFloat(match[1])
+    const match = a.totalVolume.match(/([\d,.]+)/)
+    if (match) sum += Number.parseFloat(match[1].replace(/,/g, ""))
   }
   return sum
 }
@@ -195,10 +201,13 @@ function parseVolumesByCurrency(
   const map = new Map<string, number>()
   for (const a of agents) {
     if (!a.totalVolume) continue
-    const cur = (a as { budgetCurrency?: string }).budgetCurrency ?? DEFAULT_SYMBOL
-    const match = a.totalVolume.match(/([\d.]+)/)
-    if (match) {
-      map.set(cur, (map.get(cur) ?? 0) + Number.parseFloat(match[1]))
+    // Extract token symbol from the volume string (e.g., "42,180 USDC.e" -> "USDC.e")
+    const symbolMatch = a.totalVolume.match(/[\d.,]+\s+(.+)/)
+    const cur = symbolMatch?.[1] ?? a.budgetCurrency ?? "USDC.e"
+    const numMatch = a.totalVolume.match(/([\d,.]+)/)
+    if (numMatch) {
+      const value = Number.parseFloat(numMatch[1].replace(/,/g, ""))
+      map.set(cur, (map.get(cur) ?? 0) + value)
     }
   }
   return map

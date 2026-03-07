@@ -85,6 +85,14 @@ export function getToken(chainId: number, symbol: string): TokenConfig | undefin
 	);
 }
 
+/** Tokens pegged to USD (1:1). Used for aggregate volume display. */
+export const USD_PEGGED_SYMBOLS = new Set(["USDC.e", "USDC", "USDT", "DAI"]);
+
+/** Check if a token symbol is USD-pegged (stablecoin). */
+export function isUsdPegged(symbol: string): boolean {
+	return USD_PEGGED_SYMBOLS.has(symbol);
+}
+
 /** Format a raw token amount (bigint-string or number) for display. */
 export function formatTokenAmount(
 	amount: bigint | string | number,
