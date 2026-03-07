@@ -60,6 +60,8 @@ export function WorldIdVerifyButton({
 
 			if (res.alreadyVerified && !res.success) {
 				setError("This World ID has already been used for another account.");
+			} else if (!res.success) {
+				setError("Verification failed - please sign in first.");
 			} else {
 				setDemoComplete(true);
 				onVerified?.();
@@ -135,6 +137,8 @@ export function WorldIdVerifyButton({
 
 				if (res.alreadyVerified && !res.success) {
 					setError("This World ID has already been used for another account.");
+				} else if (!res.success) {
+					setError("Verification failed - please sign in first.");
 				} else {
 					onVerified?.();
 				}
