@@ -321,16 +321,22 @@ export function useFilteredGradeDistribution(): Record<string, number> {
 }
 
 /**
- * Returns the native currency symbol for the currently selected chain.
- * "All Chains" defaults to the default chain's currency (CREDIT).
+ * Returns the primary transaction currency for the currently selected chain.
+ * SKALE Base uses USDC.e (agents transact in stablecoins, not gas tokens).
+ * Base L1/L2 uses ETH.
  */
 export function useChainCurrency(): string {
 	const { selectedChainId } = useChainFilter();
-	const chain = selectedChainId !== 0
-		? getChain(selectedChainId)
-		: getChain(DEFAULT_CHAIN_ID);
-	return chain?.nativeCurrency.symbol ?? "ETH";
+	const chainId = selectedChainId !== 0 ? selectedChainId : DEFAULT_CHAIN_ID;
+	return CHAIN_TX_CURRENCY[chainId] ?? "ETH";
 }
+
+/** Primary transaction currency per chain (not the gas token). */
+const CHAIN_TX_CURRENCY: Record<number, string> = {
+	1187947933: "USDC.e",  // SKALE Base - agents transact in bridged USDC
+	8453: "ETH",           // Base mainnet
+	84532: "ETH",          // Base Sepolia
+};
 
 /** Leaderboard filtered by chain. */
 export function useFilteredLeaderboard(limit?: number): ReturnType<typeof useLeaderboard> {

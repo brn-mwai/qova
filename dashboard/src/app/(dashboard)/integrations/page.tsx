@@ -124,7 +124,7 @@ const INTEGRATIONS: IntegrationDef[] = [
 		logo: "/integrations/skale.png",
 		docsUrl: "https://docs.skale.space",
 		core: true,
-		activeLabel: "CREDIT-powered, zero gas",
+		activeLabel: "Zero gas, USDC.e native",
 	},
 	// ── Payment ──
 	{

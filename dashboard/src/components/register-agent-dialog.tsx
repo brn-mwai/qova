@@ -32,7 +32,7 @@ import { toast } from "sonner"
 import { SUPPORTED_CHAINS, DEFAULT_CHAIN_ID, getChain } from "@/lib/chains"
 import { getTokensForChain } from "@/lib/tokens"
 
-const DEFAULT_CURRENCY = getChain(DEFAULT_CHAIN_ID)?.nativeCurrency.symbol ?? "ETH"
+const DEFAULT_CURRENCY = "USDC.e"
 
 const AGENT_TYPES = [
   { value: "trading", label: "Trading Bot" },

@@ -28,7 +28,7 @@ import {
 import { getChain, DEFAULT_CHAIN_ID } from "@/lib/chains"
 import { getGrade } from "@/lib/constants"
 
-const DEFAULT_SYMBOL = getChain(DEFAULT_CHAIN_ID)?.nativeCurrency.symbol ?? "ETH"
+const DEFAULT_SYMBOL = "USDC.e"
 
 export function SectionCards(): React.ReactElement {
   const agents = useFilteredAgentList()

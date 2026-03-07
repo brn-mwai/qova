@@ -40,14 +40,6 @@ export const SUPPORTED_TOKENS: TokenConfig[] = [
 	},
 	// ─── SKALE Base (1187947933) ────────────────────
 	{
-		symbol: "CREDIT",
-		name: "CREDIT",
-		decimals: 18,
-		chainId: 1187947933,
-		contractAddress: null,
-		icon: "/tokens/skale.svg",
-	},
-	{
 		symbol: "USDC.e",
 		name: "USD Coin",
 		decimals: 6,
@@ -70,6 +62,14 @@ export const SUPPORTED_TOKENS: TokenConfig[] = [
 		chainId: 1187947933,
 		contractAddress: "0x7bD39ABBd0Dd13103542cAe3276C7fA332bCA486",
 		icon: "/tokens/eth.svg",
+	},
+	{
+		symbol: "CREDIT",
+		name: "CREDIT",
+		decimals: 18,
+		chainId: 1187947933,
+		contractAddress: null,
+		icon: "/tokens/skale.svg",
 	},
 ];
 
