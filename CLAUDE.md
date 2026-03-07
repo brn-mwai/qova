@@ -100,6 +100,9 @@ This project has 11 specialized expert agents in `.claude/agents/`. Before worki
 | SKALE, x402, zero gas | `.claude/agents/09-skale-integration.md` |
 | Security review | `.claude/agents/10-cybersecurity.md` |
 | `dashboard/` (UI/UX) | `.claude/agents/11-dashboard-ui.md` |
+| Integrations (adding/fixing) | `.claude/agents/12-integration-engineer.md` |
+| Onboarding tour/setup | `.claude/agents/13-onboarding-tour.md` |
+| Remaining integrations | `.claude/agents/14-remaining-integrations.md` |
 
 ### Execution Priority (Hackathon)
 1. CRE Workflows → 2. Smart Contracts → 3. World ID × CRE → 4. AI Integration → 5. Risk & Compliance → 6. SKALE → 7. Dashboard → 8. SDK/API → 9. Security → 10. Docs/README

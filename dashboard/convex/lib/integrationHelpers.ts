@@ -27,6 +27,34 @@ export interface OpenAIConfig {
 	apiKey: string;
 }
 
+export interface OpenClawConfig {
+	gatewayUrl: string;
+}
+
+export interface MoltbookConfig {
+	apiKey: string;
+}
+
+export interface DiscordConfig {
+	webhookUrl: string;
+}
+
+export interface LangSmithConfig {
+	apiKey: string;
+}
+
+export interface VercelConfig {
+	apiToken: string;
+}
+
+export interface DuneConfig {
+	apiKey: string;
+}
+
+export interface WorldIdConfig {
+	appId: string;
+}
+
 // ─── Safe JSON parsers ────────────────────────────────────────────────────────
 
 function safeParse(raw: string): Record<string, unknown> | null {
@@ -82,6 +110,64 @@ export function parseOpenAIConfig(raw: string): OpenAIConfig | null {
 	const { apiKey } = obj;
 	if (typeof apiKey !== "string" || apiKey.length === 0) return null;
 	return { apiKey };
+}
+
+export function parseOpenClawConfig(raw: string): OpenClawConfig | null {
+	const obj = safeParse(raw);
+	if (!obj) return null;
+	const { gatewayUrl } = obj;
+	if (typeof gatewayUrl !== "string" || !gatewayUrl.startsWith("http"))
+		return null;
+	return { gatewayUrl };
+}
+
+export function parseMoltbookConfig(raw: string): MoltbookConfig | null {
+	const obj = safeParse(raw);
+	if (!obj) return null;
+	const { apiKey } = obj;
+	if (typeof apiKey !== "string" || apiKey.length === 0) return null;
+	return { apiKey };
+}
+
+export function parseDiscordConfig(raw: string): DiscordConfig | null {
+	const obj = safeParse(raw);
+	if (!obj) return null;
+	const { webhookUrl } = obj;
+	if (typeof webhookUrl !== "string" || !webhookUrl.startsWith("https://discord.com/api/webhooks/"))
+		return null;
+	return { webhookUrl };
+}
+
+export function parseLangSmithConfig(raw: string): LangSmithConfig | null {
+	const obj = safeParse(raw);
+	if (!obj) return null;
+	const { apiKey } = obj;
+	if (typeof apiKey !== "string" || apiKey.length === 0) return null;
+	return { apiKey };
+}
+
+export function parseVercelConfig(raw: string): VercelConfig | null {
+	const obj = safeParse(raw);
+	if (!obj) return null;
+	const { apiToken } = obj;
+	if (typeof apiToken !== "string" || apiToken.length === 0) return null;
+	return { apiToken };
+}
+
+export function parseDuneConfig(raw: string): DuneConfig | null {
+	const obj = safeParse(raw);
+	if (!obj) return null;
+	const { apiKey } = obj;
+	if (typeof apiKey !== "string" || apiKey.length === 0) return null;
+	return { apiKey };
+}
+
+export function parseWorldIdConfig(raw: string): WorldIdConfig | null {
+	const obj = safeParse(raw);
+	if (!obj) return null;
+	const { appId } = obj;
+	if (typeof appId !== "string" || !appId.startsWith("app_")) return null;
+	return { appId };
 }
 
 // ─── Message formatters ───────────────────────────────────────────────────────

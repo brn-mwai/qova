@@ -254,21 +254,75 @@ const INTEGRATIONS: IntegrationDef[] = [
 		id: "langchain",
 		name: "LangChain",
 		description:
-			"Use Qova as a LangChain tool for trust-gated operations. Agents check counterparty scores before executing transactions.",
+			"Use Qova as a LangChain tool for trust-gated operations. Connect LangSmith for observability of Qova trust checks in your agent pipelines.",
 		category: "ai-framework",
 		logo: "/integrations/langchain.png",
 		docsUrl: "https://docs.langchain.com",
+		configFields: [
+			{
+				label: "LangSmith API Key",
+				placeholder: "lsv2_pt_xxxxx",
+				key: "apiKey",
+				type: "password",
+				helpText: "Get your API key from smith.langchain.com. Used to trace Qova tool calls.",
+			},
+		],
 	},
 	{
 		id: "vercel-ai-sdk",
 		name: "Vercel AI SDK",
 		description:
-			"Add Qova credit checks as tool calls in Vercel AI SDK agent workflows. Verify trust inline during conversations.",
+			"Add Qova credit checks as tool calls in Vercel AI SDK agent workflows. Connect your Vercel account for deployment-level integration.",
 		category: "ai-framework",
 		logo: "/integrations/vercel.png",
 		docsUrl: "https://sdk.vercel.ai/docs",
+		configFields: [
+			{
+				label: "Vercel API Token",
+				placeholder: "xxxxx",
+				key: "apiToken",
+				type: "password",
+				helpText: "Create a token at vercel.com/account/tokens.",
+			},
+		],
+	},
+	{
+		id: "openclaw",
+		name: "OpenClaw",
+		description:
+			"Open-source AI agent framework with multi-channel Gateway. Connect your OpenClaw agents to Qova for trust-gated autonomous transactions.",
+		category: "ai-framework",
+		logo: "/integrations/openclaw.png",
+		docsUrl: "https://docs.openclaw.ai",
+		configFields: [
+			{
+				label: "Gateway URL",
+				placeholder: "http://127.0.0.1:18789",
+				key: "gatewayUrl",
+				type: "url",
+				helpText: "Your OpenClaw Gateway address. Default is localhost:18789.",
+			},
+		],
 	},
 	// ── Analytics ──
+	{
+		id: "moltbook",
+		name: "Moltbook",
+		description:
+			"The social network for AI agents. Sync agent identity and reputation data between Moltbook profiles and Qova credit scores.",
+		category: "analytics",
+		logo: "/integrations/moltbook.png",
+		docsUrl: "https://www.moltbook.com/developers",
+		configFields: [
+			{
+				label: "API Key",
+				placeholder: "moltbook_sk_xxxxx",
+				key: "apiKey",
+				type: "password",
+				helpText: "Moltbook API key from your agent's developer settings.",
+			},
+		],
+	},
 	{
 		id: "dune-analytics",
 		name: "Dune Analytics",
@@ -277,6 +331,15 @@ const INTEGRATIONS: IntegrationDef[] = [
 		category: "analytics",
 		logo: "/integrations/dune.png",
 		docsUrl: "https://docs.dune.com",
+		configFields: [
+			{
+				label: "API Key",
+				placeholder: "xxxxx",
+				key: "apiKey",
+				type: "password",
+				helpText: "Get your API key from dune.com/settings/api.",
+			},
+		],
 	},
 	// ── Identity ──
 	{
@@ -287,6 +350,14 @@ const INTEGRATIONS: IntegrationDef[] = [
 		category: "identity",
 		logo: "/integrations/worldid.png",
 		docsUrl: "https://docs.world.org",
+		configFields: [
+			{
+				label: "App ID",
+				placeholder: "app_xxxxx",
+				key: "appId",
+				helpText: "Your World ID app_id from developer.worldcoin.org.",
+			},
+		],
 	},
 ];
 
@@ -342,6 +413,13 @@ export default function IntegrationsPage(): React.ReactElement {
 	const testX402 = useAction(api.actions.integrationTest.testX402);
 	const testCoinbase = useAction(api.actions.integrationTest.testCoinbase);
 	const testOpenAI = useAction(api.actions.integrationTest.testOpenAI);
+	const testOpenClaw = useAction(api.actions.integrationTest.testOpenClaw);
+	const testMoltbook = useAction(api.actions.integrationTest.testMoltbook);
+	const testDiscord = useAction(api.actions.integrationTest.testDiscord);
+	const testLangSmith = useAction(api.actions.integrationTest.testLangSmith);
+	const testVercel = useAction(api.actions.integrationTest.testVercel);
+	const testDune = useAction(api.actions.integrationTest.testDune);
+	const testWorldId = useAction(api.actions.integrationTest.testWorldId);
 
 	const TEST_ACTIONS: Record<string, (args: { integrationId: string }) => Promise<{ success: boolean; message: string; duration: number }>> = {
 		slack: testSlack,
@@ -349,6 +427,13 @@ export default function IntegrationsPage(): React.ReactElement {
 		x402: testX402,
 		"coinbase-wallet": testCoinbase,
 		"openai-agents": testOpenAI,
+		openclaw: testOpenClaw,
+		moltbook: testMoltbook,
+		discord: testDiscord,
+		langchain: testLangSmith,
+		"vercel-ai-sdk": testVercel,
+		"dune-analytics": testDune,
+		"world-id": testWorldId,
 	};
 
 	async function handleTest(): Promise<void> {
