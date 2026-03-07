@@ -121,8 +121,8 @@ export const upsertAgent = mutation({
 		}
 
 		const chainId = args.chainId ?? 8453;
-		const explorerBase = chainId === 2046399126
-			? "https://elated-tan-skat.explorer.mainnet.skalenodes.com"
+		const explorerBase = chainId === 1187947933
+			? "https://skale-base-explorer.skalenodes.com"
 			: "https://basescan.org";
 
 		const id = await ctx.db.insert("agents", {

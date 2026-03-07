@@ -5,7 +5,7 @@
 
 /**
  * SDK client singleton -- initializes @qova/core client for API use.
- * Supports multiple chains (Base Sepolia, Base Mainnet, SKALE Europa).
+ * Supports multiple chains (Base Sepolia, Base Mainnet, SKALE Base).
  * @author Qova Engineering <eng@qova.cc>
  */
 
@@ -15,18 +15,18 @@ import { privateKeyToAccount } from "viem/accounts";
 import { baseSepolia, base } from "viem/chains";
 import type { Chain } from "@qova/core";
 
-/** SKALE Europa chain config for viem. */
-const skaleEuropa: ViemChain = {
-	id: 2046399126,
-	name: "SKALE Europa",
-	nativeCurrency: { name: "sFUEL", symbol: "sFUEL", decimals: 18 },
+/** SKALE Base L3 chain config for viem. */
+const skaleBase: ViemChain = {
+	id: 1187947933,
+	name: "SKALE Base",
+	nativeCurrency: { name: "CREDIT", symbol: "CREDIT", decimals: 18 },
 	rpcUrls: {
-		default: { http: ["https://mainnet.skalenodes.com/v1/elated-tan-skat"] },
+		default: { http: ["https://skale-base.skalenodes.com/v1/base"] },
 	},
 	blockExplorers: {
 		default: {
-			name: "SKALE Explorer",
-			url: "https://elated-tan-skat.explorer.mainnet.skalenodes.com",
+			name: "SKALE Base Explorer",
+			url: "https://skale-base-explorer.skalenodes.com",
 		},
 	},
 };
@@ -34,9 +34,9 @@ const skaleEuropa: ViemChain = {
 const CHAIN_CONFIGS: Record<string, { viemChain: ViemChain; defaultRpc: string }> = {
 	"base-sepolia": { viemChain: baseSepolia, defaultRpc: "https://sepolia.base.org" },
 	base: { viemChain: base, defaultRpc: "https://mainnet.base.org" },
-	"skale-europa": {
-		viemChain: skaleEuropa,
-		defaultRpc: "https://mainnet.skalenodes.com/v1/elated-tan-skat",
+	"skale-base": {
+		viemChain: skaleBase,
+		defaultRpc: "https://skale-base.skalenodes.com/v1/base",
 	},
 };
 

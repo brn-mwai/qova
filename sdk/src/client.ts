@@ -8,18 +8,18 @@ import { type Address, createPublicClient, http, type PublicClient, type WalletC
 import { base, baseSepolia, type Chain as ViemChain } from "viem/chains";
 import { CHAIN_IDS, CONTRACTS, DEFAULT_RPC_URLS } from "./constants.js";
 
-/** SKALE Europa Hub chain definition for viem. */
-const skaleEuropa: ViemChain = {
-	id: 2046399126,
-	name: "SKALE Europa",
-	nativeCurrency: { name: "sFUEL", symbol: "sFUEL", decimals: 18 },
+/** SKALE Base L3 chain definition for viem. */
+const skaleBase: ViemChain = {
+	id: 1187947933,
+	name: "SKALE Base",
+	nativeCurrency: { name: "CREDIT", symbol: "CREDIT", decimals: 18 },
 	rpcUrls: {
-		default: { http: ["https://mainnet.skalenodes.com/v1/elated-tan-skat"] },
+		default: { http: ["https://skale-base.skalenodes.com/v1/base"] },
 	},
 	blockExplorers: {
 		default: {
-			name: "SKALE Explorer",
-			url: "https://elated-tan-skat.explorer.mainnet.skalenodes.com",
+			name: "SKALE Base Explorer",
+			url: "https://skale-base-explorer.skalenodes.com",
 		},
 	},
 };
@@ -46,13 +46,13 @@ import type { TransactionStats, TransactionType } from "./types/transaction.js";
 const CHAIN_MAP: Record<string, ViemChain> = {
 	"base-sepolia": baseSepolia,
 	base: base,
-	"skale-europa": skaleEuropa,
+	"skale-base": skaleBase,
 };
 
 const CHAIN_ID_FROM_NAME: Record<string, number> = {
 	"base-sepolia": CHAIN_IDS.BASE_SEPOLIA,
 	base: CHAIN_IDS.BASE_MAINNET,
-	"skale-europa": CHAIN_IDS.SKALE_EUROPA,
+	"skale-base": CHAIN_IDS.SKALE_BASE,
 };
 
 /** The QovaClient returned by createQovaClient. */

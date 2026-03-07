@@ -16,12 +16,12 @@ export interface ChainConfig {
 
 export const SUPPORTED_CHAINS: ChainConfig[] = [
 	{
-		id: 2046399126,
-		name: "SKALE Europa",
+		id: 1187947933,
+		name: "SKALE Base",
 		icon: "/chains/skale.svg",
-		explorerUrl: "https://elated-tan-skat.explorer.mainnet.skalenodes.com",
-		explorerLabel: "SKALE Explorer",
-		nativeCurrency: { name: "sFUEL", symbol: "sFUEL", decimals: 18 },
+		explorerUrl: "https://skale-base-explorer.skalenodes.com",
+		explorerLabel: "SKALE Base Explorer",
+		nativeCurrency: { name: "CREDIT", symbol: "CREDIT", decimals: 18 },
 		isTestnet: false,
 		brandColor: "#54B86E",
 	},
@@ -47,7 +47,7 @@ export const SUPPORTED_CHAINS: ChainConfig[] = [
 	},
 ] as const;
 
-export const DEFAULT_CHAIN_ID = 2046399126;
+export const DEFAULT_CHAIN_ID = 1187947933;
 
 /** Lookup a chain config by ID. Returns undefined if not found. */
 export function getChain(chainId: number): ChainConfig | undefined {
@@ -57,13 +57,13 @@ export function getChain(chainId: number): ChainConfig | undefined {
 /** Build a block-explorer address URL for a given chain. */
 export function getExplorerUrl(chainId: number, address: string): string {
 	const chain = getChain(chainId);
-	if (!chain) return `https://elated-tan-skat.explorer.mainnet.skalenodes.com/address/${address}`;
+	if (!chain) return `https://skale-base-explorer.skalenodes.com/address/${address}`;
 	return `${chain.explorerUrl}/address/${address}`;
 }
 
 /** Build a block-explorer transaction URL for a given chain. */
 export function getExplorerTxUrl(chainId: number, txHash: string): string {
 	const chain = getChain(chainId);
-	if (!chain) return `https://elated-tan-skat.explorer.mainnet.skalenodes.com/tx/${txHash}`;
+	if (!chain) return `https://skale-base-explorer.skalenodes.com/tx/${txHash}`;
 	return `${chain.explorerUrl}/tx/${txHash}`;
 }

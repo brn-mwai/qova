@@ -7,7 +7,7 @@ import type { Address, WalletClient } from "viem";
 import { z } from "zod";
 
 /** Supported chain identifiers. */
-export const ChainSchema = z.enum(["base-sepolia", "base", "skale-europa"]);
+export const ChainSchema = z.enum(["base-sepolia", "base", "skale-base"]);
 export type Chain = z.infer<typeof ChainSchema>;
 
 /** Zod schema for the addresses of all deployed Qova contracts. */

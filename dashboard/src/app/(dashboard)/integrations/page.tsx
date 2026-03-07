@@ -116,15 +116,15 @@ const INTEGRATIONS: IntegrationDef[] = [
 		activeLabel: "5 scoring workflows active",
 	},
 	{
-		id: "skale-europa",
-		name: "SKALE Europa",
+		id: "skale-base",
+		name: "SKALE Base",
 		description:
-			"Zero gas fee chain for high-frequency score updates and transaction recording. Agents on SKALE pay no gas for score queries.",
+			"SKALE L3 on Base with zero gas fees, instant finality, and encrypted transactions. Pre-paid compute credits replace variable gas costs.",
 		category: "blockchain",
 		logo: "/integrations/skale.png",
 		docsUrl: "https://docs.skale.space",
 		core: true,
-		activeLabel: "sFUEL-powered, zero gas",
+		activeLabel: "CREDIT-powered, zero gas",
 	},
 	// ── Payment ──
 	{

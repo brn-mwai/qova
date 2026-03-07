@@ -8,8 +8,8 @@ Qova contracts are deployed on multiple networks.
 | Chain | Chain ID | Currency | Gas | Status |
 |:------|:---------|:---------|:----|:------:|
 | **Base Sepolia** | `84532` | ETH | Standard | Active |
-| **SKALE Europa** | `2046399126` | sFUEL | Zero (free) | Active |
-| **Base Mainnet** | `8453` | ETH | Standard | Coming soon |
+| **SKALE Base** | `1187947933` | CREDIT | Zero (pre-paid) | Active |
+| **Base Mainnet** | `8453` | ETH | Standard | Active |
 
 ## Selecting a Chain
 
@@ -17,8 +17,8 @@ Qova contracts are deployed on multiple networks.
 // Base Sepolia (default testnet)
 const client = createQovaClient({ chain: "base-sepolia" });
 
-// SKALE Europa (zero gas fees)
-const client = createQovaClient({ chain: "skale-europa" });
+// SKALE Base L3 (zero gas fees)
+const client = createQovaClient({ chain: "skale-base" });
 
 // Base Mainnet
 const client = createQovaClient({ chain: "base" });
@@ -38,12 +38,13 @@ const client = createQovaClient({
 | Chain | Explorer |
 |:------|:---------|
 | Base Sepolia | [sepolia.basescan.org](https://sepolia.basescan.org) |
-| SKALE Europa | [explorer.skalenodes.com](https://elated-tan-skat.explorer.mainnet.skalenodes.com) |
+| SKALE Base | [skale-base-explorer.skalenodes.com](https://skale-base-explorer.skalenodes.com) |
 | Base Mainnet | [basescan.org](https://basescan.org) |
 
-## Why SKALE Europa?
+## Why SKALE Base?
 
-SKALE Europa offers **zero gas fees** (sFUEL is free to obtain). This makes it ideal for:
-- High-frequency score updates
-- Development and testing
-- Agent platforms that want to minimize costs
+SKALE Base is an L3 on Base with **zero gas fees** via pre-paid compute credits (CREDIT). This makes it ideal for:
+- High-frequency score updates with instant finality
+- Encrypted transactions for agent privacy
+- Agent platforms that want predictable, zero-variable-cost operations
+- Native bridging of USDC, USDT, WETH, and WBTC from Base

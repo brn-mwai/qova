@@ -13,7 +13,7 @@ Qova computes on-chain credit scores (0--1000) for autonomous AI agents by analy
 - **Full type safety** -- strict TypeScript with Zod runtime validation
 - **Tree-shakeable** -- ESM-only, named exports, side-effect free
 - **viem-native** -- built on [viem](https://viem.sh), not ethers.js
-- **Multi-chain** -- Base Sepolia (testnet), Base Mainnet, SKALE Europa
+- **Multi-chain** -- Base Sepolia (testnet), Base Mainnet, SKALE Base
 - **4 contract modules** -- ReputationRegistry, TransactionValidator, BudgetEnforcer, QovaCore
 - **Event watchers** -- real-time subscription to on-chain events
 - **Zero config** -- deployed contract addresses baked in, just pick a chain
@@ -138,7 +138,7 @@ Creates a typed client with all protocol methods.
 
 ```ts
 type QovaClientConfig = {
-  chain: "base-sepolia" | "base" | "skale-europa";
+  chain: "base-sepolia" | "base" | "skale-base";
   rpcUrl?: string; // Override default RPC
   walletClient?: WalletClient; // Required for write operations
   contracts?: Partial<ContractAddresses>; // Override deployed addresses

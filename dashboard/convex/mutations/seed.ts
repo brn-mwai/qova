@@ -60,16 +60,16 @@ export const seedDemoData = mutation({
 
 		// ─── 10 Agents across all grade tiers ──────────────────────
 		const demoAgents = [
-			{ address: "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045", name: "AlphaTrader v2", description: "High-frequency trading agent on SKALE Europa", score: 962, dailyLimit: "500", monthlyLimit: "10000", totalTx: 1847, volume: "42,180 sFUEL" },
-			{ address: "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984", name: "VaultKeeper", description: "DeFi vault management and yield optimization", score: 921, dailyLimit: "1000", monthlyLimit: "25000", totalTx: 923, volume: "18,450 sFUEL" },
-			{ address: "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9", name: "PaymentRouter", description: "x402 payment processing and settlement agent", score: 874, dailyLimit: "250", monthlyLimit: "5000", totalTx: 2341, volume: "58,200 sFUEL" },
-			{ address: "0x6B175474E89094C44Da98b954EedeAC495271d0F", name: "OracleSync", description: "Cross-chain price feed oracle aggregator", score: 788, dailyLimit: "100", monthlyLimit: "2000", totalTx: 456, volume: "3,800 sFUEL" },
-			{ address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", name: "ComplianceBot", description: "KYC/AML compliance verification agent", score: 671, dailyLimit: "50", monthlyLimit: "1000", totalTx: 312, volume: "1,560 sFUEL" },
-			{ address: "0x514910771AF9Ca656af840dff83E8264EcF986CA", name: "DataOracle", description: "Off-chain data feed provider with Chainlink CRE", score: 583, dailyLimit: "75", monthlyLimit: "1500", totalTx: 189, volume: "890 sFUEL" },
-			{ address: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599", name: "SwapEngine", description: "DEX aggregator and liquidity router", score: 492, dailyLimit: "200", monthlyLimit: "4000", totalTx: 734, volume: "12,400 sFUEL" },
-			{ address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", name: "BridgeRelay", description: "Cross-chain bridge relay and verification", score: 378, dailyLimit: "150", monthlyLimit: "3000", totalTx: 98, volume: "2,100 sFUEL" },
-			{ address: "0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE", name: "TestAgent-X", description: "Experimental agent in evaluation period", score: 267, dailyLimit: "25", monthlyLimit: "500", totalTx: 42, volume: "210 sFUEL" },
-			{ address: "0xdAC17F958D2ee523a2206206994597C13D831ec7", name: "LegacyWorker", description: "Deprecated agent pending decommission", score: 134, dailyLimit: "10", monthlyLimit: "100", totalTx: 15, volume: "45 sFUEL" },
+			{ address: "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045", name: "AlphaTrader v2", description: "High-frequency trading agent on SKALE Base", score: 962, dailyLimit: "500", monthlyLimit: "10000", totalTx: 1847, volume: "42,180 CREDIT" },
+			{ address: "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984", name: "VaultKeeper", description: "DeFi vault management and yield optimization", score: 921, dailyLimit: "1000", monthlyLimit: "25000", totalTx: 923, volume: "18,450 CREDIT" },
+			{ address: "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9", name: "PaymentRouter", description: "x402 payment processing and settlement agent", score: 874, dailyLimit: "250", monthlyLimit: "5000", totalTx: 2341, volume: "58,200 CREDIT" },
+			{ address: "0x6B175474E89094C44Da98b954EedeAC495271d0F", name: "OracleSync", description: "Cross-chain price feed oracle aggregator", score: 788, dailyLimit: "100", monthlyLimit: "2000", totalTx: 456, volume: "3,800 CREDIT" },
+			{ address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", name: "ComplianceBot", description: "KYC/AML compliance verification agent", score: 671, dailyLimit: "50", monthlyLimit: "1000", totalTx: 312, volume: "1,560 CREDIT" },
+			{ address: "0x514910771AF9Ca656af840dff83E8264EcF986CA", name: "DataOracle", description: "Off-chain data feed provider with Chainlink CRE", score: 583, dailyLimit: "75", monthlyLimit: "1500", totalTx: 189, volume: "890 CREDIT" },
+			{ address: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599", name: "SwapEngine", description: "DEX aggregator and liquidity router", score: 492, dailyLimit: "200", monthlyLimit: "4000", totalTx: 734, volume: "12,400 CREDIT" },
+			{ address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", name: "BridgeRelay", description: "Cross-chain bridge relay and verification", score: 378, dailyLimit: "150", monthlyLimit: "3000", totalTx: 98, volume: "2,100 CREDIT" },
+			{ address: "0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE", name: "TestAgent-X", description: "Experimental agent in evaluation period", score: 267, dailyLimit: "25", monthlyLimit: "500", totalTx: 42, volume: "210 CREDIT" },
+			{ address: "0xdAC17F958D2ee523a2206206994597C13D831ec7", name: "LegacyWorker", description: "Deprecated agent pending decommission", score: 134, dailyLimit: "10", monthlyLimit: "100", totalTx: 15, volume: "45 CREDIT" },
 		];
 
 		// Insert all agents
@@ -88,10 +88,10 @@ export const seedDemoData = mutation({
 				updateCount: Math.floor(agent.totalTx / 10),
 				isRegistered: true,
 				addressShort: shorten(agent.address),
-				explorerUrl: `https://elated-tan-skat.explorer.mainnet.skalenodes.com/address/${agent.address}`,
+				explorerUrl: `https://skale-base-explorer.skalenodes.com/address/${agent.address}`,
 				ownerId: userId,
-				chainId: 2046399126,
-				budgetCurrency: "sFUEL",
+				chainId: 1187947933,
+				budgetCurrency: "CREDIT",
 				totalTxCount: agent.totalTx,
 				totalVolume: agent.volume,
 				successRate: `${(85 + seededRandom(agent.score) * 14).toFixed(1)}%`,
@@ -144,7 +144,7 @@ export const seedDemoData = mutation({
 		const activityTypes = [
 			{ type: "transaction", templates: ["Processed x402 payment", "Settled batch payment", "Forwarded payment to recipient"] },
 			{ type: "score_update", templates: ["Score recalculated by CRE workflow", "Score adjusted after compliance check", "Quarterly score review completed"] },
-			{ type: "registration", templates: ["Agent registered on SKALE Europa", "Agent re-registered after upgrade"] },
+			{ type: "registration", templates: ["Agent registered on SKALE Base", "Agent re-registered after upgrade"] },
 			{ type: "verification", templates: ["Sanctions screening passed", "Identity verification completed", "Compliance audit cleared"] },
 			{ type: "budget_alert", templates: ["Daily budget 80% utilized", "Monthly budget threshold reached"] },
 		];
@@ -163,12 +163,12 @@ export const seedDemoData = mutation({
 				addressShort: shorten(agent.address),
 				type: actType.type,
 				description: actType.templates[templateIdx],
-				amount: actType.type === "transaction" ? `${(seededRandom(j * 31) * 2).toFixed(3)} sFUEL` : undefined,
+				amount: actType.type === "transaction" ? `${(seededRandom(j * 31) * 2).toFixed(3)} CREDIT` : undefined,
 				txHash: actType.type === "transaction" ? `0x${j.toString(16).padStart(8, "0")}${"a]b1c2d3e4f5".repeat(5).slice(0, 56)}` : undefined,
 				timestamp: now - daysAgo * DAY - hoursOffset * HOUR,
 				ownerId: userId,
-				chainId: 2046399126,
-				currency: "sFUEL",
+				chainId: 1187947933,
+				currency: "CREDIT",
 			});
 		}
 
@@ -202,7 +202,7 @@ export const seedDemoData = mutation({
 		const notifications = [
 			{ type: "system", title: "Welcome to Qova", message: "Your dashboard is set up with demo agents. Register your own agents and connect a wallet to get started.", offset: 0 },
 			{ type: "score_change", title: "AlphaTrader v2 upgraded to AAA", message: "Score increased from 948 to 962. This agent now qualifies for premium credit terms.", agentAddress: demoAgents[0].address, offset: 2 * HOUR },
-			{ type: "budget_alert", title: "PaymentRouter daily budget 80%", message: "PaymentRouter has used 80% of its daily budget (200/250 sFUEL). Consider increasing limits.", agentAddress: demoAgents[2].address, offset: 5 * HOUR },
+			{ type: "budget_alert", title: "PaymentRouter daily budget 80%", message: "PaymentRouter has used 80% of its daily budget (200/250 CREDIT). Consider increasing limits.", agentAddress: demoAgents[2].address, offset: 5 * HOUR },
 			{ type: "verification", title: "Sanctions check passed", message: "ComplianceBot passed its quarterly sanctions screening. No matches found across OFAC, EU, and UN lists.", agentAddress: demoAgents[4].address, offset: DAY },
 			{ type: "score_change", title: "BridgeRelay downgraded to CC", message: "Score decreased from 412 to 378. Review agent activity and compliance status.", agentAddress: demoAgents[7].address, offset: 2 * DAY },
 		];
@@ -272,16 +272,16 @@ export const adminSeed = mutation({
 		const seededRandom = (seed: number): number => { const x = Math.sin(seed * 9301 + 49297) * 49297; return x - Math.floor(x); };
 
 		const demoAgents = [
-			{ address: "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045", name: "AlphaTrader v2", description: "High-frequency trading agent on SKALE Europa", score: 962, dailyLimit: "500", monthlyLimit: "10000", totalTx: 1847, volume: "42,180 sFUEL" },
-			{ address: "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984", name: "VaultKeeper", description: "DeFi vault management and yield optimization", score: 921, dailyLimit: "1000", monthlyLimit: "25000", totalTx: 923, volume: "18,450 sFUEL" },
-			{ address: "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9", name: "PaymentRouter", description: "x402 payment processing and settlement agent", score: 874, dailyLimit: "250", monthlyLimit: "5000", totalTx: 2341, volume: "58,200 sFUEL" },
-			{ address: "0x6B175474E89094C44Da98b954EedeAC495271d0F", name: "OracleSync", description: "Cross-chain price feed oracle aggregator", score: 788, dailyLimit: "100", monthlyLimit: "2000", totalTx: 456, volume: "3,800 sFUEL" },
-			{ address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", name: "ComplianceBot", description: "KYC/AML compliance verification agent", score: 671, dailyLimit: "50", monthlyLimit: "1000", totalTx: 312, volume: "1,560 sFUEL" },
-			{ address: "0x514910771AF9Ca656af840dff83E8264EcF986CA", name: "DataOracle", description: "Off-chain data feed provider with Chainlink CRE", score: 583, dailyLimit: "75", monthlyLimit: "1500", totalTx: 189, volume: "890 sFUEL" },
-			{ address: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599", name: "SwapEngine", description: "DEX aggregator and liquidity router", score: 492, dailyLimit: "200", monthlyLimit: "4000", totalTx: 734, volume: "12,400 sFUEL" },
-			{ address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", name: "BridgeRelay", description: "Cross-chain bridge relay and verification", score: 378, dailyLimit: "150", monthlyLimit: "3000", totalTx: 98, volume: "2,100 sFUEL" },
-			{ address: "0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE", name: "TestAgent-X", description: "Experimental agent in evaluation period", score: 267, dailyLimit: "25", monthlyLimit: "500", totalTx: 42, volume: "210 sFUEL" },
-			{ address: "0xdAC17F958D2ee523a2206206994597C13D831ec7", name: "LegacyWorker", description: "Deprecated agent pending decommission", score: 134, dailyLimit: "10", monthlyLimit: "100", totalTx: 15, volume: "45 sFUEL" },
+			{ address: "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045", name: "AlphaTrader v2", description: "High-frequency trading agent on SKALE Base", score: 962, dailyLimit: "500", monthlyLimit: "10000", totalTx: 1847, volume: "42,180 CREDIT" },
+			{ address: "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984", name: "VaultKeeper", description: "DeFi vault management and yield optimization", score: 921, dailyLimit: "1000", monthlyLimit: "25000", totalTx: 923, volume: "18,450 CREDIT" },
+			{ address: "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9", name: "PaymentRouter", description: "x402 payment processing and settlement agent", score: 874, dailyLimit: "250", monthlyLimit: "5000", totalTx: 2341, volume: "58,200 CREDIT" },
+			{ address: "0x6B175474E89094C44Da98b954EedeAC495271d0F", name: "OracleSync", description: "Cross-chain price feed oracle aggregator", score: 788, dailyLimit: "100", monthlyLimit: "2000", totalTx: 456, volume: "3,800 CREDIT" },
+			{ address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", name: "ComplianceBot", description: "KYC/AML compliance verification agent", score: 671, dailyLimit: "50", monthlyLimit: "1000", totalTx: 312, volume: "1,560 CREDIT" },
+			{ address: "0x514910771AF9Ca656af840dff83E8264EcF986CA", name: "DataOracle", description: "Off-chain data feed provider with Chainlink CRE", score: 583, dailyLimit: "75", monthlyLimit: "1500", totalTx: 189, volume: "890 CREDIT" },
+			{ address: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599", name: "SwapEngine", description: "DEX aggregator and liquidity router", score: 492, dailyLimit: "200", monthlyLimit: "4000", totalTx: 734, volume: "12,400 CREDIT" },
+			{ address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", name: "BridgeRelay", description: "Cross-chain bridge relay and verification", score: 378, dailyLimit: "150", monthlyLimit: "3000", totalTx: 98, volume: "2,100 CREDIT" },
+			{ address: "0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE", name: "TestAgent-X", description: "Experimental agent in evaluation period", score: 267, dailyLimit: "25", monthlyLimit: "500", totalTx: 42, volume: "210 CREDIT" },
+			{ address: "0xdAC17F958D2ee523a2206206994597C13D831ec7", name: "LegacyWorker", description: "Deprecated agent pending decommission", score: 134, dailyLimit: "10", monthlyLimit: "100", totalTx: 15, volume: "45 CREDIT" },
 		];
 
 		for (const agent of demoAgents) {
@@ -292,8 +292,8 @@ export const adminSeed = mutation({
 				scoreFormatted: String(agent.score).padStart(4, "0"), scorePercentage: agent.score / 10,
 				lastUpdated: isoNow, updateCount: Math.floor(agent.totalTx / 10), isRegistered: true,
 				addressShort: shorten(agent.address),
-				explorerUrl: `https://elated-tan-skat.explorer.mainnet.skalenodes.com/address/${agent.address}`,
-				ownerId: userId, chainId: 2046399126, budgetCurrency: "sFUEL",
+				explorerUrl: `https://skale-base-explorer.skalenodes.com/address/${agent.address}`,
+				ownerId: userId, chainId: 1187947933, budgetCurrency: "CREDIT",
 				totalTxCount: agent.totalTx, totalVolume: agent.volume,
 				successRate: `${(85 + seededRandom(agent.score) * 14).toFixed(1)}%`,
 				dailyLimit: agent.dailyLimit, monthlyLimit: agent.monthlyLimit,
@@ -323,7 +323,7 @@ export const adminSeed = mutation({
 		const activityTypes = [
 			{ type: "transaction", templates: ["Processed x402 payment", "Settled batch payment", "Forwarded payment to recipient"] },
 			{ type: "score_update", templates: ["Score recalculated by CRE workflow", "Score adjusted after compliance check"] },
-			{ type: "registration", templates: ["Agent registered on SKALE Europa"] },
+			{ type: "registration", templates: ["Agent registered on SKALE Base"] },
 			{ type: "verification", templates: ["Sanctions screening passed", "Identity verification completed"] },
 			{ type: "budget_alert", templates: ["Daily budget 80% utilized", "Monthly budget threshold reached"] },
 		];
@@ -336,9 +336,9 @@ export const adminSeed = mutation({
 			await ctx.db.insert("activity", {
 				agent: agent.address, addressShort: shorten(agent.address), type: actType.type,
 				description: actType.templates[templateIdx],
-				amount: actType.type === "transaction" ? `${(seededRandom(j * 31) * 2).toFixed(3)} sFUEL` : undefined,
+				amount: actType.type === "transaction" ? `${(seededRandom(j * 31) * 2).toFixed(3)} CREDIT` : undefined,
 				timestamp: now - Math.floor(seededRandom(j * 23) * 30) * DAY - Math.floor(seededRandom(j * 29) * 20) * HOUR,
-				ownerId: userId, chainId: 2046399126, currency: "sFUEL",
+				ownerId: userId, chainId: 1187947933, currency: "CREDIT",
 			});
 		}
 

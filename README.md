@@ -137,7 +137,7 @@ graph LR
 
 ## Smart Contracts
 
-Deployed and verified on **Base Sepolia** (Chain ID: 84532) and **SKALE Europa**.
+Deployed and verified on **Base Sepolia** (Chain ID: 84532) and **SKALE Base** (Chain ID: 1187947933).
 
 | Contract | Address (Base Sepolia) | Purpose |
 |:---------|:----------------------|:--------|
@@ -391,7 +391,7 @@ Real-time analytics dashboard at [app.qova.cc](https://app.qova.cc). Built with 
 
 ### Key Features
 
-- **Multi-chain** - SKALE Europa (zero gas), Base L2, Base Sepolia
+- **Multi-chain** - SKALE Base L3 (zero gas), Base L2, Base Sepolia
 - **Multi-wallet** - MetaMask, Coinbase Wallet, WalletConnect, browser wallets
 - **Real-time** - Convex for instant data sync
 - **World ID** - Proof-of-personhood verification
@@ -538,7 +538,7 @@ PORT=3001                   # API server port
 | Component | Platform | URL |
 |:----------|:---------|:----|
 | Dashboard | Vercel | [app.qova.cc](https://app.qova.cc) |
-| Contracts | Base Sepolia + SKALE Europa | On-chain |
+| Contracts | Base Sepolia + SKALE Base | On-chain |
 | CRE Workflows | Chainlink CRE Network | Decentralized |
 | Database | Convex Cloud | Real-time |
 | Auth | Clerk | Managed |

@@ -13,7 +13,7 @@ import { createQovaClient, type QovaClient } from "@qova/core";
 class MyIntegration {
   private client: QovaClient;
 
-  constructor(chain: "base-sepolia" | "base" | "skale-europa") {
+  constructor(chain: "base-sepolia" | "base" | "skale-base") {
     this.client = createQovaClient({ chain });
   }
 

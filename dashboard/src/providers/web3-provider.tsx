@@ -11,17 +11,17 @@ import { type Chain } from "viem"
 const CDP_API_KEY = process.env.NEXT_PUBLIC_CDP_API_KEY ?? ""
 const WALLETCONNECT_PROJECT_ID = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ?? ""
 
-const skaleEuropa: Chain = {
-  id: 2046399126,
-  name: "SKALE Europa",
-  nativeCurrency: { name: "sFUEL", symbol: "sFUEL", decimals: 18 },
+const skaleBase: Chain = {
+  id: 1187947933,
+  name: "SKALE Base",
+  nativeCurrency: { name: "CREDIT", symbol: "CREDIT", decimals: 18 },
   rpcUrls: {
-    default: { http: ["https://mainnet.skalenodes.com/v1/elated-tan-skat"] },
+    default: { http: ["https://skale-base.skalenodes.com/v1/base"] },
   },
   blockExplorers: {
     default: {
-      name: "SKALE Explorer",
-      url: "https://elated-tan-skat.explorer.mainnet.skalenodes.com",
+      name: "SKALE Base Explorer",
+      url: "https://skale-base-explorer.skalenodes.com",
     },
   },
 }
@@ -39,11 +39,11 @@ const connectors = [
 ]
 
 export const wagmiConfig = createConfig({
-  chains: [skaleEuropa, base, baseSepolia],
+  chains: [skaleBase, base, baseSepolia],
   connectors,
   ssr: true,
   transports: {
-    [skaleEuropa.id]: http(),
+    [skaleBase.id]: http(),
     [base.id]: http(),
     [baseSepolia.id]: http(),
   },
@@ -62,7 +62,7 @@ export function Web3Provider({ children, initialState }: Web3ProviderProps): Rea
       <QueryClientProvider client={queryClient}>
         <OnchainKitProvider
           apiKey={CDP_API_KEY}
-          chain={skaleEuropa}
+          chain={skaleBase}
           config={{
             appearance: {
               mode: "auto",
