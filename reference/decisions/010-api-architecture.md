@@ -18,7 +18,7 @@ CRE workflow configurations.
 ### Framework: Hono on Bun
 - **Hono** for routing, middleware, and request handling (not Express/Fastify)
 - **Bun** as the runtime (native `Bun.serve` entry point)
-- **@qova/core** SDK for all chain interactions (never raw viem calls)
+- **@brnmwai/qova-core** SDK for all chain interactions (never raw viem calls)
 - **Zod** for request validation on every POST body
 - **Vitest** for testing with mocked SDK client
 
@@ -71,7 +71,7 @@ redundant RPC calls. No external cache dependency for the hackathon.
 ## Consequences
 
 ### Positive
-- SDK-first: all chain reads go through `@qova/core`, ensuring type safety
+- SDK-first: all chain reads go through `@brnmwai/qova-core`, ensuring type safety
 - CRE workflows work without config changes (same `/v1/` response shapes)
 - Dashboard gets enriched JSON (grades, colors, formatted values)
 - 44 tests provide confidence in route behavior and error mapping

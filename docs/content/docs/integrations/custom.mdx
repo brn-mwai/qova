@@ -1,14 +1,31 @@
 ---
 title: Custom Integration
-description: Build your own integration using the SDK.
+description: Build your own integration using the @brnmwai/qova-core SDK.
 ---
 
-Build integrations for any framework using `@qova/core` directly.
+Build integrations for any agent framework using [`@brnmwai/qova-core`](https://www.npmjs.com/package/@brnmwai/qova-core) directly. The pattern is: check score before action, enforce budget, execute, record transaction.
+
+## Install
+
+```bash
+bun add @brnmwai/qova-core viem
+```
 
 ## Pattern
 
+Every Qova integration follows a four-step pattern:
+
+```
+1. Check score     ->  Read ReputationRegistry on-chain
+2. Enforce budget  ->  Read BudgetEnforcer on-chain
+3. Execute action  ->  Run the agent's operation
+4. Record tx       ->  Write to TransactionValidator on-chain
+```
+
+## Full Example
+
 ```typescript
-import { createQovaClient, type QovaClient } from "@qova/core";
+import { createQovaClient, type QovaClient } from "@brnmwai/qova-core";
 
 class MyIntegration {
   private client: QovaClient;
@@ -17,33 +34,83 @@ class MyIntegration {
     this.client = createQovaClient({ chain });
   }
 
+  // Check if an agent is trusted
   async checkAgent(address: string): Promise<{
     allowed: boolean;
     score: number;
+    grade: string;
   }> {
-    const score = await this.client.getScore(address);
-    return { allowed: score >= 650, score };
+    const details = await this.client.getAgentDetails(address);
+    const grade = getGrade(details.score);
+    return {
+      allowed: details.score >= 650,
+      score: details.score,
+      grade,
+    };
   }
 
+  // Gate any action behind a score check + budget check
   async executeWithTrust(
     agentAddress: string,
     action: () => Promise<void>,
     amount: bigint,
   ): Promise<void> {
+    // 1. Check score (reads ReputationRegistry)
     const score = await this.client.getScore(agentAddress);
     if (score < 650) throw new Error(`Score too low: ${score}`);
 
+    // 2. Check budget (reads BudgetEnforcer)
     const allowed = await this.client.checkBudget(agentAddress, amount);
     if (!allowed) throw new Error("Budget exceeded");
 
+    // 3. Execute the action
     await action();
+
+    // 4. Record it (writes to TransactionValidator)
+    await this.client.recordTransaction(agentAddress, "0x...", amount, 0);
   }
 }
 ```
 
+## Read-Only Usage
+
+If you only need to check scores without writing transactions, no wallet is required:
+
+```typescript
+import { createQovaClient } from "@brnmwai/qova-core";
+
+const client = createQovaClient({ chain: "base-sepolia" });
+
+// Read operations - no wallet needed
+const score = await client.getScore("0x1234...");
+const details = await client.getAgentDetails("0x1234...");
+const stats = await client.getTransactionStats("0x1234...");
+const budget = await client.getBudgetStatus("0x1234...");
+const registered = await client.isAgentRegistered("0x1234...");
+```
+
+## Event-Driven Integration
+
+React to score changes in real-time:
+
+```typescript
+import { watchScoreUpdates } from "@brnmwai/qova-core";
+
+const unwatch = watchScoreUpdates(
+  { chain: "base-sepolia" },
+  (event) => {
+    if (event.newScore < 300) {
+      // Agent dropped to critical - take action
+      revokeAccess(event.agent);
+    }
+  },
+);
+```
+
 ## Guidelines
 
-- Check scores before high-value operations
-- Record all transactions for accurate scoring
-- Use budget enforcement to prevent overspending
-- Cache scores locally (30s TTL) to reduce RPC calls
+- **Check scores before high-value operations** - the ReputationRegistry read is cheap
+- **Record all transactions** for accurate scoring - every recorded tx feeds the CRE scoring pipeline
+- **Use budget enforcement** to prevent overspending - especially for autonomous agents
+- **Cache scores locally** (30s TTL) to reduce RPC calls - scores change at most every 10 minutes (CRE cron interval)
+- **Handle errors gracefully** - the SDK throws typed errors (`AgentNotRegisteredError`, `BudgetExceededError`)

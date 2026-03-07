@@ -11,7 +11,7 @@ Write operations require a wallet client with testnet funds.
 import { createWalletClient, http } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { baseSepolia } from "viem/chains";
-import { createQovaClient } from "@qova/core";
+import { createQovaClient } from "@brnmwai/qova-core";
 
 const wallet = createWalletClient({
   account: privateKeyToAccount(process.env.PRIVATE_KEY as `0x${string}`),
@@ -35,7 +35,7 @@ console.log(`Registered: ${txHash}`);
 ## Record a Transaction
 
 ```typescript
-import { TransactionType } from "@qova/core";
+import { TransactionType } from "@brnmwai/qova-core";
 
 await client.recordTransaction(
   "0xAgent...",

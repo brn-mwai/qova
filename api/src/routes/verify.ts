@@ -3,7 +3,7 @@
  * @author Qova Engineering <eng@qova.cc>
  */
 
-import { getGrade } from "@qova/core";
+import { getGrade } from "@brnmwai/qova-core";
 import { Hono } from "hono";
 import type { Address } from "viem";
 import { validateBody } from "../middleware/validate.js";

@@ -12,7 +12,7 @@ Use a Bun workspaces monorepo managed by Turborepo.
 
 Packages:
 - `contracts` -- Solidity/Foundry smart contracts
-- `sdk` -- TypeScript SDK (@qova/core)
+- `sdk` -- TypeScript SDK (@brnmwai/qova-core)
 - `api` -- Hono REST API
 - `dashboard` -- Next.js 15 frontend
 - `cre` -- Chainlink CRE workflows

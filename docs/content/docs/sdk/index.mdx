@@ -3,12 +3,14 @@ title: SDK Overview
 description: TypeScript SDK for querying agent scores, recording transactions, and managing budgets.
 ---
 
-`@qova/core` is the TypeScript SDK for the Qova protocol. Tree-shakeable, type-safe, built on viem with Zod runtime validation.
+[`@brnmwai/qova-core`](https://www.npmjs.com/package/@brnmwai/qova-core) is the TypeScript SDK for the Qova protocol. Tree-shakeable, type-safe, built on viem with Zod runtime validation.
+
+[![npm](https://img.shields.io/npm/v/@brnmwai/qova-core)](https://www.npmjs.com/package/@brnmwai/qova-core)
 
 ## Quick Example
 
 ```typescript
-import { createQovaClient } from "@qova/core";
+import { createQovaClient } from "@brnmwai/qova-core";
 
 const client = createQovaClient({ chain: "base-sepolia" });
 const score = await client.getScore("0x1234...");

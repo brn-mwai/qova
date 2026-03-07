@@ -1,5 +1,5 @@
 /**
- * @qova/core - Financial Trust Infrastructure for AI Agents
+ * @brnmwai/qova-core - Financial Trust Infrastructure for AI Agents
  *
  * TypeScript SDK for interacting with the Qova protocol on Base L2.
  * Built on viem with full type safety and Zod runtime validation.

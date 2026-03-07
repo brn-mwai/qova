@@ -1,19 +1,19 @@
 /**
- * SDK client singleton -- initializes @qova/core client for API use.
+ * SDK client singleton -- initializes @brnmwai/qova-core client for API use.
  * @author Qova Engineering <eng@qova.cc>
  */
 
 /**
- * SDK client singleton -- initializes @qova/core client for API use.
+ * SDK client singleton -- initializes @brnmwai/qova-core client for API use.
  * Supports multiple chains (Base Sepolia, Base Mainnet, SKALE Base).
  * @author Qova Engineering <eng@qova.cc>
  */
 
-import { createQovaClient, type QovaClient } from "@qova/core";
+import { createQovaClient, type QovaClient } from "@brnmwai/qova-core";
 import { createWalletClient, http, type Chain as ViemChain } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { baseSepolia, base } from "viem/chains";
-import type { Chain } from "@qova/core";
+import type { Chain } from "@brnmwai/qova-core";
 
 /** SKALE Base L3 chain config for viem. */
 const skaleBase: ViemChain = {

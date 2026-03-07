@@ -1,5 +1,5 @@
 /**
- * API-specific types not covered by @qova/core.
+ * API-specific types not covered by @brnmwai/qova-core.
  * @author Qova Engineering <eng@qova.cc>
  */
 

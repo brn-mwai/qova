@@ -19,7 +19,7 @@ AI agents are increasingly autonomous - trading, bridging, paying for services. 
 ## Architecture Overview
 
 ```
-Agent Platforms ──> @qova/core SDK ──> Smart Contracts (Base L2)
+Agent Platforms ──> @brnmwai/qova-core SDK ──> Smart Contracts (Base L2)
                                             │
                                     Chainlink CRE Network
                                     (4 scoring workflows)
@@ -47,3 +47,20 @@ The protocol has six packages in a Turborepo monorepo:
 - [Smart Contracts](/docs/contracts) - On-chain registry, validator, and enforcer
 - [Chainlink CRE](/docs/cre) - Decentralized scoring workflows
 - [Dashboard](/docs/dashboard) - Real-time analytics at app.qova.cc
+- [Integrations](/docs/integrations) - LangGraph, CrewAI, n8n plugins and custom integration patterns
+
+## npm Package
+
+The SDK is published on npm as [`@brnmwai/qova-core`](https://www.npmjs.com/package/@brnmwai/qova-core):
+
+```bash
+bun add @brnmwai/qova-core viem
+```
+
+```typescript
+import { createQovaClient } from "@brnmwai/qova-core";
+
+const client = createQovaClient({ chain: "base-sepolia" });
+const score = await client.getScore("0xAgentAddress...");
+// => 750 (grade: BBB)
+```

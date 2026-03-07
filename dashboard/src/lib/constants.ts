@@ -1,6 +1,6 @@
 import { formatTokenAmount } from "./tokens";
 
-/** Score grade thresholds -- mirrors @qova/core constants. */
+/** Score grade thresholds -- mirrors @brnmwai/qova-core constants. */
 export const SCORE_GRADES = [
 	{ grade: "AAA", min: 950, color: "#22C55E", label: "Exceptional" },
 	{ grade: "AA", min: 900, color: "#22C55E", label: "Excellent" },

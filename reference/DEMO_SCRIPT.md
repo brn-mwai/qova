@@ -140,7 +140,7 @@ Smart Contracts
 **Screen:** Show code snippet.
 
 ```typescript
-import { createQovaClient } from "@qova/core";
+import { createQovaClient } from "@brnmwai/qova-core";
 
 const client = createQovaClient({ chain: "base-sepolia" });
 const { score, grade } = await client.getScore("0xAgentAddress...");

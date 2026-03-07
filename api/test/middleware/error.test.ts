@@ -6,7 +6,7 @@ import {
 	InvalidScoreError,
 	QovaError,
 	UnauthorizedError,
-} from "@qova/core";
+} from "@brnmwai/qova-core";
 import { errorHandler } from "../../src/middleware/error.js";
 
 function createTestApp(error: Error): Hono {

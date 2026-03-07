@@ -1,22 +1,110 @@
 ---
 title: n8n
-description: Workflow automation with reputation checkpoints.
+description: Visual workflow automation with reputation checkpoints.
 ---
 
-Visual workflow nodes for n8n that add reputation checkpoints.
+Four drag-and-drop nodes that bring Qova reputation checks into n8n visual workflows. No code required for basic trust-gated automation.
 
 ## Nodes
 
-| Node | Type | Description |
-|:-----|:-----|:-----------|
-| **Qova Score Check** | Action | Read score and gate workflow |
-| **Qova Record Transaction** | Action | Record a transaction |
-| **Qova Budget Check** | Action | Verify budget compliance |
-| **Qova Score Trigger** | Trigger | Fire on score changes |
+| Node | Type | What It Does |
+|:-----|:-----|:-------------|
+| **Qova Score Check** | Action | Reads an agent's on-chain score and outputs `{ score, grade, color }`. Connect to an IF node to branch workflows by credit grade. |
+| **Qova Record Transaction** | Action | Records a transaction to TransactionValidator on-chain. Connect after any action node to log it for scoring. |
+| **Qova Budget Check** | Action | Calls `checkBudget()` on BudgetEnforcer. Returns `true`/`false` for conditional branching. |
+| **Qova Score Trigger** | Trigger | Fires your workflow when an agent's score changes. Listens for `ScoreUpdated` events on-chain via the SDK's event watcher. |
+
+## Example Flows
+
+### Trust-Gated Notification
+
+```
+[Score Trigger]  -->  Agent score changes
+    |
+    v
+[IF: grade >= "BBB"]
+    |-- Yes  -->  [Slack: "Agent promoted to investment grade"]
+    |-- No   -->  [Slack: "Agent dropped below BBB - review needed"]
+```
+
+### Budget-Protected Execution
+
+```
+[Webhook: Incoming task]
+    |
+    v
+[Qova Score Check]  -->  Read agent's on-chain score
+    |
+    v
+[IF: score >= 650]
+    |-- No   -->  [Respond: "Agent untrusted"]
+    |-- Yes  -->  [Qova Budget Check]
+                      |-- Under limit  -->  [Execute Task]  -->  [Qova Record Transaction]
+                      |-- Over limit   -->  [Respond: "Budget exceeded"]
+```
+
+### Anomaly Alert Pipeline
+
+```
+[Score Trigger: score dropped > 50 points]
+    |
+    v
+[Qova Score Check]  -->  Get current details
+    |
+    v
+[IF: grade < "B"]
+    |-- Yes  -->  [Discord: "ALERT - Agent {address} dropped to grade {grade}"]
+    |           |
+    |           v
+    |         [Email: Send detailed report to ops team]
+    |
+    |-- No   -->  [Log: "Minor score fluctuation, no action"]
+```
+
+## Node Configuration
+
+### Score Check Node
+
+| Field | Type | Description |
+|:------|:-----|:-----------|
+| Chain | Dropdown | `base-sepolia`, `base`, or `skale-base` |
+| Agent Address | String | `0x...` address of the agent to check |
+
+**Output:** `{ score: number, grade: string, color: string, registered: boolean }`
+
+### Record Transaction Node
+
+| Field | Type | Description |
+|:------|:-----|:-----------|
+| Chain | Dropdown | Chain to write to |
+| Agent Address | String | Agent performing the action |
+| Transaction Hash | String | Hash of the transaction to record |
+| Amount | String | Amount in wei |
+| Type | Dropdown | PAYMENT, SWAP, TRANSFER, CONTRACT_CALL, BRIDGE |
+
+### Budget Check Node
+
+| Field | Type | Description |
+|:------|:-----|:-----------|
+| Chain | Dropdown | Chain to check |
+| Agent Address | String | Agent to check budget for |
+| Amount | String | Proposed spend amount in wei |
+
+**Output:** `{ allowed: boolean, dailyRemaining: string, monthlyRemaining: string }`
+
+### Score Trigger Node
+
+| Field | Type | Description |
+|:------|:-----|:-----------|
+| Chain | Dropdown | Chain to watch |
+| Agent Address | String | (Optional) Filter to specific agent. Leave empty for all agents. |
+
+**Fires when:** `ScoreUpdated` event emitted from ReputationRegistry
 
 ## Features
 
-- Visual workflow builder integration
-- Conditional branching based on scores
-- Webhook triggers for score changes
-- No code required for basic flows
+- **Visual workflow builder** - drag-and-drop integration
+- **Conditional branching** - IF nodes based on scores and grades
+- **Webhook triggers** - fire workflows on score changes
+- **No code required** for basic trust-gated flows
+- **Works with all n8n nodes** - combine with Slack, Discord, Email, HTTP, databases

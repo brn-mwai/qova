@@ -1,7 +1,7 @@
 /**
  * Vercel Serverless Function entry point.
  * Wraps the Hono app with the Vercel adapter.
- * Imports from pre-bundled output that inlines @qova/core.
+ * Imports from pre-bundled output that inlines @brnmwai/qova-core.
  *
  * Build the bundle before deploying:
  *   cd sdk && bun run build

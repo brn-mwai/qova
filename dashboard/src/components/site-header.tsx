@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Bell, MagnifyingGlass } from "@phosphor-icons/react"
@@ -16,19 +17,19 @@ const routeTitles: Record<string, string> = {
   "/agents": "Agents",
   "/transactions": "Transactions",
   "/cre": "CRE Engine",
-  "/ecosystem": "Ecosystem Intelligence",
+  "/ecosystem": "Ecosystem",
   "/scores": "Scores",
   "/budgets": "Budgets",
   "/verify": "Verify",
   "/integrations": "Integrations",
-  "/alerts": "Notifications",
+  "/alerts": "Alerts",
   "/developers/keys": "API Keys",
   "/developers/webhooks": "Webhooks",
-  "/developers/docs": "API Documentation",
+  "/developers/docs": "API Docs",
   "/settings": "Settings",
   "/settings/team": "Team",
   "/settings/wallet": "Wallet",
-  "/settings/notifications": "Notification Preferences",
+  "/settings/notifications": "Notifications",
   "/onboarding": "Welcome",
 }
 
@@ -70,6 +71,10 @@ export function SiteHeader(): React.ReactElement {
     (pathname.startsWith("/agents/") ? "Agent Detail" :
      pathname.startsWith("/cre/") ? "Workflow Detail" :
      pathname.startsWith("/verify/report/") ? "Credit Report" : "Qova")
+
+  useEffect(() => {
+    document.title = title === "Qova" ? "Qova" : `${title} | Qova`
+  }, [title])
 
   return (
     <header className="flex h-(--header-height) shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">

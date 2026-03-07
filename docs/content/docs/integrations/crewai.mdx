@@ -3,13 +3,21 @@ title: CrewAI
 description: Trust-based task delegation between crew members.
 ---
 
-Trust-based task delegation for CrewAI crews. Higher-scored agents get delegated more valuable tasks.
+Trust-based task delegation for CrewAI crews. When multiple agents are available, `QovaTrustDelegation` assigns tasks based on each agent's on-chain credit score. High-value tasks go to high-scored agents. Low-value tasks can be handled by newer agents still building reputation.
 
 ## Install
 
 ```bash
-bun add @qova/crewai @qova/core
+bun add @qova/crewai @brnmwai/qova-core
 ```
+
+## How It Works
+
+1. For each agent in `availableAgents`, reads their score from ReputationRegistry on-chain
+2. Classifies the task by value tier (highValue / standard / lowValue)
+3. Filters agents whose score meets the tier threshold
+4. Among qualifying agents, picks the highest-scored one
+5. After task completion, records the outcome via TransactionValidator
 
 ## Usage
 
@@ -19,18 +27,49 @@ import { QovaTrustDelegation } from "@qova/crewai";
 const delegation = new QovaTrustDelegation({
   chain: "base-sepolia",
   scoreThresholds: {
-    highValue: 800,
-    standard: 650,
-    lowValue: 450,
+    highValue: 800,     // Only AAA/AA/A agents handle these
+    standard: 650,      // BB+ agents for routine tasks
+    lowValue: 450,      // CCC+ agents for low-risk work
   },
 });
 
+// Delegation reads each agent's score and picks the best fit
 const assignedAgent = await delegation.assignTask(task, availableAgents);
 ```
 
+## Delegation Flow
+
+```
+Task arrives with value tier
+    |
+    v
+[Read scores for all available agents]  -->  ReputationRegistry on Base
+    |
+    v
+[Filter by tier threshold]
+    |-- highValue task (e.g. $10,000 swap)  -->  Only agents scoring 800+
+    |-- standard task (e.g. $500 payment)   -->  Only agents scoring 650+
+    |-- lowValue task (e.g. $10 transfer)   -->  Only agents scoring 450+
+    |
+    v
+[Pick highest-scored qualifying agent]
+    |
+    v
+[Execute task]  -->  [Record outcome to TransactionValidator]
+```
+
+## Threshold Mapping
+
+| Tier | Score Threshold | Credit Grade | Example Tasks |
+|:-----|:---------------|:-------------|:-------------|
+| High Value | 800+ | A or above | Large swaps, bridge operations, contract deployments |
+| Standard | 650+ | BB or above | Routine payments, transfers, API calls |
+| Low Value | 450+ | CCC or above | Data queries, read operations, logging |
+
 ## Features
 
-- Score-based task assignment
-- Tiered delegation thresholds
-- Score updates after task completion
-- Crew-level reputation aggregation
+- **Score-based task assignment** - highest-trust agent gets the task
+- **Tiered delegation thresholds** - different minimums for different task values
+- **Score updates after completion** - successful tasks improve the agent's reputation
+- **Crew-level aggregation** - view the overall trust level of an entire crew
+- **Fallback handling** - configurable behavior when no agent meets the threshold

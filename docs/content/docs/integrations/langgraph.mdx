@@ -3,13 +3,21 @@ title: LangGraph
 description: Score-gated tool execution in LangChain agents.
 ---
 
-Score-gated tool execution within LangChain/LangGraph agents.
+Score-gated tool execution within LangChain/LangGraph agents. Before an agent executes any tool, the `QovaScoreGate` node reads the agent's on-chain score and blocks execution if it falls below the configured threshold.
 
 ## Install
 
 ```bash
-bun add @qova/langgraph @qova/core
+bun add @qova/langgraph @brnmwai/qova-core
 ```
+
+## How It Works
+
+1. `checkNode()` calls `client.getScore(agentAddress)` on the ReputationRegistry contract
+2. If `score < minimumScore`, the node throws and the graph halts - the tool never executes
+3. If the score passes, execution continues to the next node
+4. After a successful tool call, `client.recordTransaction()` writes the action to TransactionValidator
+5. The recorded transaction feeds into the next CRE scoring cycle
 
 ## Usage
 
@@ -18,20 +26,54 @@ import { QovaScoreGate } from "@qova/langgraph";
 
 const gate = new QovaScoreGate({
   chain: "base-sepolia",
-  minimumScore: 650,
+  minimumScore: 650,    // Block agents below BB grade
   minimumGrade: "BB",
 });
 
+// Add the gate as a node in your LangGraph state graph
 const graph = new StateGraph({ channels })
-  .addNode("score_check", gate.checkNode())
+  .addNode("score_check", gate.checkNode())   // reads on-chain score
   .addNode("execute_tool", toolNode)
-  .addEdge("score_check", "execute_tool")
+  .addEdge("score_check", "execute_tool")      // only reaches here if score >= 650
   .compile();
+```
+
+## Score-Gated Pipeline
+
+```
+Agent Request
+    |
+    v
+[Score Check Node]  -->  Reads ReputationRegistry on Base
+    |
+    |-- Score < 650?  -->  HALT (agent untrusted)
+    |
+    v
+[Tool Execution]  -->  Agent performs action
+    |
+    v
+[Record Transaction]  -->  Writes to TransactionValidator
+    |
+    v
+CRE workflow picks up the new tx in next scoring cycle
+```
+
+## Configuration Options
+
+```typescript
+const gate = new QovaScoreGate({
+  chain: "base-sepolia",       // Chain to read scores from
+  minimumScore: 650,           // Minimum numeric score (0-1000)
+  minimumGrade: "BB",          // Minimum letter grade
+  recordTransactions: true,    // Auto-record tool calls as transactions
+  enforceBudget: true,         // Check budget before execution
+});
 ```
 
 ## Features
 
-- Automatic score checking before tool execution
-- Configurable minimum score and grade thresholds
-- Transaction recording after successful tool calls
-- Budget enforcement per agent
+- **Automatic score checking** before every tool execution
+- **Configurable thresholds** - set minimum score and/or grade
+- **Transaction recording** after successful tool calls
+- **Budget enforcement** per agent to prevent overspending
+- **Zero manual wiring** - the gate handles all SDK calls internally

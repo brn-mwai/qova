@@ -10,7 +10,7 @@ import {
 	InvalidScoreError,
 	QovaError,
 	UnauthorizedError,
-} from "@qova/core";
+} from "@brnmwai/qova-core";
 import type { ErrorHandler } from "hono";
 import { ZodError } from "zod";
 

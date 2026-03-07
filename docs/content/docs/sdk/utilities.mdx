@@ -8,7 +8,7 @@ Helper functions and constants exported from the SDK.
 ## Score Utilities
 
 ```typescript
-import { getGrade, formatScore, getScoreColor, scoreToPercentage } from "@qova/core";
+import { getGrade, formatScore, getScoreColor, scoreToPercentage } from "@brnmwai/qova-core";
 
 getGrade(750);          // "BBB"
 formatScore(750);       // "750"
@@ -19,7 +19,7 @@ scoreToPercentage(750); // 75
 ## Address Utilities
 
 ```typescript
-import { shortenAddress, isValidAddress, checksumAddress } from "@qova/core";
+import { shortenAddress, isValidAddress, checksumAddress } from "@brnmwai/qova-core";
 
 shortenAddress("0x1234567890abcdef1234567890abcdef12345678");
 // "0x1234...5678"
@@ -31,7 +31,7 @@ checksumAddress("0x1234..."); // "0x1234..." (checksummed)
 ## Format Utilities
 
 ```typescript
-import { formatWei, formatBasisPoints, formatTimestamp } from "@qova/core";
+import { formatWei, formatBasisPoints, formatTimestamp } from "@brnmwai/qova-core";
 
 formatWei(1000000000000000000n); // "1.0"
 formatBasisPoints(3000);         // "30%"
@@ -50,7 +50,7 @@ import {
   MAX_SCORE,         // 1000
   MIN_SCORE,         // 0
   SCORE_GRADE_THRESHOLDS,
-} from "@qova/core";
+} from "@brnmwai/qova-core";
 ```
 
 ## ABIs
@@ -63,7 +63,7 @@ import {
   transactionValidatorAbi,
   budgetEnforcerAbi,
   qovaCoreAbi,
-} from "@qova/core";
+} from "@brnmwai/qova-core";
 ```
 
 ## Zod Schemas
@@ -80,7 +80,7 @@ import {
   QovaClientConfigSchema,
   ContractAddressesSchema,
   ChainSchema,
-} from "@qova/core";
+} from "@brnmwai/qova-core";
 ```
 
 ## Error Types
@@ -93,5 +93,5 @@ import {
   InvalidScoreError,
   BudgetExceededError,
   UnauthorizedError,
-} from "@qova/core";
+} from "@brnmwai/qova-core";
 ```

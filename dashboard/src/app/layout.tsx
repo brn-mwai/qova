@@ -6,7 +6,10 @@ import "./globals.css";
 
 export const metadata: Metadata = {
 	metadataBase: new URL("https://app.qova.cc"),
-	title: "Qova - Financial Trust Infrastructure",
+	title: {
+		template: "%s | Qova",
+		default: "Qova - Financial Trust Infrastructure for AI Agents",
+	},
 	description:
 		"The financial credit bureau for AI agents. As agentic on-chain transactions grow, Qova computes verifiable reputation scores so any protocol can assess an agent's trustworthiness.",
 	openGraph: {

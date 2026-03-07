@@ -1,5 +1,5 @@
 {
-  "name": "@qova/core",
+  "name": "@brnmwai/qova-core",
   "version": "0.2.0",
   "description": "TypeScript SDK for the Qova protocol -- financial trust infrastructure for AI agents on Base L2",
   "type": "module",

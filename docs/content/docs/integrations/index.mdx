@@ -1,13 +1,55 @@
 ---
 title: Integrations Overview
-description: Framework plugins for embedding Qova credit scoring into agent workflows.
+description: Framework plugins and protocol integrations for embedding Qova credit scoring into agent workflows.
 ---
 
-Framework-specific plugins that embed credit scoring directly into agent workflows.
+Qova provides framework plugins to embed credit scoring directly into agent workflows. Every integration uses [`@brnmwai/qova-core`](https://www.npmjs.com/package/@brnmwai/qova-core) under the hood to read scores, record transactions, and enforce budgets on-chain.
 
-| Framework | Package | Use Case |
-|:----------|:--------|:---------|
-| [LangGraph](/docs/integrations/langgraph) | `@qova/langgraph` | Score-gated tool execution |
-| [CrewAI](/docs/integrations/crewai) | `@qova/crewai` | Trust-based task delegation |
-| [n8n](/docs/integrations/n8n) | `@qova/n8n` | Workflow automation checkpoints |
-| [Custom](/docs/integrations/custom) | `@qova/core` | Build your own integration |
+## Framework Integrations
+
+| Framework | Package | Use Case | How It Works |
+|:----------|:--------|:---------|:-------------|
+| [LangGraph](/docs/integrations/langgraph) | `@qova/langgraph` | Score-gated tool execution | Adds a `checkNode()` to your state graph that blocks tool execution if the agent's on-chain score is below threshold |
+| [CrewAI](/docs/integrations/crewai) | `@qova/crewai` | Trust-based task delegation | Routes high-value tasks to higher-scored agents using tiered thresholds |
+| [n8n](/docs/integrations/n8n) | `@qova/n8n` | Visual workflow automation | Provides 4 no-code nodes for score checking, transaction recording, budget enforcement, and event triggers |
+| [Custom](/docs/integrations/custom) | `@brnmwai/qova-core` | Build your own integration | SDK pattern: check score, enforce budget, execute, record transaction |
+
+## Protocol Integrations
+
+| Integration | What It Does |
+|:------------|:-------------|
+| **Chainlink CRE** | 4 decentralized workflows compute scores, detect anomalies, enforce budgets, and verify agents |
+| **Base L2** | Smart contracts deployed on Base Sepolia for CRE settlement via KeystoneForwarder |
+| **SKALE** | Zero-gas agent transactions on SKALE Base L3 for high-frequency score reads/writes |
+| **World ID** | Proof-of-personhood verification orchestrated by CRE. One human = one verified agent. |
+| **Coinbase** | Smart Wallet support via wagmi for frictionless agent operator onboarding |
+| **x402** | Micropayment protocol for agent-to-agent premium reputation lookups on SKALE |
+
+## How Integrations Work
+
+Every integration follows the same four-step pattern:
+
+```
+1. Check score     ->  Read ReputationRegistry on-chain
+2. Enforce budget  ->  Read BudgetEnforcer on-chain
+3. Execute action  ->  Run the agent's operation
+4. Record tx       ->  Write to TransactionValidator on-chain
+```
+
+The score check gates whether the action can proceed. The budget check prevents overspending. The transaction record feeds back into the scoring pipeline - CRE workflows will include this transaction in the next score computation.
+
+## Quick Start
+
+Install the SDK and check any agent's score with three lines:
+
+```bash
+bun add @brnmwai/qova-core viem
+```
+
+```typescript
+import { createQovaClient } from "@brnmwai/qova-core";
+
+const client = createQovaClient({ chain: "base-sepolia" });
+const score = await client.getScore("0x1234...abcd");
+// => 750 (grade: BBB)
+```

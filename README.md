@@ -1,9 +1,5 @@
 <p align="center">
-  <img src=".github/banner.svg" alt="Qova" width="400" />
-</p>
-
-<p align="center">
-  <strong>Financial Trust Infrastructure for AI Agents</strong>
+  <img src=".github/banner.png" alt="Qova - Financial Trust Infrastructure for AI Agents" width="720" />
 </p>
 
 <p align="center">
@@ -13,6 +9,7 @@
 </p>
 
 <p align="center">
+  <a href="https://www.npmjs.com/package/@brnmwai/qova-core"><img src="https://img.shields.io/npm/v/@brnmwai/qova-core?label=%40brnmwai%2Fqova-core&color=FACC15" alt="npm" /></a>
   <img src="https://img.shields.io/badge/runtime-Bun-f9f1e1?logo=bun" alt="Bun" />
   <img src="https://img.shields.io/badge/contracts-Solidity_0.8.28-363636?logo=solidity" alt="Solidity" />
   <img src="https://img.shields.io/badge/oracle-Chainlink_CRE-375BD2?logo=chainlink" alt="Chainlink" />
@@ -36,7 +33,7 @@ flowchart TB
 
     subgraph Qova["Qova Protocol"]
         direction TB
-        SDK["@qova/core SDK"]
+        SDK["@brnmwai/qova-core SDK"]
         API["REST API - 21 endpoints"]
         SC["Smart Contracts - Base L2"]
         DB["Convex Real-time DB"]
@@ -209,9 +206,9 @@ graph LR
     end
 
     C -->|"ABIs + types"| S
-    S -->|"@qova/core"| A
-    S -->|"@qova/core"| D
-    S -->|"@qova/core"| I
+    S -->|"@brnmwai/qova-core"| A
+    S -->|"@brnmwai/qova-core"| D
+    S -->|"@brnmwai/qova-core"| I
     CR -->|"reads contracts"| C
 ```
 
@@ -352,14 +349,18 @@ On-demand verification via HTTP POST with `KEY_TYPE_ECDSA_EVM` authorization key
 
 ---
 
-## SDK (`@qova/core`)
+## SDK (`@brnmwai/qova-core`)
 
 TypeScript SDK with typed wrappers for all contract interactions. ESM only, tree-shakeable.
 
 ### Quick Start
 
+```bash
+bun add @brnmwai/qova-core viem
+```
+
 ```typescript
-import { createQovaClient } from "@qova/core";
+import { createQovaClient } from "@brnmwai/qova-core";
 
 // Read-only client (no wallet needed)
 const client = createQovaClient({ chain: "base-sepolia" });
@@ -387,7 +388,7 @@ const budget = await client.getBudgetStatus("0x1234...");
 import { createWalletClient, http } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { baseSepolia } from "viem/chains";
-import { createQovaClient } from "@qova/core";
+import { createQovaClient } from "@brnmwai/qova-core";
 
 const wallet = createWalletClient({
   account: privateKeyToAccount("0x..."),
@@ -409,7 +410,7 @@ await client.recordTransaction("0xAgent...", "0xTxHash...", 5000n, 0);
 ### Event Watching
 
 ```typescript
-import { watchTransactions, watchScoreUpdates } from "@qova/core";
+import { watchTransactions, watchScoreUpdates } from "@brnmwai/qova-core";
 
 // Real-time transaction feed
 const unwatch = watchTransactions(client, (event) => {
@@ -426,7 +427,7 @@ watchScoreUpdates(client, (event) => {
 
 ```typescript
 // Client
-import { createQovaClient } from "@qova/core";
+import { createQovaClient } from "@brnmwai/qova-core";
 
 // ABIs (for direct viem usage)
 import {
@@ -434,7 +435,7 @@ import {
   transactionValidatorAbi,
   budgetEnforcerAbi,
   qovaCoreAbi,
-} from "@qova/core/abi";
+} from "@brnmwai/qova-core/abi";
 
 // Types + Zod schemas
 import type {
@@ -442,7 +443,7 @@ import type {
   BudgetStatus,
   TransactionStats,
   ScoreGrade,
-} from "@qova/core/types";
+} from "@brnmwai/qova-core/types";
 
 // Utilities
 import {
@@ -450,7 +451,7 @@ import {
   formatScore,
   shortenAddress,
   getScoreColor,
-} from "@qova/core/utils";
+} from "@brnmwai/qova-core/utils";
 ```
 
 ---
@@ -497,33 +498,164 @@ Real-time analytics dashboard at [app.qova.cc](https://app.qova.cc). Built with 
 
 ## Integrations
 
-Qova provides framework plugins to embed credit scoring directly into agent workflows.
+Qova provides framework plugins to embed credit scoring directly into agent workflows. Every integration uses `@brnmwai/qova-core` under the hood to read scores, record transactions, and enforce budgets on-chain.
 
-| Framework | Package | Use Case |
-|:----------|:--------|:---------|
-| **LangGraph** | `@qova/langgraph` | Score-gated tool execution in LangChain agents |
-| **CrewAI** | `@qova/crewai` | Trust-based task delegation between crew members |
-| **n8n** | `@qova/n8n` | Workflow automation with reputation checkpoints |
+<p align="center">
+  <img src="dashboard/public/integrations/chainlink.png" alt="Chainlink" height="40" />
+  &nbsp;&nbsp;
+  <img src="dashboard/public/integrations/base.png" alt="Base" height="40" />
+  &nbsp;&nbsp;
+  <img src="dashboard/public/integrations/worldid.png" alt="World ID" height="40" />
+  &nbsp;&nbsp;
+  <img src="dashboard/public/integrations/langchain.png" alt="LangChain" height="40" />
+  &nbsp;&nbsp;
+  <img src="dashboard/public/integrations/openai.png" alt="OpenAI" height="40" />
+  &nbsp;&nbsp;
+  <img src="dashboard/public/integrations/coinbase.png" alt="Coinbase" height="40" />
+  &nbsp;&nbsp;
+  <img src="dashboard/public/integrations/skale.png" alt="SKALE" height="40" />
+  &nbsp;&nbsp;
+  <img src="dashboard/public/integrations/telegram.png" alt="Telegram" height="40" />
+  &nbsp;&nbsp;
+  <img src="dashboard/public/integrations/slack.png" alt="Slack" height="40" />
+  &nbsp;&nbsp;
+  <img src="dashboard/public/integrations/discord.png" alt="Discord" height="40" />
+  &nbsp;&nbsp;
+  <img src="dashboard/public/integrations/dune.png" alt="Dune" height="40" />
+</p>
 
-### Integration Pattern
+### Framework Integrations
+
+| Framework | Package | Use Case | How It Works |
+|:----------|:--------|:---------|:-------------|
+| <img src="dashboard/public/integrations/langchain.png" alt="LangGraph" height="20" /> **LangGraph** | `@qova/langgraph` | Score-gated tool execution | Adds a `checkNode()` to your LangGraph state graph that blocks tool execution if the agent's on-chain score is below threshold |
+| **CrewAI** | `@qova/crewai` | Trust-based task delegation | Routes high-value tasks to higher-scored agents using tiered thresholds (800 for high-value, 650 for standard, 450 for low-value) |
+| **n8n** | `@qova/n8n` | Visual workflow automation | Provides 4 no-code nodes (Score Check, Record Transaction, Budget Check, Score Trigger) for visual workflow builders |
+
+### LangGraph - Score-Gated Tool Execution
+
+Before an agent executes any tool in a LangChain pipeline, the `QovaScoreGate` node reads the agent's on-chain score and blocks execution if it falls below the configured threshold. After a successful tool call, the transaction is automatically recorded on-chain for future scoring.
 
 ```typescript
-// Example: Check agent score before executing a high-value action
-import { createQovaClient } from "@qova/core";
+import { QovaScoreGate } from "@qova/langgraph";
 
-const client = createQovaClient({ chain: "base-sepolia" });
+const gate = new QovaScoreGate({
+  chain: "base-sepolia",
+  minimumScore: 650,    // Block agents below BB grade
+  minimumGrade: "BB",
+});
 
-async function executeWithTrustCheck(agentAddress: string, action: () => Promise<void>) {
-  const { score, grade } = await client.getScore(agentAddress);
+// Add the gate as a node in your LangGraph state graph
+const graph = new StateGraph({ channels })
+  .addNode("score_check", gate.checkNode())   // <-- reads on-chain score
+  .addNode("execute_tool", toolNode)
+  .addEdge("score_check", "execute_tool")      // only reaches here if score >= 650
+  .compile();
+```
 
-  if (score < 650) {
-    throw new Error(`Agent ${agentAddress} score too low: ${grade} (${score})`);
+**What happens under the hood:**
+1. `checkNode()` calls `client.getScore(agentAddress)` on the ReputationRegistry contract
+2. If `score < minimumScore`, the node throws and the graph halts - the tool never executes
+3. If the score passes, execution continues to the tool node
+4. After the tool succeeds, `client.recordTransaction()` writes the action to TransactionValidator
+
+### CrewAI - Trust-Based Task Delegation
+
+When a CrewAI crew has multiple agents available, `QovaTrustDelegation` assigns tasks based on each agent's on-chain credit score. High-value tasks go to high-scored agents. Low-value tasks can be handled by newer agents still building reputation.
+
+```typescript
+import { QovaTrustDelegation } from "@qova/crewai";
+
+const delegation = new QovaTrustDelegation({
+  chain: "base-sepolia",
+  scoreThresholds: {
+    highValue: 800,     // Only AAA/AA/A agents handle these
+    standard: 650,      // BB+ agents for routine tasks
+    lowValue: 450,      // CCC+ agents for low-risk work
+  },
+});
+
+// Delegation reads each agent's score and picks the best fit
+const assignedAgent = await delegation.assignTask(task, availableAgents);
+```
+
+**What happens under the hood:**
+1. For each agent in `availableAgents`, reads their score from ReputationRegistry
+2. Classifies the task by value tier (highValue / standard / lowValue)
+3. Filters agents whose score meets the tier threshold
+4. Among qualifying agents, picks the highest-scored one
+5. After task completion, updates the agent's score via TransactionValidator
+
+### n8n - Visual Workflow Nodes
+
+Four drag-and-drop nodes that bring Qova reputation checks into n8n visual workflows. No code required for basic trust-gated automation.
+
+| Node | Type | What It Does |
+|:-----|:-----|:-------------|
+| **Qova Score Check** | Action | Reads an agent's on-chain score and outputs `{ score, grade, color }`. Connect to an IF node to branch workflows by credit grade. |
+| **Qova Record Transaction** | Action | Records a transaction to TransactionValidator. Connect after any action node to log it for scoring. |
+| **Qova Budget Check** | Action | Calls `checkBudget()` on BudgetEnforcer. Returns `true`/`false` for conditional branching. |
+| **Qova Score Trigger** | Trigger | Fires your workflow when an agent's score changes. Listens for `ScoreUpdated` events on-chain. |
+
+**Example flow:** Score Trigger fires -> IF node checks `grade >= "BBB"` -> Yes branch sends Slack notification -> Record Transaction logs the action.
+
+### Custom Integration (Any Framework)
+
+Build integrations for any agent framework using `@brnmwai/qova-core` directly. The pattern is: check score before action, enforce budget, execute, record transaction.
+
+```typescript
+import { createQovaClient, type QovaClient } from "@brnmwai/qova-core";
+
+class MyIntegration {
+  private client: QovaClient;
+
+  constructor(chain: "base-sepolia" | "base" | "skale-base") {
+    this.client = createQovaClient({ chain });
   }
 
-  await action();
-  await client.recordTransaction(agentAddress, "0x...", amount, 0);
+  // Gate any action behind a score check + budget check
+  async executeWithTrust(
+    agentAddress: string,
+    action: () => Promise<void>,
+    amount: bigint,
+  ): Promise<void> {
+    // 1. Check score (reads ReputationRegistry)
+    const score = await this.client.getScore(agentAddress);
+    if (score < 650) throw new Error(`Score too low: ${score}`);
+
+    // 2. Check budget (reads BudgetEnforcer)
+    const allowed = await this.client.checkBudget(agentAddress, amount);
+    if (!allowed) throw new Error("Budget exceeded");
+
+    // 3. Execute the action
+    await action();
+
+    // 4. Record it (writes to TransactionValidator)
+    await this.client.recordTransaction(agentAddress, "0x...", amount, 0);
+  }
 }
 ```
+
+**Guidelines:**
+- Check scores before high-value operations
+- Record all transactions for accurate scoring
+- Use budget enforcement to prevent overspending
+- Cache scores locally (30s TTL) to reduce RPC calls
+
+### Protocol Integrations
+
+| Integration | Logo | What It Does |
+|:------------|:----:|:-------------|
+| **Chainlink CRE** | <img src="dashboard/public/integrations/chainlink.png" alt="Chainlink" height="24" /> | 4 decentralized workflows compute scores, detect anomalies, enforce budgets, and verify agents |
+| **Base L2** | <img src="dashboard/public/integrations/base.png" alt="Base" height="24" /> | Smart contracts deployed on Base Sepolia for CRE settlement via KeystoneForwarder |
+| **SKALE** | <img src="dashboard/public/integrations/skale.png" alt="SKALE" height="24" /> | Zero-gas agent transactions on SKALE Base L3 for high-frequency score reads/writes |
+| **World ID** | <img src="dashboard/public/integrations/worldid.png" alt="World ID" height="24" /> | Proof-of-personhood verification orchestrated by CRE. One human = one verified agent. |
+| **Coinbase** | <img src="dashboard/public/integrations/coinbase.png" alt="Coinbase" height="24" /> | Smart Wallet support via wagmi for frictionless agent operator onboarding |
+| **x402** | | Micropayment protocol for agent-to-agent premium reputation lookups on SKALE |
+| **Dune Analytics** | <img src="dashboard/public/integrations/dune.png" alt="Dune" height="24" /> | On-chain score data available for public dashboards and analytics |
+| **Telegram** | <img src="dashboard/public/integrations/telegram.png" alt="Telegram" height="24" /> | Score change alerts and verification notifications via bot |
+| **Slack** | <img src="dashboard/public/integrations/slack.png" alt="Slack" height="24" /> | Team alerts for anomaly detections and budget breaches |
+| **Discord** | <img src="dashboard/public/integrations/discord.png" alt="Discord" height="24" /> | Community notifications for score milestones and verification events |
 
 ---
 
@@ -671,6 +803,10 @@ PORT=3001                   # API server port
 ---
 
 ## Team
+
+<p align="center">
+  <img src=".github/logo-mark.png" alt="Qova" width="64" />
+</p>
 
 Built by **Hausor Labs**.
 

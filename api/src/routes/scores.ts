@@ -3,7 +3,7 @@
  * @author Qova Engineering <eng@qova.cc>
  */
 
-import { formatBasisPoints, formatWei, getGrade, getScoreColor } from "@qova/core";
+import { formatBasisPoints, formatWei, getGrade, getScoreColor } from "@brnmwai/qova-core";
 import { Hono } from "hono";
 import type { Address } from "viem";
 import { getCached, setCache } from "../middleware/cache.js";

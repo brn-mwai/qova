@@ -1,6 +1,6 @@
 /**
  * Data enrichment -- transforms raw on-chain data into API response shapes.
- * Uses @qova/core utilities for all formatting, grading, and coloring.
+ * Uses @brnmwai/qova-core utilities for all formatting, grading, and coloring.
  *
  * @author Qova Engineering <eng@qova.cc>
  */
@@ -19,7 +19,7 @@ import {
 	scoreToPercentage,
 	shortenAddress,
 	type TransactionStats,
-} from "@qova/core";
+} from "@brnmwai/qova-core";
 import type { EnrichedAgentResponse } from "../types/api.js";
 
 /**

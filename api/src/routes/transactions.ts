@@ -3,7 +3,7 @@
  * @author Qova Engineering <eng@qova.cc>
  */
 
-import type { TransactionType } from "@qova/core";
+import type { TransactionType } from "@brnmwai/qova-core";
 import { Hono } from "hono";
 import type { Address, Hex } from "viem";
 import { getCached, setCache } from "../middleware/cache.js";

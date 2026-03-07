@@ -37,6 +37,12 @@ const cards = [
     href: "/docs/dashboard",
     icon: "[]",
   },
+  {
+    title: "Integrations",
+    description: "LangGraph, CrewAI, n8n plugins and custom integration patterns for any agent framework.",
+    href: "/docs/integrations",
+    icon: "++",
+  },
 ];
 
 export default function DocsHome(): React.ReactElement {
@@ -88,6 +94,10 @@ export default function DocsHome(): React.ReactElement {
             {" / "}
             <a href="https://qova.cc" className="underline hover:text-white transition-colors">
               Website
+            </a>
+            {" / "}
+            <a href="https://www.npmjs.com/package/@brnmwai/qova-core" className="underline hover:text-white transition-colors">
+              npm
             </a>
           </p>
         </div>

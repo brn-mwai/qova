@@ -3,7 +3,7 @@
  * @author Qova Engineering <eng@qova.cc>
  */
 
-import { CHAIN_IDS, CONTRACTS } from "@qova/core";
+import { CHAIN_IDS, CONTRACTS } from "@brnmwai/qova-core";
 import { Hono } from "hono";
 import { getQovaClient } from "../services/chain.js";
 

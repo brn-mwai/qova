@@ -8,7 +8,7 @@ Watch on-chain events in real-time.
 ## watchTransactions
 
 ```typescript
-import { watchTransactions } from "@qova/core";
+import { watchTransactions } from "@brnmwai/qova-core";
 
 const unwatch = watchTransactions(client, (event) => {
   console.log(`Agent ${event.agent} - ${event.amount} wei`);
@@ -21,7 +21,7 @@ unwatch();
 ## watchScoreUpdates
 
 ```typescript
-import { watchScoreUpdates } from "@qova/core";
+import { watchScoreUpdates } from "@brnmwai/qova-core";
 
 watchScoreUpdates(client, (event) => {
   console.log(`${event.agent}: ${event.oldScore} -> ${event.newScore}`);
@@ -31,7 +31,7 @@ watchScoreUpdates(client, (event) => {
 ## watchAgentActions
 
 ```typescript
-import { watchAgentActions } from "@qova/core";
+import { watchAgentActions } from "@brnmwai/qova-core";
 
 watchAgentActions(client, (event) => {
   console.log(`Action: ${event.agent} spent ${event.amount}`);
@@ -47,5 +47,5 @@ import type {
   AgentActionExecutedEvent,
   QovaEvent,
   WatchConfig,
-} from "@qova/core";
+} from "@brnmwai/qova-core";
 ```

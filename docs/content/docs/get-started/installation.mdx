@@ -1,37 +1,59 @@
 ---
 title: Installation
-description: Install the @qova/core SDK in your project.
+description: Install the @brnmwai/qova-core SDK in your project.
 ---
+
+The SDK is published on npm as [`@brnmwai/qova-core`](https://www.npmjs.com/package/@brnmwai/qova-core).
 
 ## Using Bun
 
 ```bash
-bun add @qova/core
+bun add @brnmwai/qova-core viem
 ```
 
 ## Using npm
 
 ```bash
-npm install @qova/core
+npm install @brnmwai/qova-core viem
 ```
 
 ## Using pnpm
 
 ```bash
-pnpm add @qova/core
+pnpm add @brnmwai/qova-core viem
 ```
+
+> `viem` is a peer dependency and must be installed alongside the SDK.
 
 ## Requirements
 
-- **Runtime:** Bun 1.3+ or Node.js 20+
+- **Runtime:** Bun 1.3+ or Node.js 18+
 - **TypeScript:** 5.7+ recommended (strict mode)
 - **Module system:** ESM only (set `"type": "module"` in package.json)
 
 ## Verify Installation
 
 ```typescript
-import { createQovaClient } from "@qova/core";
+import { createQovaClient } from "@brnmwai/qova-core";
 
 const client = createQovaClient({ chain: "base-sepolia" });
 console.log("Qova client created successfully");
+```
+
+## Sub-path Exports
+
+The SDK exposes granular imports for tree-shaking:
+
+```typescript
+// Main client
+import { createQovaClient } from "@brnmwai/qova-core";
+
+// Contract ABIs only
+import { reputationRegistryAbi, budgetEnforcerAbi } from "@brnmwai/qova-core/abi";
+
+// Type definitions and Zod schemas
+import type { AgentDetails, BudgetStatus } from "@brnmwai/qova-core/types";
+
+// Utility functions
+import { getGrade, getScoreColor, formatScore } from "@brnmwai/qova-core/utils";
 ```

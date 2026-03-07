@@ -12,7 +12,7 @@
     "check:fix": "bunx biome check --write src/"
   },
   "dependencies": {
-    "@qova/core": "workspace:*",
+    "@brnmwai/qova-core": "workspace:*",
     "hono": "^4.7.0",
     "viem": "^2.21.0",
     "zod": "^3.24.0"

@@ -1,5 +1,5 @@
 /**
- * @qova/core - Contract addresses, chain configuration, and protocol constants.
+ * @brnmwai/qova-core - Contract addresses, chain configuration, and protocol constants.
  * @author Qova Engineering <eng@qova.cc>
  */
 

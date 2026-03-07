@@ -10,7 +10,7 @@ Methods for recording and querying agent transactions.
 Records a transaction. **Requires wallet.**
 
 ```typescript
-import { TransactionType } from "@qova/core";
+import { TransactionType } from "@brnmwai/qova-core";
 
 const txHash = await client.recordTransaction(
   "0xAgent...",   // agent address
@@ -49,6 +49,6 @@ const stats = await client.getTransactionStats("0x1234...");
 ## Types
 
 ```typescript
-import type { TransactionStats } from "@qova/core";
-import { TransactionStatsSchema, TransactionType, TRANSACTION_TYPE_LABELS } from "@qova/core";
+import type { TransactionStats } from "@brnmwai/qova-core";
+import { TransactionStatsSchema, TransactionType, TRANSACTION_TYPE_LABELS } from "@brnmwai/qova-core";
 ```

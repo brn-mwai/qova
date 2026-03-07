@@ -8,7 +8,7 @@ The `QovaClient` is the main entry point for all SDK operations.
 ## Creating a Client
 
 ```typescript
-import { createQovaClient } from "@qova/core";
+import { createQovaClient } from "@brnmwai/qova-core";
 
 // Read-only (no wallet needed)
 const client = createQovaClient({ chain: "base-sepolia" });
@@ -26,7 +26,7 @@ const client = createQovaClient({
 import { createWalletClient, http } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { baseSepolia } from "viem/chains";
-import { createQovaClient } from "@qova/core";
+import { createQovaClient } from "@brnmwai/qova-core";
 
 const wallet = createWalletClient({
   account: privateKeyToAccount("0x..."),
@@ -60,7 +60,7 @@ client.contracts;      // Resolved contract addresses
 ## Error Handling
 
 ```typescript
-import { QovaError } from "@qova/core";
+import { QovaError } from "@brnmwai/qova-core";
 
 try {
   const client = createQovaClient({ chain: "invalid" });
@@ -74,5 +74,5 @@ try {
 ## Types
 
 ```typescript
-import type { QovaClient, QovaClientConfig, ContractAddresses } from "@qova/core";
+import type { QovaClient, QovaClientConfig, ContractAddresses } from "@brnmwai/qova-core";
 ```

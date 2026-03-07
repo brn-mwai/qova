@@ -48,7 +48,7 @@ const ENDPOINTS: Endpoint[] = [
     method: "GET",
     path: "SDK: client.getScore(address)",
     description: "Read an agent's reputation score from the on-chain ReputationRegistry contract",
-    example: `import { createQovaClient } from "@qova/core";
+    example: `import { createQovaClient } from "@brnmwai/qova-core";
 
 const client = createQovaClient({ chain: "base" });
 const score = await client.getScore("0x742d...bD18");
@@ -72,7 +72,7 @@ console.log(score); // 967`,
     method: "POST",
     path: "SDK: client.registerAgent(address)",
     description: "Register a new agent on-chain (requires walletClient)",
-    example: `import { createQovaClient } from "@qova/core";
+    example: `import { createQovaClient } from "@brnmwai/qova-core";
 import { createWalletClient, http } from "viem";
 
 const wallet = createWalletClient({ ... });
