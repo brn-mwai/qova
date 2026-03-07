@@ -54,7 +54,7 @@ export const chainDistribution = query({
 
 		const map = new Map<number, number>();
 		for (const a of agents) {
-			const cid = a.chainId ?? 8453;
+			const cid = a.chainId ?? 1187947933;
 			map.set(cid, (map.get(cid) ?? 0) + 1);
 		}
 
@@ -81,7 +81,7 @@ export const currencyBreakdown = query({
 
 		const map = new Map<string, { totalBudget: number; agentCount: number }>();
 		for (const a of agents) {
-			const cur = a.budgetCurrency ?? "ETH";
+			const cur = a.budgetCurrency ?? "USDC.e";
 			const entry = map.get(cur) ?? { totalBudget: 0, agentCount: 0 };
 			entry.agentCount++;
 			if (a.monthlyLimit) {

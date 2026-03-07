@@ -35,8 +35,8 @@ export default defineSchema({
     previousScore: v.optional(v.number()),
     previousGrade: v.optional(v.string()),
     // Multi-chain support
-    chainId: v.optional(v.number()), // default 8453 (Base)
-    budgetCurrency: v.optional(v.string()), // default "ETH"
+    chainId: v.optional(v.number()), // default 1187947933 (SKALE Base)
+    budgetCurrency: v.optional(v.string()), // default "USDC.e"
   })
     .index("by_address", ["address"])
     .index("by_score", ["score"])

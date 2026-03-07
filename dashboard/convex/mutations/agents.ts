@@ -120,7 +120,7 @@ export const upsertAgent = mutation({
 			return found._id;
 		}
 
-		const chainId = args.chainId ?? 8453;
+		const chainId = args.chainId ?? 1187947933;
 		const explorerBase = chainId === 1187947933
 			? "https://skale-base-explorer.skalenodes.com"
 			: "https://basescan.org";
@@ -151,14 +151,14 @@ export const upsertAgent = mutation({
 			dailySpent: args.dailySpent,
 			monthlySpent: args.monthlySpent,
 			chainId,
-			budgetCurrency: args.budgetCurrency ?? "ETH",
+			budgetCurrency: args.budgetCurrency ?? "USDC.e",
 		});
 		await trackEvent(ctx, {
 			userId,
 			action: "agent.register",
 			resource: "agent",
 			resourceId: args.address,
-			metadata: { name: args.name, chainId, budgetCurrency: args.budgetCurrency ?? "ETH" },
+			metadata: { name: args.name, chainId, budgetCurrency: args.budgetCurrency ?? "USDC.e" },
 			notification: {
 				type: "system",
 				title: "Agent Registered",

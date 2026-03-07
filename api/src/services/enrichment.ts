@@ -62,7 +62,7 @@ export function enrichTransactionStats(
 	return {
 		agent: address,
 		totalCount: stats.totalCount,
-		totalVolume: `${formatWei(stats.totalVolume)} ETH`,
+		totalVolume: `${formatWei(stats.totalVolume)} USDC.e`,
 		totalVolumeWei: stats.totalVolume.toString(),
 		successRate: formatBasisPoints(successRateBps),
 		successRateBps,
@@ -89,15 +89,15 @@ export function enrichBudgetStatus(address: string, status: BudgetStatus): Recor
 	return {
 		agent: address,
 		config: {
-			dailyLimit: `${formatWei(dailyLimit)} ETH`,
-			monthlyLimit: `${formatWei(monthlyLimit)} ETH`,
-			perTxLimit: `${formatWei(status.perTxLimit)} ETH`,
+			dailyLimit: `${formatWei(dailyLimit)} USDC.e`,
+			monthlyLimit: `${formatWei(monthlyLimit)} USDC.e`,
+			perTxLimit: `${formatWei(status.perTxLimit)} USDC.e`,
 		},
 		usage: {
-			dailySpent: `${formatWei(status.dailySpent)} ETH`,
-			monthlySpent: `${formatWei(status.monthlySpent)} ETH`,
-			dailyRemaining: `${formatWei(status.dailyRemaining)} ETH`,
-			monthlyRemaining: `${formatWei(status.monthlyRemaining)} ETH`,
+			dailySpent: `${formatWei(status.dailySpent)} USDC.e`,
+			monthlySpent: `${formatWei(status.monthlySpent)} USDC.e`,
+			dailyRemaining: `${formatWei(status.dailyRemaining)} USDC.e`,
+			monthlyRemaining: `${formatWei(status.monthlyRemaining)} USDC.e`,
 		},
 		utilization: {
 			daily: `${dailyUtilization.toFixed(2)}%`,

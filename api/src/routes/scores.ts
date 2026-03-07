@@ -130,7 +130,7 @@ scoreRoutes.get("/:address", validateAddress(), async (c) => {
 		gradeColor: getScoreColor(currentScore),
 		factors: {
 			transactionVolume: {
-				raw: `${formatWei(stats.totalVolume)} ETH`,
+				raw: `${formatWei(stats.totalVolume)} USDC.e`,
 				normalized: Math.round(volNorm * 1000) / 1000,
 				weight: SCORE_WEIGHTS.transactionVolume,
 				contribution: Math.round(volNorm * SCORE_WEIGHTS.transactionVolume * 1000),

@@ -117,7 +117,7 @@ export function RegisterAgentDialog({
   const handleChainChange = useCallback((chainIdStr: string): void => {
     const chainId = Number(chainIdStr)
     const tokens = getTokensForChain(chainId)
-    const defaultCurrency = tokens[0]?.symbol ?? getChain(chainId)?.nativeCurrency.symbol ?? DEFAULT_CURRENCY
+    const defaultCurrency = tokens[0]?.symbol ?? DEFAULT_CURRENCY
     setForm((prev) => ({
       ...prev,
       chainId,

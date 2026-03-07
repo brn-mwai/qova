@@ -328,7 +328,7 @@ export function useFilteredGradeDistribution(): Record<string, number> {
 export function useChainCurrency(): string {
 	const { selectedChainId } = useChainFilter();
 	const chainId = selectedChainId !== 0 ? selectedChainId : DEFAULT_CHAIN_ID;
-	return CHAIN_TX_CURRENCY[chainId] ?? "ETH";
+	return CHAIN_TX_CURRENCY[chainId] ?? "USDC.e";
 }
 
 /** Primary transaction currency per chain (not the gas token). */

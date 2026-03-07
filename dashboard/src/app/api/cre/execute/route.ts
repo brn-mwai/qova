@@ -212,14 +212,14 @@ export async function POST(request: Request): Promise<NextResponse> {
 			// Sync agent score and on-chain stats to dashboard
 			const volumeEth = (Number(totalVolume) / 1e18).toFixed(4);
 			const successPct = `${(Number(successRate) / 100).toFixed(1)}%`;
-			const dailySpentEth = `${(Number(budgetStatus.dailySpent) / 1e18).toFixed(4)} ETH`;
-			const monthlySpentEth = `${(Number(budgetStatus.monthlySpent) / 1e18).toFixed(4)} ETH`;
+			const dailySpentEth = `${(Number(budgetStatus.dailySpent) / 1e18).toFixed(4)} USDC.e`;
+			const monthlySpentEth = `${(Number(budgetStatus.monthlySpent) / 1e18).toFixed(4)} USDC.e`;
 			try {
 				await convex.mutation(api.mutations.agents.syncFromChain, {
 					address: agentAddress,
 					score: newScore,
 					totalTxCount: Number(totalCount),
-					totalVolume: `${volumeEth} ETH`,
+					totalVolume: `${volumeEth} USDC.e`,
 					successRate: successPct,
 					dailySpent: dailySpentEth,
 					monthlySpent: monthlySpentEth,
