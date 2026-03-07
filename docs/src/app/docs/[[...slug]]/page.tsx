@@ -1,5 +1,5 @@
 import defaultMdxComponents from "fumadocs-ui/mdx";
-import { DocsPage, DocsBody } from "fumadocs-ui/page";
+import { DocsPage, DocsBody, DocsTitle, DocsDescription } from "fumadocs-ui/page";
 import { notFound } from "next/navigation";
 import { source } from "@/lib/source";
 import type { ReactElement } from "react";
@@ -24,6 +24,10 @@ export default async function Page(props: {
 
   return (
     <DocsPage toc={data.toc} full={data.full}>
+      <DocsTitle>{data.title}</DocsTitle>
+      {data.description ? (
+        <DocsDescription>{data.description}</DocsDescription>
+      ) : null}
       <DocsBody>
         {/* @ts-expect-error -- MDX body component from fumadocs-mdx */}
         <MDX components={{ ...defaultMdxComponents }} />
