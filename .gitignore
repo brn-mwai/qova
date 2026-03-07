@@ -12,7 +12,16 @@ cache/
 contracts/out/
 contracts/cache/
 .convex/
-.claude/settings.local.json
+# Claude
+.claude/
+CLAUDE.md
+CLAUDE-2.md
+**/CLAUDE.md
+qova-progress.txt
+reference/build-plan.md
+reference/build-plan-addendum.md
+reference/decisions/012-dashboard-architecture.md
+reference/ui-design-system.md
 .vercel
 *.tsbuildinfo
 qova-claude-agents.tar.gz
