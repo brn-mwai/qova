@@ -1,64 +1,158 @@
-# cre/ -- Chainlink CRE Workflows
+# CRE Workflows -- Development Protocol
 
-## Overview
-Chainlink CRE (Compute Runtime Environment) workflows for decentralized reputation
-scoring, transaction monitoring, budget alerts, and agent verification.
-Built with @chainlink/cre-sdk v1.1.2, TypeScript, Bun runtime.
+> Source of truth: `.claude/agents/01-cre-workflow.md` (1189 lines)
 
-## Workflows
+## Mandatory Workflow Structure
 
-### reputation-oracle/
-- **Trigger:** CronCapability (configurable schedule)
-- **Flow:** Fetch agents -> read on-chain data -> off-chain enrichment -> compute score -> write on-chain
-- **Output:** Updated ReputationRegistry score snapshot via CRE report
+Every CRE workflow MUST follow this pattern:
 
-### transaction-monitor/
-- **Trigger:** EVMClient.logTrigger (TransactionRecorded events)
-- **Flow:** Capture event -> read tx stats -> off-chain enrichment -> compute anomaly risk score -> write report on-chain -> webhook alert
-- **Output:** Monitoring report with risk score (0-100), anomaly flags, and on-chain score adjustment
-- **Risk factors:** Frequency anomaly (30%), large value (25%), failure rate (25%), flagged contracts (20%)
+```typescript
+import { Runner, handler, CronCapability, type Runtime } from "@chainlink/cre-sdk"
+import { z } from "zod"
 
-### budget-alert/
-- **Trigger:** EVMClient.logTrigger (SpendRecorded events)
-- **Flow:** Capture event -> read budget status -> read agent score -> compute utilization -> write report on-chain -> webhook alert
-- **Output:** Budget report with daily/monthly utilization, alert level (GREEN/YELLOW/RED/CRITICAL)
+// 1. Zod config schema
+const configSchema = z.object({ /* ... */ })
+type Config = z.infer<typeof configSchema>
 
-### agent-verify/
-- **Trigger:** HTTPCapability (POST requests)
-- **Flow:** Parse agent address -> read on-chain data -> fetch contract info -> sanctions check -> run 8 verification checks -> write report on-chain
-- **Output:** Verification attestation with status (VERIFIED/PARTIALLY_VERIFIED/UNVERIFIED/SUSPICIOUS) and credit grade (AAA-D)
+// 2. Callback (stateless, runs on every node)
+const onTrigger = (runtime: Runtime<Config>): string => {
+  runtime.log("Executing")
+  return "done"
+}
 
-## Shared Modules (shared/)
-- `constants.ts` -- Chain selectors, contract addresses, scoring weights, monitoring thresholds, budget alert levels, verification parameters
-- `contracts.ts` -- Minimal ABI fragments for ReputationRegistry, TransactionValidator, BudgetEnforcer, QovaCore, QovaReputationConsumer
-- `scoring.ts` -- Deterministic reputation scoring algorithm
-- `monitoring.ts` -- Anomaly detection computation (frequency, value, failure rate, flagged contracts)
-- `budget.ts` -- Budget utilization computation and alert level classification
-- `verification.ts` -- Agent verification checks (8 checks) and status classification
-- `types.ts` -- Zod config schemas + report types (MonitoringReport, BudgetReport, VerificationReport)
+// 3. initWorkflow returns handler array
+const initWorkflow = (config: Config) => {
+  const cron = new CronCapability()
+  return [handler(cron.trigger({ schedule: config.schedule }), onTrigger)]
+}
 
-## CRE SDK Patterns
-- `Runner.newRunner<Config>({ configSchema })` -> `runner.run(initWorkflow)`
-- `initWorkflow(config)` returns array of `cre.handler(trigger, handlerFn)`
-- EVM reads: `evmClient.callContract(runtime, { call, blockNumber }).result()`
-- HTTP consensus: `httpClient.sendRequest(runtime, fn, consensusIdenticalAggregation())(args).result()`
-- On-chain writes: `runtime.report(prepareReportRequest(data)).result()` -> `evmClient.writeReport(runtime, { receiver, report })`
-- Log triggers: `evmClient.logTrigger({ addresses, topics })`
-- Chain selector resolved via `getNetwork({ chainFamily, chainSelectorName, isTestnet })`
-
-## Commands
-```bash
-bun test                       # Run unit tests (90 tests across 6 files)
-bun run mock-api               # Start mock scoring API on :3001
-bun run simulate:reputation    # CRE local simulation
-bun run simulate:monitor
-bun run simulate:budget
-bun run simulate:verify
-bun run check                  # Biome lint
-bun run check:fix              # Biome lint + auto-fix
+// 4. main() entry point
+export async function main() {
+  const runner = await Runner.newRunner<Config>({ configSchema })
+  await runner.run(initWorkflow)
+}
 ```
 
-## Testing
-- 90 unit tests across 6 files (scoring, contracts, config, monitoring, budget, verification)
-- Mock API server for local development and simulation
-- All workflows validated against CRE SDK v1.1.2 types
+## The .result() Pattern (MANDATORY)
+
+Traditional async/await does NOT work in WASM. ALL SDK capabilities:
+
+```typescript
+// Chain .result() on every SDK call
+const response = httpClient.sendRequest(runtime, { ... }).result()
+const data = evmClient.callContract(runtime, { ... }).result()
+const report = runtime.report({ ... }).result()
+const secret = runtime.getSecret("KEY").result()
+
+// runInNodeMode: note the double call ()()
+const result = runtime.runInNodeMode(fn, consensus)().result()
+```
+
+## Runtime vs NodeRuntime
+
+- **Runtime<C>** (DON mode): Passed to trigger callbacks. Automatic BFT consensus on all operations. Use for EVM reads/writes, secrets, reports.
+- **NodeRuntime<C>** (Node mode): Inside `runInNodeMode()` blocks. Each node runs independently. YOU must specify consensus aggregation. Use for HTTP API calls.
+
+## Trigger Types
+
+### Cron
+```typescript
+const cron = new CronCapability()
+handler(cron.trigger({ schedule: "0 */10 * * * *" }), callback)
+// Callback: (runtime: Runtime<Config>, payload: CronPayload) => string
+```
+
+### EVM Log
+```typescript
+const evmClient = new EVMClient(network.chainSelector.selector)
+const eventSig = keccak256(toHex("TransactionRecorded(address,uint256,bool)"))
+handler(evmClient.logTrigger({
+  contractAddress: hexToBase64(config.contractAddress),
+  topic0: hexToBase64(eventSig),
+  // Topics 1-3: MUST pad to 32 bytes: hexToBase64(padHex(value, { size: 32 }))
+}), callback)
+// Callback: (runtime: Runtime<Config>, log: EVMLog) => string
+```
+
+### HTTP
+```typescript
+const http = new HTTPCapability()
+handler(http.trigger({ method: "POST", path: "/verify" }), callback)
+// Callback: (runtime: Runtime<Config>, payload: HTTPTriggerPayload) => string
+```
+
+## Write Pattern (EVM)
+
+```typescript
+// 1. ABI-encode data
+const encoded = encodeAbiParameters(parseAbiParameters("address,uint256,uint256"), [...])
+// 2. Generate signed report
+const report = runtime.report({
+  encodedPayload: hexToBase64(encoded),
+  encoderName: "evm", signingAlgo: "ecdsa", hashingAlgo: "keccak256",
+}).result()
+// 3. Submit to consumer contract
+evmClient.writeReport(runtime, {
+  receiver: consumerAddress,
+  report,
+  gasConfig: { gasLimit: "500000" },  // ALWAYS set explicit gasLimit
+}).result()
+```
+
+## HTTP in Node Mode
+
+```typescript
+const result = runtime.runInNodeMode(
+  (nodeRuntime: NodeRuntime<Config>) => {
+    const http = new HTTPClient()
+    return http.sendRequest(nodeRuntime, { url, method: "GET", headers }).result()
+  },
+  consensusIdenticalAggregation()  // or consensusMedianAggregation, ConsensusAggregationByFields
+)().result()
+```
+
+## Service Quotas
+
+| Quota | Limit |
+|---|---|
+| EVM reads per execution | **10** |
+| HTTP calls per execution | **5** |
+| Execution timeout | **5 min** |
+| Cron minimum interval | **30 sec** |
+| Report payload | **5 KB** |
+| Gas per tx | **5,000,000** |
+| Concurrent executions per owner | **5** |
+| Log line size | **1 KB** |
+| Concurrent capability calls | **3** |
+
+## Non-Determinism Rules (VIOLATIONS = CONSENSUS FAILURE)
+
+| NEVER | USE INSTEAD |
+|---|---|
+| `Math.random()` | `runtime.random()` |
+| `Date.now()` / `new Date()` | `runtime.now()` |
+| Floating point math | `BigInt` exclusively |
+| `console.log` | `runtime.log()` |
+| `async/await` on SDK | `.result()` pattern |
+| Node.js APIs (crypto, fs) | viem utilities |
+
+## Simulation Commands
+
+```bash
+cre workflow simulate reputation-oracle --target staging-settings
+cre workflow simulate transaction-monitor --target staging-settings
+cre workflow simulate budget-alert --target staging-settings
+cre workflow simulate agent-verify --target staging-settings --http-payload '{"agent_address":"0x..."}'
+
+# With real on-chain writes
+cre workflow simulate <dir> --target staging-settings --broadcast
+```
+
+## Qova Workflows
+
+| Workflow | Trigger | Pattern |
+|---|---|---|
+| reputation-oracle | Cron (10min) | Read 3 contracts -> compute score -> write if delta >= 10 |
+| transaction-monitor | EVM Log (TransactionRecorded) | Decode event -> anomaly detection -> alert |
+| budget-alert | EVM Log (BudgetUpdated/Exceeded) | Read utilization -> threshold check -> enforce |
+| agent-verify | HTTP POST | Parse proof -> World ID verify -> write verification on-chain |

@@ -38,7 +38,7 @@ app.use(
 	cors({
 		origin: CORS_ORIGINS,
 		allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-		allowHeaders: ["Content-Type", "Authorization", "X-API-Key"],
+		allowHeaders: ["Content-Type", "Authorization", "X-API-Key", "X-Payment"],
 		maxAge: 86400,
 	}),
 );
@@ -72,6 +72,14 @@ app.onError(errorHandler);
 
 // Mount API routes under /api
 app.route("/api", routes);
+
+// ─── x402 Payment Support ────────────────────────────────────────
+// Premium score lookups support x402 micropayments on SKALE on Base.
+// External AI agents can pay $0.001 USDC per reputation check via the
+// x402 HTTP payment protocol. When X-Payment header is absent, premium
+// endpoints return HTTP 402 with payment requirements. The facilitator
+// verifies and settles payments on SKALE (zero gas) before the API
+// returns score data. See reference/decisions/013-dual-chain-architecture.md
 
 // CRE-compatible routes under /v1 (backward compat with CRE workflow configs)
 app.get("/v1/agents", (c) => {

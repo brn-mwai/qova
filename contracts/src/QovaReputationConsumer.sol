@@ -1,23 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {CREReceiver} from "./base/CREReceiver.sol";
 import {ReputationRegistry} from "./ReputationRegistry.sol";
 
 /// @title QovaReputationConsumer
 /// @author Qova Engineering
-/// @notice Receives CRE workflow reports and writes reputation scores on-chain.
-/// @dev Deployed as the CRE report receiver. The CRE DON calls `onReport` which
-///      decodes the payload and forwards the score update to ReputationRegistry.
-///      Only addresses with CRE_FORWARDER_ROLE can call `onReport`.
-contract QovaReputationConsumer is AccessControl {
-    // ──────────────────────────────────────────────
-    //  Roles
-    // ──────────────────────────────────────────────
-
-    /// @notice Role granted to the CRE forwarder contract.
-    bytes32 public constant CRE_FORWARDER_ROLE = keccak256("CRE_FORWARDER_ROLE");
-
+/// @notice Receives CRE workflow reports via KeystoneForwarder and writes
+///         reputation scores to the ReputationRegistry.
+/// @dev Extends CREReceiver (ReceiverTemplate pattern) for forwarder validation.
+///      CRE workflows encode reports as (address agent, uint256 score, uint256 timestamp).
+contract QovaReputationConsumer is CREReceiver, Ownable {
     // ──────────────────────────────────────────────
     //  State
     // ──────────────────────────────────────────────
@@ -25,8 +19,11 @@ contract QovaReputationConsumer is AccessControl {
     /// @notice The Qova ReputationRegistry that stores agent scores.
     ReputationRegistry public reputationRegistry;
 
-    /// @notice Tracks the last report timestamp per agent for replay protection.
-    mapping(address => uint48) public lastReportTimestamp;
+    /// @notice Tracks the last report timestamp per agent for staleness checks.
+    mapping(address => uint256) public lastReportTimestamp;
+
+    /// @notice Replay protection: each unique report payload can only be processed once.
+    mapping(bytes32 => bool) public processedReports;
 
     // ──────────────────────────────────────────────
     //  Errors
@@ -35,74 +32,80 @@ contract QovaReputationConsumer is AccessControl {
     /// @dev Thrown when the registry address is zero.
     error InvalidRegistry();
 
-    /// @dev Thrown when report payload decoding fails.
-    error InvalidReportPayload();
+    /// @dev Thrown when a report payload has already been processed.
+    error ReportAlreadyProcessed();
 
-    /// @dev Thrown when a stale or replayed report is submitted.
-    error StaleReport();
-
-    /// @dev Thrown when the score exceeds the valid range.
+    /// @dev Thrown when the decoded score exceeds the valid range (0-1000).
     error ScoreOutOfRange();
+
+    /// @dev Thrown when a report's timestamp is not newer than the previous one.
+    error StaleReport();
 
     // ──────────────────────────────────────────────
     //  Events
     // ──────────────────────────────────────────────
 
     /// @notice Emitted when a CRE reputation report is processed.
-    /// @param agent     The agent whose score was updated.
-    /// @param newScore  The new reputation score.
-    /// @param reason    CRE workflow identifier hash.
-    /// @param timestamp Block timestamp of the report.
+    /// @param agent    The agent whose score was updated.
+    /// @param newScore The new reputation score.
+    /// @param timestamp Timestamp from the CRE report.
     event ReputationReportProcessed(
         address indexed agent,
         uint16 newScore,
-        bytes32 reason,
-        uint48 timestamp
+        uint256 timestamp
     );
+
+    /// @notice Emitted when the ReputationRegistry reference is updated.
+    event RegistryUpdated(address indexed oldRegistry, address indexed newRegistry);
 
     // ──────────────────────────────────────────────
     //  Constructor
     // ──────────────────────────────────────────────
 
-    /// @notice Deploys the consumer with a reference to the ReputationRegistry.
-    /// @param _registry Address of the deployed ReputationRegistry.
-    /// @param _creForwarder Address of the CRE forwarder contract (or EOA for testing).
-    constructor(address _registry, address _creForwarder) {
+    /// @notice Deploys the consumer with a forwarder and registry reference.
+    /// @param _forwarder Address of the KeystoneForwarder (CRE report delivery).
+    /// @param _registry  Address of the deployed ReputationRegistry.
+    constructor(
+        address _forwarder,
+        address _registry
+    ) CREReceiver(_forwarder) Ownable(msg.sender) {
         if (_registry == address(0)) revert InvalidRegistry();
-
         reputationRegistry = ReputationRegistry(_registry);
-
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(CRE_FORWARDER_ROLE, _creForwarder);
     }
 
     // ──────────────────────────────────────────────
     //  CRE Report Entry Point
     // ──────────────────────────────────────────────
 
-    /// @notice Called by the CRE forwarder to deliver a reputation report.
-    /// @dev Decodes the ABI-encoded payload as (address agent, uint16 score, bytes32 reason).
-    ///      Enforces monotonic timestamps and score range [0, 1000].
-    /// @param reportPayload ABI-encoded payload from the CRE workflow.
-    function onReport(bytes calldata reportPayload) external onlyRole(CRE_FORWARDER_ROLE) {
-        (address agent, uint16 score, bytes32 reason) = abi.decode(
-            reportPayload,
-            (address, uint16, bytes32)
-        );
+    /// @notice Called by the KeystoneForwarder to deliver a reputation report.
+    /// @dev Validates forwarder, checks replay/staleness, decodes and forwards to registry.
+    ///      Report format: abi.encode(address agent, uint256 score, uint256 timestamp)
+    /// @param metadata CRE report metadata (workflow ID, DON config, signatures).
+    /// @param report   ABI-encoded payload from the CRE workflow.
+    function onReport(bytes calldata metadata, bytes calldata report) external override {
+        // Step 1: Validate forwarder
+        _validateReport(metadata, report);
 
-        if (agent == address(0)) revert InvalidReportPayload();
+        // Step 2: Replay protection
+        bytes32 reportHash = keccak256(report);
+        if (processedReports[reportHash]) revert ReportAlreadyProcessed();
+        processedReports[reportHash] = true;
+
+        // Step 3: Decode report (matches CRE workflow encoding)
+        (address agent, uint256 score, uint256 timestamp) =
+            abi.decode(report, (address, uint256, uint256));
+
+        // Step 4: Validate
         if (score > 1000) revert ScoreOutOfRange();
+        if (timestamp <= lastReportTimestamp[agent]) revert StaleReport();
 
-        uint48 ts = uint48(block.timestamp);
+        // Step 5: Update state
+        lastReportTimestamp[agent] = timestamp;
 
-        // Replay protection: ensure this report is newer than the last one
-        if (ts <= lastReportTimestamp[agent]) revert StaleReport();
-        lastReportTimestamp[agent] = ts;
+        // Step 6: Forward to ReputationRegistry (cast uint256 -> uint16, use reportHash as reason)
+        reputationRegistry.updateScore(agent, uint16(score), reportHash);
 
-        // Forward the score update to ReputationRegistry
-        reputationRegistry.updateScore(agent, score, reason);
-
-        emit ReputationReportProcessed(agent, score, reason, ts);
+        emit ReputationReportProcessed(agent, uint16(score), timestamp);
     }
 
     // ──────────────────────────────────────────────
@@ -111,8 +114,10 @@ contract QovaReputationConsumer is AccessControl {
 
     /// @notice Update the ReputationRegistry reference.
     /// @param _registry Address of the new ReputationRegistry contract.
-    function setReputationRegistry(address _registry) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setReputationRegistry(address _registry) external onlyOwner {
         if (_registry == address(0)) revert InvalidRegistry();
+        address old = address(reputationRegistry);
         reputationRegistry = ReputationRegistry(_registry);
+        emit RegistryUpdated(old, _registry);
     }
 }

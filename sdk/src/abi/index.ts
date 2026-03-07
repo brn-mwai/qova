@@ -19,5 +19,7 @@
 
 export { budgetEnforcerAbi } from "./budget-enforcer.js";
 export { qovaCoreAbi } from "./qova-core.js";
+export { reputationConsumerAbi } from "./reputation-consumer.js";
 export { reputationRegistryAbi } from "./reputation-registry.js";
 export { transactionValidatorAbi } from "./transaction-validator.js";
+export { verificationConsumerAbi } from "./verification-consumer.js";

@@ -38,7 +38,7 @@ describe("enrichTransactionStats", () => {
 		});
 
 		expect(result.totalCount).toBe(156);
-		expect(result.totalVolume).toContain("ETH");
+		expect(result.totalVolume).toContain("USDC.e");
 		expect(result.successRate).toContain("%");
 		expect(result.addressShort).toContain("...");
 	});
@@ -59,7 +59,7 @@ describe("enrichBudgetStatus", () => {
 		expect(result.utilization).toBeDefined();
 		expect(result.raw).toBeDefined();
 		const config = result.config as Record<string, string>;
-		expect(config.dailyLimit).toContain("ETH");
+		expect(config.dailyLimit).toContain("USDC.e");
 		const util = result.utilization as Record<string, string>;
 		expect(util.daily).toContain("%");
 	});

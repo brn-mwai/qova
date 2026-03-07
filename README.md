@@ -102,6 +102,99 @@ flowchart TB
 
 ---
 
+## Chainlink Integration Map
+
+> **Hackathon requirement**: "README must link to all files that use Chainlink."
+
+### CRE Workflows (`cre/`)
+
+| Workflow | File | Trigger | Purpose |
+|:---------|:-----|:--------|:--------|
+| Reputation Oracle | [`cre/reputation-oracle/main.ts`](./cre/reputation-oracle/main.ts) | Cron (10min) | AI-enhanced reputation scoring with Groq Llama 3.1 70B via `runInNodeMode` |
+| Transaction Monitor | [`cre/transaction-monitor/main.ts`](./cre/transaction-monitor/main.ts) | EVM Log (`TransactionRecorded`) | Real-time anomaly detection with 4-factor risk scoring |
+| Budget Alert | [`cre/budget-alert/main.ts`](./cre/budget-alert/main.ts) | EVM Log (`SpendRecorded`) | Budget threshold enforcement with tiered alerts |
+| Agent Verify | [`cre/agent-verify/main.ts`](./cre/agent-verify/main.ts) | HTTP POST | World ID verification orchestrated by CRE |
+
+### Smart Contracts (`contracts/src/`)
+
+| Contract | File | Chainlink Usage |
+|:---------|:-----|:----------------|
+| QovaReputationConsumer | [`contracts/src/QovaReputationConsumer.sol`](./contracts/src/QovaReputationConsumer.sol) | CRE report receiver (`IReceiver.onReport`) with replay protection |
+| QovaVerificationConsumer | [`contracts/src/QovaVerificationConsumer.sol`](./contracts/src/QovaVerificationConsumer.sol) | CRE report receiver for World ID sybil-resistant verification |
+| CrossChainReputation | [`contracts/src/CrossChainReputation.sol`](./contracts/src/CrossChainReputation.sol) | CCIP cross-chain reputation sync |
+| PriceFeedConsumer | [`contracts/src/PriceFeedConsumer.sol`](./contracts/src/PriceFeedConsumer.sol) | Chainlink Data Feeds for price conversion |
+
+### CRE Configuration
+
+| File | Purpose |
+|:-----|:--------|
+| [`cre/project.yaml`](./cre/project.yaml) | Global CRE project config (targets, RPCs, chain selectors) |
+| [`cre/secrets.yaml`](./cre/secrets.yaml) | Secret declarations (AI_API_KEY, WORLD_ID_APP_ID) |
+| [`cre/reputation-oracle/config.json`](./cre/reputation-oracle/config.json) | Reputation oracle config (contract addresses, schedule, AI toggle) |
+| [`cre/transaction-monitor/config.json`](./cre/transaction-monitor/config.json) | Transaction monitor config (thresholds, contract address) |
+| [`cre/budget-alert/config.json`](./cre/budget-alert/config.json) | Budget alert config (utilization thresholds) |
+| [`cre/agent-verify/config.json`](./cre/agent-verify/config.json) | Agent verification config (World ID app ID, min score) |
+
+### CRE Consumer Base Contracts
+
+| File | Purpose |
+|:-----|:--------|
+| [`contracts/src/interfaces/IReceiver.sol`](./contracts/src/interfaces/IReceiver.sol) | CRE `IReceiver` interface (`onReport(metadata, report)`) |
+| [`contracts/src/base/CREReceiver.sol`](./contracts/src/base/CREReceiver.sol) | Base contract with forwarder validation (`_validateReport`) |
+
+---
+
+## Prize Tracks
+
+| Track | Prize | What Qova Does |
+|:------|:------|:---------------|
+| **CRE & AI** | $10,500 | AI-enhanced reputation scoring with Groq Llama 3.1 70B running inside CRE `runInNodeMode`. DON nodes reach consensus on AI-generated behavioral analysis before writing scores on-chain. |
+| **Risk & Compliance** | $10,000 | Real-time anomaly detection via `TransactionRecorded` EVM Log trigger (4-factor risk scoring) + automated budget enforcement via `SpendRecorded` EVM Log trigger (tiered alerts with score penalties). |
+| **World ID with CRE** | $3,000 | Off-chain World ID proof verification orchestrated entirely by CRE. HTTP trigger receives proof, DON nodes independently verify against World ID API, consensus writes sybil-resistant verification status to Base via `QovaVerificationConsumer`. |
+| **Top 10** | $1,500 | Full CRE-native architecture with 4 workflows, 3 trigger types (Cron, EVM Log, HTTP), AI integration, cross-chain design, and 348 passing tests. |
+
+---
+
+## Dual-Chain Architecture
+
+```mermaid
+flowchart TB
+    subgraph Dashboard["Dashboard (app.qova.cc)"]
+        UI["Next.js 15 + Convex"]
+    end
+
+    subgraph CRE["Chainlink CRE Network"]
+        W1["Reputation Oracle\n(Cron + AI)"]
+        W2["Transaction Monitor\n(EVM Log)"]
+        W3["Budget Alert\n(EVM Log)"]
+        W4["Agent Verify\n(HTTP + World ID)"]
+    end
+
+    subgraph Base["Base Sepolia - CRE Settlement"]
+        RC["QovaReputationConsumer\n(CRE report receiver)"]
+        VC["QovaVerificationConsumer\n(World ID CRE receiver)"]
+        KF["KeystoneForwarder"]
+    end
+
+    subgraph SKALE["SKALE on Base - Zero Gas Agent Txs"]
+        RR["ReputationRegistry\n(gas-free score reads)"]
+        TV["TransactionValidator\n(gas-free tx recording)"]
+        BE["BudgetEnforcer\n(gas-free budget checks)"]
+    end
+
+    UI --> CRE
+    CRE -->|"writeReport()"| KF
+    KF --> RC
+    KF --> VC
+    CRE -->|"read contracts"| SKALE
+    Base <-->|"state sync"| SKALE
+    UI -->|"real-time"| SKALE
+```
+
+**Why dual-chain:** CRE workflows settle on Base Sepolia (where Chainlink's KeystoneForwarder lives). Agent day-to-day transactions happen on SKALE on Base with zero gas fees, making high-frequency score updates economically viable. Premium reputation lookups use x402 micropayments settled on SKALE.
+
+---
+
 ## Architecture
 
 ```mermaid
@@ -438,13 +531,39 @@ async function executeWithTrustCheck(agentAddress: string, action: () => Promise
 
 - [Bun](https://bun.sh) v1.3+
 - [Foundry](https://getfoundry.sh) (for contracts)
+- [Chainlink CRE CLI](https://docs.chain.link/chainlink-functions/getting-started) (for workflow simulation)
+
+### Quick Start (Windows)
+
+```bash
+# 1. Clone and install
+git clone https://github.com/brn-mwai/qova.git
+cd qova
+bun install
+
+# 2. Add CRE CLI to PATH (if not already)
+set PATH=%PATH%;C:\Users\<you>\AppData\Local\Programs\cre
+
+# 3. Login to CRE
+cre auth login
+
+# 4. Build everything
+bun run build
+
+# 5. Run all tests (348 total)
+bun run test
+
+# 6. Simulate a CRE workflow
+cd cre
+cre workflow simulate reputation-oracle --target staging-settings
+cre workflow simulate transaction-monitor --target staging-settings
+cre workflow simulate budget-alert --target staging-settings
+cre workflow simulate agent-verify --target staging-settings
+```
 
 ### Install and Build
 
 ```bash
-git clone https://github.com/brn-mwai/qova.git
-cd qova
-
 bun install        # Install all dependencies
 bun run build      # Build all packages
 bun run test       # Run all tests
@@ -457,11 +576,11 @@ bun run check      # Lint and format (Biome)
 # Smart contracts
 cd contracts && forge build && forge test -vvv
 
-# SDK
-cd sdk && bun run build && bun run test
+# SDK (99 tests)
+cd sdk && bun run build && bun test
 
-# API (port 3001)
-cd api && bun run dev
+# API (44 tests)
+cd api && bun test
 
 # Dashboard (port 3000)
 cd dashboard && bun run dev
@@ -469,8 +588,12 @@ cd dashboard && bun run dev
 # CRE workflows (90 tests)
 cd cre && bun test
 
-# CRE local simulation
-cd cre && bun run simulate:reputation
+# CRE local simulation (all 4 workflows)
+cd cre
+cre workflow simulate reputation-oracle --target staging-settings
+cre workflow simulate transaction-monitor --target staging-settings
+cre workflow simulate budget-alert --target staging-settings
+cre workflow simulate agent-verify --target staging-settings
 ```
 
 ### Seed Demo Data
@@ -547,8 +670,10 @@ PORT=3001                   # API server port
 
 ## Team
 
-- **Brian Mwai** - Architecture, smart contracts, CRE workflows, SDK, dashboard
-- **Joy C. Langat** - Research, testing, documentation
+Built by **Hausor Labs**.
+
+- **Brian Mwai** - Architecture, smart contracts, CRE workflows, SDK, dashboard - [brian@hausorlabs.tech](mailto:brian@hausorlabs.tech)
+- **Joy C. Lang'at** - Research, testing, documentation - [joy@hausorlabs.tech](mailto:joy@hausorlabs.tech)
 
 ---
 

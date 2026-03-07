@@ -1,77 +1,41 @@
-# api/ -- Qova API Service
+# API -- Development Protocol
 
-## Overview
-REST API built with Hono framework on Bun runtime.
-NOT Express. NOT Fastify. Uses @qova/core SDK for all chain interactions.
+> Sources of truth: `.claude/agents/06-sdk-api.md`, `.claude/agents/10-cybersecurity.md`
 
-## Architecture
-- Entry: `src/index.ts` (Bun-native server)
-- App: `src/app.ts` (Hono instance, middleware, route mounting)
-- Routes: `src/routes/` (6 modules: health, agents, transactions, budgets, scores, verify)
-- Middleware: `src/middleware/` (error handler, validation, cache)
-- Services: `src/services/` (chain client, scoring algorithm, data enrichment)
-- Types: `src/types/` (API response types, Hono env)
-- Schemas: `src/schemas/` (Zod request/response schemas)
+## Stack
+Hono 4.7, Bun runtime, Zod validation, Vercel serverless deployment
 
-## Routes (21 endpoints)
-### /api/agents (7)
-- `GET /api/agents` -- List agents
-- `GET /api/agents/:address` -- Enriched agent details
-- `GET /api/agents/:address/score` -- Score + grade + color
-- `GET /api/agents/:address/registered` -- Registration status
-- `POST /api/agents/register` -- Register agent (write)
-- `POST /api/agents/:address/score` -- Update score (write)
-- `POST /api/agents/batch-scores` -- Batch update (write)
+## Endpoints (21 total)
+- health (1), agents (7), transactions (2), budgets (4), scores (5), verify (2)
 
-### /api/transactions (2)
-- `GET /api/transactions/:address/stats` -- Enriched tx stats
-- `POST /api/transactions/record` -- Record transaction (write)
+## Endpoint Validation
+- ALL request bodies validated with Zod schemas before processing
+- ALL responses follow consistent structure: `{ success, data?, error? }`
+- Proper HTTP status codes: 200 (ok), 201 (created), 400 (bad input), 404 (not found), 429 (rate limited), 500 (server error)
 
-### /api/budgets (4)
-- `GET /api/budgets/:address` -- Enriched budget status
-- `POST /api/budgets/:address/set` -- Set limits (write)
-- `POST /api/budgets/:address/check` -- Check budget
-- `POST /api/budgets/:address/spend` -- Record spend (write)
+## Rate Limiting
+- 100 requests per minute per IP (in-memory tracker)
+- Consider per-API-key limiting for production
 
-### /api/scores (5)
-- `GET /api/scores/agents` -- Agent list (CRE-compatible)
-- `POST /api/scores/enrich` -- Off-chain enrichment (CRE-compatible)
-- `POST /api/scores/anomaly-check` -- Anomaly detection (CRE-compatible)
-- `POST /api/scores/compute` -- Compute score from metrics
-- `GET /api/scores/:address` -- Full score breakdown
+## Caching
+- 30-second TTL in-memory cache on GET endpoints
+- Cache-Control headers set appropriately
 
-### /api/verify (2)
-- `POST /api/verify` -- Verify agent
-- `POST /api/verify/sanctions` -- Sanctions screening
+## CORS
+- Restrict to dashboard domain (app.qova.cc) in production
+- Allow localhost:3000 in development
 
-### /v1/* (CRE backward-compatible)
-- `GET /v1/agents`, `POST /v1/enrich`, `POST /v1/anomaly-check`, `POST /v1/sanctions/check`, `POST /v1/webhook`
+## Security Requirements
+- [ ] API key comparison uses timing-safe equality (`crypto.timingSafeEqual`)
+- [ ] No error details (stack traces, internal paths) in production responses
+- [ ] Helmet-equivalent headers: X-Content-Type-Options, X-Frame-Options, Strict-Transport-Security
+- [ ] Input sanitization beyond Zod: reject oversized payloads, strip unexpected fields
+- [ ] No hardcoded secrets (use env vars)
+- [ ] Webhook SSRF prevention: reject internal IPs in webhook URLs
 
-## Middleware Stack
-1. CORS (localhost:3000, localhost:5173, qova.cc)
-2. Logger (Hono built-in)
-3. Pretty JSON (Hono built-in)
-4. Error handler (SDK errors -> HTTP status codes)
-5. Address validation (regex per-route)
-6. Body validation (Zod per-route)
-
-## Key Patterns
-- AppEnv type (`src/types/env.ts`) for typed Hono context variables
-- SDK errors map to HTTP codes: AgentNotRegistered->404, BudgetExceeded->422, Unauthorized->403, InvalidScore->400
-- BigInt values serialized as strings in JSON responses
-- In-memory TTL cache (30s) for read-heavy endpoints
-- Scoring algorithm synced with cre/shared/scoring.ts (manual sync)
-- All enrichment uses SDK utils (getGrade, formatWei, etc.) -- never manual
-
-## Commands
+## Build & Test
 ```bash
-bun run dev      # Start dev server (port 3000)
-bun run test     # Run vitest (44 tests)
-bun run build    # Compile TypeScript
+cd api
+bun run dev      # Dev server on port 3001
+bun test         # 44 tests across 10 files
 ```
-
-## Test Coverage
-- 10 test files, 44 tests
-- Routes: health, agents, transactions, budgets, scores, verify
-- Middleware: error handler, validation
-- Services: scoring algorithm, enrichment

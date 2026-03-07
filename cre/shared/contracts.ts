@@ -169,14 +169,10 @@ export const QOVA_REPUTATION_CONSUMER_ABI = [
 	},
 ] as const;
 
-/** Event signatures (keccak256 hashes) for EVM log triggers */
+/** Pre-computed event signature keccak256 hashes for EVM log triggers */
 export const EVENT_SIGNATURES = {
-	/** TransactionRecorded(address indexed agent, bytes32 indexed txHash, uint256 amount, uint8 txType, uint48 timestamp) */
-	TransactionRecorded: "0x9e01dbe80e0d45ff3a91deb78de18f8c7d498e13e9d0e1f7a18c84e8b0e14f9a",
-	/** SpendRecorded(address indexed agent, uint128 amount, uint128 dailyRemaining, uint128 monthlyRemaining) */
-	SpendRecorded: "0x1e5a5f8e06d738a73f2cf3e2f244b8e3d3c4e5f6a7b8c9d0e1f2a3b4c5d6e7f8",
-	/** AgentRegistered(address indexed agent, uint48 timestamp) */
-	AgentRegistered: "0x4b0b8d2e3f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c",
-	/** ScoreUpdated(address indexed agent, uint16 oldScore, uint16 newScore, bytes32 reason, uint48 timestamp) */
-	ScoreUpdated: "0xa2e4e8e2c5f7d3b1a9c6e0d4f8b2a5c7e1d3f6b9a4c8e2d5f7b0a3c6e9d2f5a8",
+	/** TransactionRecorded(address,bytes32,uint256,uint8,uint48) */
+	TransactionRecorded: "0x2952dfbfd2e957df91fb3c0272c40addc5175ca07216e27021b1ea2b988aa161" as `0x${string}`,
+	/** SpendRecorded(address,uint128,uint128,uint128) */
+	SpendRecorded: "0x163877ff2ffa5bacbe5a23f942d0a130610b751c4e1ddae73e7f6f3f486f97c8" as `0x${string}`,
 } as const;

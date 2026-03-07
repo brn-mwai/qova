@@ -1,0 +1,75 @@
+staging-settings:
+  config:
+    chainSelectorName: "ethereum-testnet-sepolia-base-1"
+    reputationRegistryAddress: "0x0b2466b01E6d73A24D9C716A9072ED3923563fBB"
+    transactionValidatorAddress: "0x5d7a7AEAb26D2F0076892D1C9A28F230EbB3e900"
+    budgetEnforcerAddress: "0x271618781040dc358e4F6B66561b65A839b0C76E"
+    consumerContractAddress: "0x0b2466b01E6d73A24D9C716A9072ED3923563fBB"
+    gasLimit: "500000"
+    schedule: "0 */10 * * * *"
+  user-workflow:
+    workflow-name: "reputation-oracle"
+  workflow-artifacts:
+    workflow-path: "./main.ts"
+    config-path: "./config.json"
+  rpcs:
+    - chain-name: ethereum-testnet-sepolia-base-1
+      url: https://sepolia.base.org
+  private-keys:
+    - chain-name: ethereum-testnet-sepolia-base-1
+      value: "${PRIVATE_KEY}"
+
+staging-budget-alert:
+  config:
+    chainSelectorName: "ethereum-testnet-sepolia-base-1"
+    reputationRegistryAddress: "0x0b2466b01E6d73A24D9C716A9072ED3923563fBB"
+    budgetEnforcerAddress: "0x271618781040dc358e4F6B66561b65A839b0C76E"
+    gasLimit: "500000"
+  user-workflow:
+    workflow-name: "budget-alert"
+  workflow-artifacts:
+    workflow-path: "./main.ts"
+    config-path: "./config.json"
+  rpcs:
+    - chain-name: ethereum-testnet-sepolia-base-1
+      url: https://sepolia.base.org
+  private-keys:
+    - chain-name: ethereum-testnet-sepolia-base-1
+      value: "${PRIVATE_KEY}"
+
+staging-transaction-monitor:
+  config:
+    chainSelectorName: "ethereum-testnet-sepolia-base-1"
+    reputationRegistryAddress: "0x0b2466b01E6d73A24D9C716A9072ED3923563fBB"
+    transactionValidatorAddress: "0x5d7a7AEAb26D2F0076892D1C9A28F230EbB3e900"
+    gasLimit: "500000"
+  user-workflow:
+    workflow-name: "transaction-monitor"
+  workflow-artifacts:
+    workflow-path: "./main.ts"
+    config-path: "./config.json"
+  rpcs:
+    - chain-name: ethereum-testnet-sepolia-base-1
+      url: https://sepolia.base.org
+  private-keys:
+    - chain-name: ethereum-testnet-sepolia-base-1
+      value: "${PRIVATE_KEY}"
+
+staging-agent-verify:
+  config:
+    chainSelectorName: "ethereum-testnet-sepolia-base-1"
+    reputationRegistryAddress: "0x0b2466b01E6d73A24D9C716A9072ED3923563fBB"
+    transactionValidatorAddress: "0x5d7a7AEAb26D2F0076892D1C9A28F230EbB3e900"
+    budgetEnforcerAddress: "0x271618781040dc358e4F6B66561b65A839b0C76E"
+    gasLimit: "500000"
+  user-workflow:
+    workflow-name: "agent-verify"
+  workflow-artifacts:
+    workflow-path: "./main.ts"
+    config-path: "./config.json"
+  rpcs:
+    - chain-name: ethereum-testnet-sepolia-base-1
+      url: https://sepolia.base.org
+  private-keys:
+    - chain-name: ethereum-testnet-sepolia-base-1
+      value: "${PRIVATE_KEY}"

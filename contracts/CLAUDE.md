@@ -1,38 +1,87 @@
-# contracts/ -- Qova Smart Contracts
+# Smart Contracts -- Development Protocol
 
-## Overview
-Solidity smart contracts deployed on Base L2 (Base Sepolia for testnet).
-Built with Foundry (forge, cast, anvil). NOT Hardhat.
+> Sources of truth: `.claude/agents/05-smart-contracts.md`, `.claude/agents/10-cybersecurity.md`
 
-## Contracts
-- `QovaIdentityRegistry.sol` -- ERC-8004 compatible, ERC-721 NFT identity for AI agents
-- `QovaReputationRegistry.sol` -- Financial feedback storage, on-chain score snapshots
-- `QovaFacilitator.sol` -- x402 payment processing, transaction data capture
+## Stack
+Solidity 0.8.28, Foundry (forge/cast/anvil), OpenZeppelin v5, Chainlink CRE contracts
 
-## Conventions
-- Solidity 0.8.28+ with pinned pragma
-- OpenZeppelin v5 contracts as base (AccessControl, ReentrancyGuard, ERC721)
-- Custom errors instead of require strings: `error Unauthorized();`
-- NatSpec on every external/public function
-- Events for every state change
-- Checks-effects-interactions pattern strictly enforced
+## CRE Consumer Contract Pattern
 
-## File Structure
-- `src/` -- Production contracts
-- `test/` -- Forge test files (unit, fuzz, invariant)
-- `script/` -- Deployment scripts (Deploy.s.sol)
-- `foundry.toml` -- Foundry configuration
+Every contract that receives CRE reports MUST:
 
-## Commands
-```bash
-forge build          # Compile
-forge test -vvv      # Run tests with verbosity
-forge test --gas-report  # Gas usage report
-forge script script/Deploy.s.sol --rpc-url $BASE_SEPOLIA_RPC_URL --broadcast  # Deploy
+```solidity
+import {ReceiverTemplate} from "@chainlink/cre-contracts/ReceiverTemplate.sol";
+
+contract QovaConsumer is ReceiverTemplate {
+    // Replay protection
+    mapping(bytes32 => bool) public processedReports;
+
+    constructor(address forwarder) ReceiverTemplate(forwarder) {}
+
+    function onReport(bytes calldata metadata, bytes calldata report) external override {
+        // 1. Validate forwarder + signatures (FIRST)
+        _validateReport(metadata, report);
+
+        // 2. Replay protection
+        bytes32 reportHash = keccak256(report);
+        if (processedReports[reportHash]) revert ReportAlreadyProcessed();
+        processedReports[reportHash] = true;
+
+        // 3. Decode report
+        (address agent, uint256 score, uint256 timestamp) =
+            abi.decode(report, (address, uint256, uint256));
+
+        // 4. Validate inputs
+        if (score > 1000) revert InvalidScore();
+        if (timestamp <= lastUpdateTimestamp[agent]) revert StaleReport();
+
+        // 5. Update state + emit events
+    }
+}
 ```
 
-## Security
-- Reentrancy guards on all value-handling functions
-- AccessControl for role-based permissions (not Ownable)
-- Never use tx.origin, transfer(), or send()
-- All external calls follow checks-effects-interactions
+## Forwarder Addresses
+- **Simulation**: MockKeystoneForwarder (per-chain, check Forwarder Directory)
+- **Production**: KeystoneForwarder (per-chain, different addresses)
+- **CRITICAL**: Update forwarder address when moving from sim to prod
+
+## Event Design for CRE Log Triggers
+
+Events consumed by CRE workflows MUST use proper indexing:
+
+```solidity
+// topic[0] = keccak256 of event signature (automatic)
+// topic[1-3] = indexed params (padded to 32 bytes by CRE SDK)
+event TransactionRecorded(address indexed agent, uint256 amount, bool success);
+event BudgetUpdated(address indexed agent, uint256 spent, uint256 limit);
+event BudgetExceeded(address indexed agent, uint256 amount);
+event ScoreUpdated(address indexed agent, uint256 oldScore, uint256 newScore, uint256 timestamp);
+```
+
+## Security Checklist
+
+### CRE Consumer
+- [ ] Implements IReceiver / extends ReceiverTemplate
+- [ ] Constructor accepts forwarder address
+- [ ] onReport calls `_validateReport()` FIRST
+- [ ] Replay protection via report hash mapping
+- [ ] Score range validation (0-1000)
+- [ ] Staleness check on timestamps
+- [ ] Events emitted for all state changes
+- [ ] View functions for external composability
+
+### General Security
+- [ ] Checks-effects-interactions pattern on all external calls
+- [ ] ReentrancyGuard on state-changing functions that call external contracts
+- [ ] Access control (Ownable / AccessControl) on admin functions
+- [ ] No reentrancy in onReport (ReceiverTemplate handles forwarder check)
+- [ ] Integer overflow protection (Solidity 0.8+ automatic)
+- [ ] Gas usage within CRE's 5,000,000 limit per tx
+- [ ] NatSpec documentation on all public functions
+
+### Deployment
+- [ ] `forge build` compiles without warnings
+- [ ] `forge test` passes all tests
+- [ ] Deployment script covers all contracts
+- [ ] Base Sepolia addresses in deployments/base-sepolia.json
+- [ ] ABIs exported for SDK and CRE workflows

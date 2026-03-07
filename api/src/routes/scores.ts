@@ -78,7 +78,15 @@ scoreRoutes.post("/compute", validateBody(ComputeScoreRequest), async (c) => {
 	});
 });
 
-/** GET /api/scores/:address -- Full score breakdown from on-chain data */
+/**
+ * GET /api/scores/:address -- Full score breakdown from on-chain data.
+ *
+ * TODO(x402): Gate this endpoint behind x402 micropayments on SKALE Base.
+ * External agents will pay ~$0.001 USDC per score lookup via the x402 payment
+ * protocol. The API responds with HTTP 402 + payment options; the agent signs
+ * an x402 payment authorization and re-sends with an X-Payment header.
+ * Settlement happens on SKALE Base (chain 1187947933) with zero gas fees.
+ */
 scoreRoutes.get("/:address", validateAddress(), async (c) => {
 	const address = c.req.param("address");
 	const cacheKey = `scoreBreakdown:${address}`;

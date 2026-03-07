@@ -24,8 +24,8 @@ describe("GET /api/budgets/:address", () => {
 		const res = await app.request(`/api/budgets/${VALID_ADDRESS}`);
 		expect(res.status).toBe(200);
 		const body = await res.json();
-		expect(body.config.dailyLimit).toContain("ETH");
-		expect(body.usage.dailySpent).toContain("ETH");
+		expect(body.config.dailyLimit).toContain("USDC.e");
+		expect(body.usage.dailySpent).toContain("USDC.e");
 		expect(body.utilization.daily).toContain("%");
 		expect(body.raw.dailyLimit).toBeDefined();
 	});

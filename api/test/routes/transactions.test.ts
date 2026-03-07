@@ -24,7 +24,7 @@ describe("GET /api/transactions/:address/stats", () => {
 		expect(res.status).toBe(200);
 		const body = await res.json();
 		expect(body.totalCount).toBe(156);
-		expect(body.totalVolume).toContain("ETH");
+		expect(body.totalVolume).toContain("USDC.e");
 		expect(body.successRate).toContain("%");
 		expect(body.addressShort).toContain("...");
 	});

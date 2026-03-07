@@ -1,0 +1,9 @@
+staging-settings:
+  config:
+    chainSelectorName: "ethereum-testnet-sepolia-base-1"
+    reputationRegistryAddress: "0x0b2466b01E6d73A24D9C716A9072ED3923563fBB"
+    transactionValidatorAddress: "0x5d7a7AEAb26D2F0076892D1C9A28F230EbB3e900"
+    gasLimit: "500000"
+  workflow-artifacts:
+    workflow-path: "./main.ts"
+    config-path: "./config.json"

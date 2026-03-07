@@ -79,3 +79,42 @@ Chainlink CRE Network (workflows).
 - Do NOT skip tests. Every new function needs a test.
 - Do NOT use console.log in production code. Use the structured logger.
 - Do NOT leave "Claude" or "AI assistant" references in production code.
+
+---
+
+## HACKATHON EXPERT AGENTS
+
+This project has 11 specialized expert agents in `.claude/agents/`. Before working on ANY part of the codebase, read the relevant agent file first.
+
+### Agent Routing
+| Working on... | Read first |
+|---|---|
+| `cre/` (any CRE workflow) | `.claude/agents/01-cre-workflow.md` |
+| World ID integration | `.claude/agents/02-world-id-cre.md` |
+| Anomaly detection, budget alerts | `.claude/agents/03-risk-compliance.md` |
+| AI/LLM integration in CRE | `.claude/agents/04-ai-integration.md` |
+| `contracts/` (Solidity) | `.claude/agents/05-smart-contracts.md` |
+| `sdk/` or `api/` | `.claude/agents/06-sdk-api.md` |
+| README, docs | `.claude/agents/07-docs-readme.md` |
+| Video demo planning | `.claude/agents/08-demo-video.md` |
+| SKALE, x402, zero gas | `.claude/agents/09-skale-integration.md` |
+| Security review | `.claude/agents/10-cybersecurity.md` |
+| `dashboard/` (UI/UX) | `.claude/agents/11-dashboard-ui.md` |
+
+### Execution Priority (Hackathon)
+1. CRE Workflows → 2. Smart Contracts → 3. World ID × CRE → 4. AI Integration → 5. Risk & Compliance → 6. SKALE → 7. Dashboard → 8. SDK/API → 9. Security → 10. Docs/README
+
+### Universal Rules
+- `.result()` pattern for all CRE SDK calls (never async/await)
+- `runtime.log()` only (never console.log in CRE workflows)
+- `runtime.now()` only (never Date.now() in CRE workflows)
+- BigInt for ALL financial math (never floats)
+- HTTPClient ONLY inside `runInNodeMode()` with consensus aggregation
+- `hexToBase64()` on all EVM log trigger addresses/topics
+- Explicit `gasLimit` on all `writeReport()` calls
+- Zod config schemas on all workflows
+- ReceiverTemplate on all CRE consumer contracts
+- No hardcoded secrets anywhere
+
+### Detailed instructions in `claude-2.md`
+For the complete phase-by-phase build instructions, file structures, code templates, service quotas, and hackathon checklist, read `claude-2.md` in the repo root.

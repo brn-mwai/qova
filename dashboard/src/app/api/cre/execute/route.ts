@@ -62,6 +62,16 @@ function computeScore(metrics: {
  * and logs the execution to Convex.
  */
 export async function POST(request: Request): Promise<NextResponse> {
+	// Security: require CRE API key for server-to-server calls
+	const apiKey = request.headers.get("x-cre-api-key");
+	const expectedKey = process.env.CRE_API_KEY;
+	if (expectedKey && apiKey !== expectedKey) {
+		return NextResponse.json(
+			{ error: "Unauthorized", code: "UNAUTHORIZED" },
+			{ status: 401 },
+		);
+	}
+
 	const startedAt = Date.now();
 
 	const body = (await request.json()) as {

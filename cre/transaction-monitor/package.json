@@ -1,0 +1,13 @@
+{
+	"name": "transaction-monitor",
+	"private": true,
+	"dependencies": {
+		"@chainlink/cre-sdk": "^1.1.2",
+		"viem": "^2.34.0",
+		"zod": "^3.25.76"
+	},
+	"devDependencies": {
+		"typescript": "^5.9.0",
+		"@types/bun": "latest"
+	}
+}

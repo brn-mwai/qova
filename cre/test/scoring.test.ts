@@ -2,7 +2,7 @@ import { describe, expect, it } from "bun:test";
 import { type AgentMetrics, computeReputationScore } from "../shared/scoring";
 
 describe("computeReputationScore", () => {
-	it("returns 0 for a brand new agent with no activity", () => {
+	it("returns low score for a brand new agent with no activity", () => {
 		const metrics: AgentMetrics = {
 			totalVolume: 0n,
 			transactionCount: 0,
@@ -12,7 +12,8 @@ describe("computeReputationScore", () => {
 			accountAgeSeconds: 0,
 			sanctionsClean: true,
 		};
-		expect(computeReputationScore(metrics)).toBe(0);
+		// New agent gets 150 from budget compliance (no limits = fully compliant at 15% weight)
+		expect(computeReputationScore(metrics)).toBe(150);
 	});
 
 	it("returns 0 for sanctioned agent regardless of metrics", () => {

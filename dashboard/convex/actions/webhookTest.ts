@@ -32,6 +32,27 @@ export const testWebhook = action({
 		);
 		if (!webhook) throw new Error("Webhook not found");
 
+		// SSRF protection: reject internal/private IPs
+		const urlObj = new URL(webhook.url);
+		const hostname = urlObj.hostname.toLowerCase();
+		const blocked = [
+			"localhost", "127.0.0.1", "0.0.0.0", "[::1]",
+		];
+		const blockedPrefixes = [
+			"10.", "172.16.", "172.17.", "172.18.", "172.19.",
+			"172.20.", "172.21.", "172.22.", "172.23.", "172.24.",
+			"172.25.", "172.26.", "172.27.", "172.28.", "172.29.",
+			"172.30.", "172.31.", "192.168.",
+		];
+		if (
+			blocked.includes(hostname) ||
+			blockedPrefixes.some((p) => hostname.startsWith(p)) ||
+			hostname.endsWith(".local") ||
+			hostname.endsWith(".internal")
+		) {
+			throw new Error("Webhook URL must not point to internal or private addresses");
+		}
+
 		const testPayload = {
 			event: "test",
 			timestamp: new Date().toISOString(),
