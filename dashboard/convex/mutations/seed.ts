@@ -173,7 +173,7 @@ export const seedDemoData = mutation({
 		}
 
 		// ─── CRE workflow executions (40 entries over 14 days) ─────
-		const workflowIds = ["payment-volume", "longevity", "sanctions", "volatility"];
+		const workflowIds = ["reputation-oracle", "transaction-monitor", "budget-alert", "agent-verify"];
 		for (let k = 0; k < 40; k++) {
 			const wfIdx = Math.floor(seededRandom(k * 37) * workflowIds.length);
 			const agentIdx = Math.floor(seededRandom(k * 41) * 5);
@@ -342,7 +342,7 @@ export const adminSeed = mutation({
 			});
 		}
 
-		const workflowIds = ["payment-volume", "longevity", "sanctions", "volatility"];
+		const workflowIds = ["reputation-oracle", "transaction-monitor", "budget-alert", "agent-verify"];
 		for (let k = 0; k < 40; k++) {
 			const wfIdx = Math.floor(seededRandom(k * 37) * workflowIds.length);
 			const agentIdx = Math.floor(seededRandom(k * 41) * 5);

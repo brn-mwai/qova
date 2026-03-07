@@ -4,36 +4,36 @@ import { trackEvent } from "../lib/trackEvent";
 
 const DEFAULT_WORKFLOWS = [
   {
-    workflowId: "payment-volume",
-    name: "Payment Volume Analysis",
+    workflowId: "reputation-oracle",
+    name: "Reputation Oracle",
     description:
-      "Analyzes transaction volume, frequency, and consistency to assess payment reliability and throughput capacity.",
+      "Reads 3 on-chain contracts (ReputationRegistry, TransactionValidator, BudgetEnforcer), computes a composite score via AI-enhanced analysis, and writes updates on-chain.",
     weight: 0.35,
+    icon: "ChartLineUp",
+  },
+  {
+    workflowId: "transaction-monitor",
+    name: "Transaction Monitor",
+    description:
+      "Listens for TransactionRecorded events on-chain, detects anomalies in volume and frequency, and triggers score recalculations.",
+    weight: 0.25,
     icon: "CurrencyCircleDollar",
   },
   {
-    workflowId: "longevity",
-    name: "Operational Longevity",
+    workflowId: "budget-alert",
+    name: "Budget Alert",
     description:
-      "Evaluates agent uptime, registration age, and historical activity patterns to measure operational maturity.",
-    weight: 0.25,
+      "Monitors BudgetUpdated and BudgetExceeded events, checks utilization thresholds, and enforces spending limits per agent.",
+    weight: 0.2,
     icon: "Timer",
   },
   {
-    workflowId: "sanctions",
-    name: "Sanctions & Compliance",
+    workflowId: "agent-verify",
+    name: "Agent Verification",
     description:
-      "Screens agent addresses against known sanctions lists and checks for interaction with flagged contracts.",
+      "Accepts HTTP proof submissions, verifies World ID proofs for sybil resistance, and writes verification status on-chain.",
     weight: 0.2,
     icon: "ShieldCheck",
-  },
-  {
-    workflowId: "volatility",
-    name: "Score Volatility",
-    description:
-      "Measures score stability over time. Lower volatility indicates predictable, reliable agent behavior.",
-    weight: 0.2,
-    icon: "ChartLineUp",
   },
 ];
 
@@ -173,6 +173,34 @@ export const createServerExecution = mutation({
           : workflow.avgDurationMs,
       });
     }
+  },
+});
+
+/** Reset all CRE data: delete old workflows and executions, then re-seed workflows. */
+export const resetWorkflows = mutation({
+  args: {},
+  handler: async (ctx): Promise<number> => {
+    // Delete all existing workflows
+    const workflows = await ctx.db.query("creWorkflows").collect();
+    for (const wf of workflows) {
+      await ctx.db.delete(wf._id);
+    }
+    // Delete all existing executions
+    const executions = await ctx.db.query("creExecutions").collect();
+    for (const exec of executions) {
+      await ctx.db.delete(exec._id);
+    }
+    // Re-seed with correct workflow definitions
+    for (const wf of DEFAULT_WORKFLOWS) {
+      await ctx.db.insert("creWorkflows", {
+        ...wf,
+        status: "active",
+        totalRuns: 0,
+        successRate: 100,
+        createdAt: Date.now(),
+      });
+    }
+    return DEFAULT_WORKFLOWS.length;
   },
 });
 

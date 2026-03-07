@@ -3,6 +3,7 @@ import { createPublicClient, createWalletClient, http, keccak256, toHex } from "
 import { privateKeyToAccount } from "viem/accounts";
 import { baseSepolia } from "viem/chains";
 import { ConvexHttpClient } from "convex/browser";
+import { auth } from "@clerk/nextjs/server";
 import { api } from "../../../../../convex/_generated/api";
 
 // ─── Contract addresses (Base Sepolia) ────────────────────────
@@ -62,10 +63,22 @@ function computeScore(metrics: {
  * and logs the execution to Convex.
  */
 export async function POST(request: Request): Promise<NextResponse> {
-	// Security: require CRE API key for server-to-server calls
+	// Security: require either CRE API key (server-to-server) or Clerk session (browser)
 	const apiKey = request.headers.get("x-cre-api-key");
 	const expectedKey = process.env.CRE_API_KEY;
-	if (expectedKey && apiKey !== expectedKey) {
+	const hasValidApiKey = expectedKey && apiKey === expectedKey;
+
+	let hasValidSession = false;
+	if (!hasValidApiKey) {
+		try {
+			const { userId } = await auth();
+			hasValidSession = !!userId;
+		} catch {
+			// No Clerk session
+		}
+	}
+
+	if (!hasValidApiKey && !hasValidSession) {
 		return NextResponse.json(
 			{ error: "Unauthorized", code: "UNAUTHORIZED" },
 			{ status: 401 },
@@ -240,10 +253,10 @@ export async function POST(request: Request): Promise<NextResponse> {
 
 			// Log CRE execution for each sub-workflow that contributes to the composite score
 			const subWorkflows = [
-				{ id: "payment-volume", weight: 0.35 },
-				{ id: "longevity", weight: 0.25 },
-				{ id: "sanctions", weight: 0.20 },
-				{ id: "volatility", weight: 0.20 },
+				{ id: "reputation-oracle", weight: 0.35 },
+				{ id: "transaction-monitor", weight: 0.25 },
+				{ id: "budget-alert", weight: 0.20 },
+				{ id: "agent-verify", weight: 0.20 },
 			];
 			for (const sub of subWorkflows) {
 				try {
@@ -299,7 +312,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 		const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
 		if (convexUrl) {
 			const convex = new ConvexHttpClient(convexUrl);
-			const failedSubWorkflows = ["payment-volume", "longevity", "sanctions", "volatility"];
+			const failedSubWorkflows = ["reputation-oracle", "transaction-monitor", "budget-alert", "agent-verify"];
 			for (const subId of failedSubWorkflows) {
 				try {
 					await convex.mutation(api.mutations.cre.createServerExecution, {
