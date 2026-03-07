@@ -1,6 +1,6 @@
 "use client";
 
-import { CurrencyEth, Gauge, SpinnerGap, Wallet } from "@phosphor-icons/react";
+import { Coins, Gauge, SpinnerGap, Wallet } from "@phosphor-icons/react";
 import { useMutation } from "convex/react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -171,7 +171,7 @@ export default function BudgetsPage(): React.ReactElement {
 									Daily Limit ({currency})
 								</label>
 								<div className="relative">
-									<CurrencyEth
+									<Coins
 										size={16}
 										className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
 									/>
@@ -195,7 +195,7 @@ export default function BudgetsPage(): React.ReactElement {
 									Monthly Limit ({currency})
 								</label>
 								<div className="relative">
-									<CurrencyEth
+									<Coins
 										size={16}
 										className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
 									/>
@@ -219,7 +219,7 @@ export default function BudgetsPage(): React.ReactElement {
 									Per-Transaction Limit ({currency})
 								</label>
 								<div className="relative">
-									<CurrencyEth
+									<Coins
 										size={16}
 										className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
 									/>

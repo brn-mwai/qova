@@ -127,7 +127,7 @@ export default function OnboardingPage(): React.ReactElement {
 
   const handleRegisterAgent = useCallback(async (): Promise<void> => {
     if (!isValidAddress(agentAddress)) {
-      setAgentError("Enter a valid Ethereum address (0x + 40 hex characters)")
+      setAgentError("Enter a valid wallet address (0x + 40 hex characters)")
       return
     }
     if (agentName.length < 3) {

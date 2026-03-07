@@ -55,9 +55,9 @@ export default function WalletSettingsPage(): React.ReactElement {
           title="Wallet"
           subtitle="Connect and manage your blockchain wallet"
           info={{
-            description: "Connect your Ethereum wallet and manage blockchain network settings for on-chain operations.",
+            description: "Connect your wallet and manage blockchain network settings for on-chain operations.",
             sections: [
-              { title: "Wallet Connection", description: "Link your Ethereum wallet via MetaMask or other providers." },
+              { title: "Wallet Connection", description: "Link your wallet via MetaMask, Coinbase Wallet, or other providers." },
               { title: "Network Configuration", description: "View the target blockchain network, chain ID, and block explorer URL." },
             ],
           }}
@@ -79,7 +79,7 @@ export default function WalletSettingsPage(): React.ReactElement {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <SettingRow label="Address" description="Your linked Ethereum address">
+              <SettingRow label="Address" description="Your linked wallet address">
                 <span className="font-mono text-xs">
                   {user.walletAddress.slice(0, 6)}...{user.walletAddress.slice(-4)}
                 </span>

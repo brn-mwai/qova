@@ -58,7 +58,7 @@ export function scoreToPercentage(score: number): number {
 	return score / 10;
 }
 
-/** Shorten Ethereum address for display. */
+/** Shorten wallet address for display. */
 export function shortenAddress(address: string): string {
 	if (address.length < 10) return address;
 	return `${address.slice(0, 6)}...${address.slice(-4)}`;

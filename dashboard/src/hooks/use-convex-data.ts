@@ -322,7 +322,7 @@ export function useFilteredGradeDistribution(): Record<string, number> {
 
 /**
  * Returns the native currency symbol for the currently selected chain.
- * "All Chains" defaults to the default chain's currency (sFUEL).
+ * "All Chains" defaults to the default chain's currency (CREDIT).
  */
 export function useChainCurrency(): string {
 	const { selectedChainId } = useChainFilter();

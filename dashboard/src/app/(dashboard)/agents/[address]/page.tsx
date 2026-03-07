@@ -5,7 +5,7 @@ import {
 	Check,
 	ClockCounterClockwise,
 	Copy,
-	CurrencyEth,
+	Coins,
 	Lightning,
 	Percent,
 	ShieldCheck,
@@ -317,7 +317,7 @@ export default function AgentDetailPage({
 				<DetailStat
 					label="Total Volume"
 					value={agent.totalVolume ?? zeroVal}
-					icon={<CurrencyEth size={18} />}
+					icon={<Coins size={18} />}
 				/>
 				<DetailStat
 					label="Success Rate"

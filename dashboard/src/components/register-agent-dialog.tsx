@@ -87,7 +87,7 @@ export function RegisterAgentDialog({
   const validate = useCallback((): boolean => {
     const errs: Record<string, string> = {}
     if (!isValidAddress(form.address)) {
-      errs.address = "Invalid Ethereum address (0x + 40 hex characters)"
+      errs.address = "Invalid wallet address (0x + 40 hex characters)"
     }
     if (form.name.length < 3) {
       errs.name = "Name must be at least 3 characters"
