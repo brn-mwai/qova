@@ -14,5 +14,10 @@ contracts/cache/
 .convex/
 .claude/settings.local.json
 .vercel
+*.tsbuildinfo
+qova-claude-agents.tar.gz
 
-.vercel
+# CRE build artifacts
+cre/**/.cre_build_tmp.js
+cre/**/.workflow-temp-*
+cre/**/bun.lock

@@ -39,6 +39,7 @@ const configSchema = z.object({
 	transactionValidatorAddress: z.string(),
 	budgetEnforcerAddress: z.string(),
 	gasLimit: z.string(),
+	authorizedKey: z.string().optional(),
 });
 type Config = z.infer<typeof configSchema>;
 
@@ -251,11 +252,18 @@ const onVerifyRequest = (
 	});
 };
 
-const initWorkflow = (_config: Config) => {
+const initWorkflow = (config: Config) => {
 	const http = new HTTPCapability();
+	const triggerConfig = config.authorizedKey
+		? {
+				authorizedKeys: [
+					{ type: "KEY_TYPE_ECDSA_EVM" as const, publicKey: config.authorizedKey },
+				],
+			}
+		: {};
 	return [
 		handler(
-			http.trigger({}),
+			http.trigger(triggerConfig),
 			onVerifyRequest,
 		),
 	];

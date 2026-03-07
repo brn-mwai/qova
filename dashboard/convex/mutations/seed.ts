@@ -366,3 +366,71 @@ export const adminSeed = mutation({
 		return { seeded: true };
 	},
 });
+
+/**
+ * Remove all demo/seed data for the current user.
+ * Deletes agents, score snapshots, activity, CRE executions, and notifications
+ * that belong to this user, so they can start fresh with real data.
+ */
+export const removeDemoData = mutation({
+	args: {},
+	handler: async (ctx): Promise<{ removed: boolean; counts: Record<string, number> }> => {
+		const identity = await ctx.auth.getUserIdentity();
+		if (!identity) return { removed: false, counts: {} };
+
+		const userId = identity.subject;
+		const counts: Record<string, number> = {};
+
+		// Delete user's agents
+		const agents = await ctx.db
+			.query("agents")
+			.withIndex("by_owner", (q) => q.eq("ownerId", userId))
+			.collect();
+		for (const a of agents) await ctx.db.delete(a._id);
+		counts.agents = agents.length;
+
+		// Delete user's score snapshots
+		const snapshots = await ctx.db
+			.query("scoreSnapshots")
+			.withIndex("by_owner", (q) => q.eq("ownerId", userId))
+			.collect();
+		for (const s of snapshots) await ctx.db.delete(s._id);
+		counts.scoreSnapshots = snapshots.length;
+
+		// Delete user's activity
+		const activities = await ctx.db
+			.query("activity")
+			.withIndex("by_owner", (q) => q.eq("ownerId", userId))
+			.collect();
+		for (const a of activities) await ctx.db.delete(a._id);
+		counts.activity = activities.length;
+
+		// Delete user's notifications
+		const notifications = await ctx.db
+			.query("notifications")
+			.withIndex("by_user", (q) => q.eq("userId", userId))
+			.collect();
+		for (const n of notifications) await ctx.db.delete(n._id);
+		counts.notifications = notifications.length;
+
+		return { removed: true, counts };
+	},
+});
+
+/** Check if the current user has demo seed data (by checking for known demo agent addresses). */
+export const hasDemoData = mutation({
+	args: {},
+	handler: async (ctx): Promise<boolean> => {
+		const identity = await ctx.auth.getUserIdentity();
+		if (!identity) return false;
+
+		const userId = identity.subject;
+		const demoAddress = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"; // AlphaTrader v2
+		const agent = await ctx.db
+			.query("agents")
+			.withIndex("by_owner", (q) => q.eq("ownerId", userId))
+			.filter((q) => q.eq(q.field("address"), demoAddress))
+			.first();
+		return !!agent;
+	},
+});

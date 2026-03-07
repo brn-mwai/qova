@@ -1,16 +1,24 @@
 "use client"
 
+import { useState } from "react"
 import {
   Cloud,
+  Database,
   Fingerprint,
   Gear,
   Link as LinkIcon,
   ShieldCheck,
+  SpinnerGap,
+  Trash,
+  Warning,
 } from "@phosphor-icons/react"
 import { useUser, useClerk } from "@clerk/nextjs"
+import { useMutation } from "convex/react"
+import { api } from "../../../../convex/_generated/api"
 import { useConvexAvailable } from "@/components/providers/convex-provider"
 import { StatusBadge } from "@/components/data/status-badge"
 import { WorldIdVerifyButton } from "@/components/world-id/verify-button"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { PageHeader } from "@/components/shared/page-header"
@@ -21,6 +29,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { toast } from "sonner"
 
 const CHAIN_CONFIG = {
   name: process.env.NEXT_PUBLIC_CHAIN_NAME ?? "Base",
@@ -55,6 +64,11 @@ export default function SettingsPage(): React.ReactElement {
   const { user } = useUser()
   const { openUserProfile } = useClerk()
   const convexAvailable = useConvexAvailable()
+  const seedDemo = useMutation(api.mutations.seed.seedDemoData)
+  const removeDemo = useMutation(api.mutations.seed.removeDemoData)
+  const [seeding, setSeeding] = useState(false)
+  const [removing, setRemoving] = useState(false)
+  const [confirmRemove, setConfirmRemove] = useState(false)
 
   return (
     <div className="px-4 lg:px-6">
@@ -205,6 +219,105 @@ export default function SettingsPage(): React.ReactElement {
                 {CHAIN_CONFIG.explorerLabel}
               </a>
             </SettingRow>
+          </CardContent>
+        </Card>
+
+        {/* Data Management */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Database size={16} />
+              Data Management
+            </CardTitle>
+            <CardDescription>
+              Load demo data to explore the platform, or remove it when you are ready to use real data.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b pb-4">
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Load Demo Data</p>
+                <p className="text-xs text-muted-foreground">
+                  Populate your dashboard with 10 sample agents, score history, activity, and CRE executions.
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={seeding}
+                onClick={async () => {
+                  setSeeding(true)
+                  try {
+                    const result = await seedDemo({})
+                    if (result.seeded) {
+                      toast.success("Demo data loaded successfully")
+                    } else {
+                      toast.info("Demo data already exists for your account")
+                    }
+                  } catch {
+                    toast.error("Failed to load demo data")
+                  } finally {
+                    setSeeding(false)
+                  }
+                }}
+              >
+                {seeding ? <SpinnerGap size={14} className="animate-spin mr-1.5" /> : <Database size={14} className="mr-1.5" />}
+                {seeding ? "Loading..." : "Load Demo Data"}
+              </Button>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Remove All Data</p>
+                <p className="text-xs text-muted-foreground">
+                  Delete all agents, scores, activity, and notifications from your account. This cannot be undone.
+                </p>
+              </div>
+              {!confirmRemove ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-destructive hover:text-destructive"
+                  onClick={() => setConfirmRemove(true)}
+                >
+                  <Trash size={14} className="mr-1.5" />
+                  Remove Data
+                </Button>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setConfirmRemove(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    disabled={removing}
+                    onClick={async () => {
+                      setRemoving(true)
+                      try {
+                        const result = await removeDemo({})
+                        if (result.removed) {
+                          const total = Object.values(result.counts).reduce((a, b) => a + b, 0)
+                          toast.success(`Removed ${total} records from your account`)
+                        }
+                      } catch {
+                        toast.error("Failed to remove data")
+                      } finally {
+                        setRemoving(false)
+                        setConfirmRemove(false)
+                      }
+                    }}
+                  >
+                    {removing ? <SpinnerGap size={14} className="animate-spin mr-1.5" /> : <Warning size={14} className="mr-1.5" />}
+                    {removing ? "Removing..." : "Confirm Remove"}
+                  </Button>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
 

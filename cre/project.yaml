@@ -62,6 +62,7 @@ staging-agent-verify:
     transactionValidatorAddress: "0x5d7a7AEAb26D2F0076892D1C9A28F230EbB3e900"
     budgetEnforcerAddress: "0x271618781040dc358e4F6B66561b65A839b0C76E"
     gasLimit: "500000"
+    authorizedKey: "0x0a3AF9a104Bd2B5d96C7E24fe95Cc03432431158"
   user-workflow:
     workflow-name: "agent-verify"
   workflow-artifacts:

@@ -113,7 +113,7 @@ flowchart TB
 | Reputation Oracle | [`cre/reputation-oracle/main.ts`](./cre/reputation-oracle/main.ts) | Cron (10min) | AI-enhanced reputation scoring with Groq Llama 3.1 70B via `runInNodeMode` |
 | Transaction Monitor | [`cre/transaction-monitor/main.ts`](./cre/transaction-monitor/main.ts) | EVM Log (`TransactionRecorded`) | Real-time anomaly detection with 4-factor risk scoring |
 | Budget Alert | [`cre/budget-alert/main.ts`](./cre/budget-alert/main.ts) | EVM Log (`SpendRecorded`) | Budget threshold enforcement with tiered alerts |
-| Agent Verify | [`cre/agent-verify/main.ts`](./cre/agent-verify/main.ts) | HTTP POST | World ID verification orchestrated by CRE |
+| Agent Verify | [`cre/agent-verify/main.ts`](./cre/agent-verify/main.ts) | HTTP POST | World ID verification orchestrated by CRE (with `authorizedKeys` for production) |
 
 ### Smart Contracts (`contracts/src/`)
 
@@ -296,7 +296,7 @@ flowchart LR
 
 ### 4. Agent Verify
 
-On-demand verification via HTTP POST. Runs **8 checks**: registration, contract existence, account age, owner consistency, activity level, ownership stability, sanctions screening, minimum score. Returns `VERIFIED` / `PARTIALLY_VERIFIED` / `UNVERIFIED` / `SUSPICIOUS` with credit grade.
+On-demand verification via HTTP POST with `KEY_TYPE_ECDSA_EVM` authorization keys for production deployments. Runs **8 checks**: registration, contract existence, account age, owner consistency, activity level, ownership stability, sanctions screening, minimum score. Returns `VERIFIED` / `PARTIALLY_VERIFIED` / `UNVERIFIED` / `SUSPICIOUS` with credit grade.
 
 ---
 
@@ -479,16 +479,18 @@ Real-time analytics dashboard at [app.qova.cc](https://app.qova.cc). Built with 
 | `/developers/docs` | API documentation |
 | `/developers/keys` | API key management |
 | `/developers/webhooks` | Webhook configuration |
-| `/settings` | Account, team, wallet, notifications |
-| `/onboarding` | First-time setup wizard |
+| `/settings` | Account, team, wallet, World ID verification, data management |
+| `/onboarding` | 5-step setup wizard (profile, chain, agent, wallet + World ID, dashboard tour) |
 
 ### Key Features
 
 - **Multi-chain** - SKALE Base L3 (zero gas), Base L2, Base Sepolia
 - **Multi-wallet** - MetaMask, Coinbase Wallet, WalletConnect, browser wallets
 - **Real-time** - Convex for instant data sync
-- **World ID** - Proof-of-personhood verification
+- **World ID** - Proof-of-personhood verification (onboarding + settings)
 - **Chain-adaptive UI** - Currency labels, explorer links, and data all adapt to selected chain
+- **Data Management** - Seed and remove demo data from Settings
+- **Guided Onboarding** - 5-step wizard with dashboard tour highlights and optional demo data seeding
 - **Dark mode first** - Black/white base with functional color only
 
 ---
