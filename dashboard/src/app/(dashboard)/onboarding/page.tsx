@@ -209,7 +209,7 @@ export default function OnboardingPage(): React.ReactElement {
 
   // Auto-link when wallet connects
   useEffect(() => {
-    if (walletConnected && walletAddress && available && !walletLinked && !walletLinking && step === 3) {
+    if (walletConnected && walletAddress && available && !walletLinked && !walletLinking && step === 4) {
       handleLinkWallet()
     }
   }, [walletConnected, walletAddress, available, walletLinked, walletLinking, step, handleLinkWallet])
@@ -581,7 +581,7 @@ export default function OnboardingPage(): React.ReactElement {
                   <>
                     <div className="flex justify-center">
                       <OnchainWallet>
-                        <ConnectWallet className="!flex !items-center !justify-center !gap-2 !w-full !rounded-md !border !border-border !bg-foreground !px-4 !py-2.5 !text-sm !font-medium !text-background !shadow-none hover:!bg-foreground/90">
+                        <ConnectWallet className="!flex !items-center !justify-center !gap-2 !w-full !rounded-none !border !border-border !bg-foreground !px-4 !py-2.5 !text-sm !font-medium !text-background !shadow-none hover:!bg-foreground/90">
                           <Wallet className="size-4" />
                           <span>Connect Wallet</span>
                         </ConnectWallet>

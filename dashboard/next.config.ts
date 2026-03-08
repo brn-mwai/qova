@@ -2,7 +2,15 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   experimental: {
-    optimizePackageImports: ["@phosphor-icons/react", "@coinbase/onchainkit", "recharts"],
+    optimizePackageImports: ["@phosphor-icons/react", "recharts"],
+  },
+
+  // Turbopack-compatible resolve aliases (used by dev server)
+  turbopack: {
+    resolveAlias: {
+      "@react-native-async-storage/async-storage": { browser: "" },
+      "pino-pretty": { browser: "" },
+    },
   },
 
   images: {

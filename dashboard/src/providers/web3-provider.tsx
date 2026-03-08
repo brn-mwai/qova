@@ -3,7 +3,7 @@
 import { OnchainKitProvider } from "@coinbase/onchainkit"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { type ReactNode, useState } from "react"
-import { type State, WagmiProvider, createConfig, http } from "wagmi"
+import { type State, WagmiProvider, createConfig, createStorage, http } from "wagmi"
 import { base, baseSepolia } from "wagmi/chains"
 import { coinbaseWallet, injected, metaMask, walletConnect } from "wagmi/connectors"
 import { type Chain } from "viem"
@@ -42,6 +42,10 @@ export const wagmiConfig = createConfig({
   chains: [skaleBase, base, baseSepolia],
   connectors,
   ssr: true,
+  storage: createStorage({
+    storage: typeof window !== "undefined" ? window.localStorage : undefined,
+    key: "qova-wagmi",
+  }),
   transports: {
     [skaleBase.id]: http(),
     [base.id]: http(),
@@ -58,7 +62,7 @@ export function Web3Provider({ children, initialState }: Web3ProviderProps): Rea
   const [queryClient] = useState(() => new QueryClient())
 
   return (
-    <WagmiProvider config={wagmiConfig} initialState={initialState}>
+    <WagmiProvider config={wagmiConfig} initialState={initialState} reconnectOnMount>
       <QueryClientProvider client={queryClient}>
         <OnchainKitProvider
           apiKey={CDP_API_KEY}

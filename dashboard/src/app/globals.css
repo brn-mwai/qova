@@ -44,7 +44,7 @@
 	--sidebar-accent-foreground: #1A1A1A;
 	--sidebar-border: #E8E8E6;
 	--sidebar-ring: #1A1A1A;
-	--radius: 0.625rem;
+	--radius: 0px;
 
 	/* Qova design system */
 	--bg-page: #F7F7F5;
@@ -117,7 +117,7 @@
 	--sidebar-accent-foreground: #F0F0EE;
 	--sidebar-border: #2A2A2A;
 	--sidebar-ring: #F0F0EE;
-	--radius: 0.625rem;
+	--radius: 0px;
 
 	/* Qova design system */
 	--bg-page: #0F0F0F;
@@ -264,7 +264,7 @@ body {
 }
 [data-rk] [role="dialog"] {
 	border: 1px solid var(--border) !important;
-	border-radius: 12px !important;
+	border-radius: 0 !important;
 }
 
 /* Smooth theme color transitions */
@@ -288,6 +288,13 @@ body {
 [data-sonner-toaster] [data-sonner-toast] {
 	box-shadow: none !important;
 	border: 1px solid var(--border) !important;
+}
+
+/* Zero border-radius globally */
+*,
+*::before,
+*::after {
+	border-radius: 0 !important;
 }
 
 /* Custom scrollbar */

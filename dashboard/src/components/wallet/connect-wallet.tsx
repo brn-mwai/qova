@@ -185,9 +185,9 @@ export function ConnectWalletCard({
                   type="button"
                   onClick={() => handleConnect(connector)}
                   disabled={isConnecting}
-                  className="flex items-center gap-3 rounded-lg border px-4 py-3 text-left hover:bg-accent/50 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed w-full"
+                  className="flex items-center gap-3 border px-4 py-3 text-left hover:bg-accent/50 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed w-full"
                 >
-                  <div className="flex size-8 items-center justify-center rounded-lg bg-muted shrink-0">
+                  <div className="flex size-8 items-center justify-center bg-muted shrink-0">
                     {isLoading ? (
                       <SpinnerGap size={16} className="animate-spin text-muted-foreground" />
                     ) : (
@@ -237,7 +237,7 @@ export function ConnectWalletCard({
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Address */}
-        <div className="flex items-center justify-between rounded-lg border bg-muted/30 p-3">
+        <div className="flex items-center justify-between border bg-muted/30 p-3">
           <div className="space-y-1">
             <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
               Address
@@ -255,7 +255,7 @@ export function ConnectWalletCard({
 
         {/* Balance & Chain */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-lg border bg-muted/30 p-3 space-y-1">
+          <div className="border bg-muted/30 p-3 space-y-1">
             <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
               Balance
             </p>
@@ -265,7 +265,7 @@ export function ConnectWalletCard({
                 : "Loading..."}
             </p>
           </div>
-          <div className="rounded-lg border bg-muted/30 p-3 space-y-1">
+          <div className="border bg-muted/30 p-3 space-y-1">
             <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
               Network
             </p>

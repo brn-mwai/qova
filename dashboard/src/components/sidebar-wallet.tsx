@@ -26,7 +26,7 @@ export function SidebarWallet(): React.ReactElement {
   if (!isConnected) {
     return (
       <Wallet>
-        <ConnectWallet className="!flex !items-center !gap-2 !w-full !px-3 !py-2 !text-sm !text-[var(--text-secondary)] hover:!bg-[var(--bg-sidebar-active)] !rounded-lg !transition-colors !bg-transparent !border-none !shadow-none">
+        <ConnectWallet className="!flex !items-center !gap-2 !w-full !px-3 !py-2 !text-sm !text-[var(--text-secondary)] hover:!bg-[var(--bg-sidebar-active)] !rounded-none !transition-colors !bg-transparent !border-none !shadow-none">
           <WalletIcon className="size-4" />
           <span>Connect Wallet</span>
         </ConnectWallet>
@@ -36,7 +36,7 @@ export function SidebarWallet(): React.ReactElement {
 
   return (
     <Wallet>
-      <ConnectWallet className="!flex !items-center !gap-2 !w-full !px-3 !py-1.5 hover:!bg-[var(--bg-sidebar-active)] !rounded-lg !transition-colors !bg-transparent !border-none !shadow-none">
+      <ConnectWallet className="!flex !items-center !gap-2 !w-full !px-3 !py-1.5 hover:!bg-[var(--bg-sidebar-active)] !rounded-none !transition-colors !bg-transparent !border-none !shadow-none">
         <span className="size-2 rounded-full bg-[var(--status-green-text)] shrink-0" />
         <span className="text-xs font-mono text-[var(--text-secondary)] truncate">
           {address ? truncateAddress(address) : ""}

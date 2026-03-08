@@ -17,7 +17,7 @@ import {
 export function HeaderWallet(): React.ReactElement {
   return (
     <Wallet>
-      <ConnectWallet className="!rounded-md !border !border-border !bg-background !px-3 !py-1.5 !text-sm !font-medium !text-foreground !shadow-none hover:!bg-accent">
+      <ConnectWallet className="!rounded-none !border !border-border !bg-background !px-3 !py-1.5 !text-sm !font-medium !text-foreground !shadow-none hover:!bg-accent">
         <Avatar className="h-5 w-5" />
         <Name className="font-mono text-xs" />
       </ConnectWallet>
