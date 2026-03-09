@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import crypto from "node:crypto";
 
 const APP_ID = process.env.NEXT_PUBLIC_WORLD_ID_APP_ID ?? "";
+const RP_ID = process.env.WORLD_ID_RP_ID ?? "";
 const APP_KEY = process.env.WORLD_ID_APP_KEY ?? "";
 
 /**
@@ -12,7 +13,7 @@ const APP_KEY = process.env.WORLD_ID_APP_KEY ?? "";
  * Body: { app_id: string, action: string }
  */
 export async function POST(request: Request): Promise<NextResponse> {
-	if (!APP_ID || !APP_KEY) {
+	if (!APP_ID || !APP_KEY || !RP_ID) {
 		return NextResponse.json(
 			{ error: "World ID not configured" },
 			{ status: 503 },
@@ -40,7 +41,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 		.digest("hex");
 
 	return NextResponse.json({
-		rp_id: APP_ID,
+		rp_id: RP_ID,
 		nonce,
 		created_at: createdAt,
 		expires_at: expiresAt,
