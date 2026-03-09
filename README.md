@@ -178,6 +178,7 @@ flowchart TB
 | **CRE & AI** | $10,500 | AI-enhanced reputation scoring with Groq Llama 3.1 70B running inside CRE `runInNodeMode`. DON nodes reach consensus on AI-generated behavioral analysis before writing scores on-chain. |
 | **Risk & Compliance** | $10,000 | Real-time anomaly detection via `TransactionRecorded` EVM Log trigger (4-factor risk scoring) + automated budget enforcement via `SpendRecorded` EVM Log trigger (tiered alerts with score penalties). |
 | **World ID with CRE** | $3,000 | Off-chain World ID proof verification orchestrated entirely by CRE. HTTP trigger receives proof, DON nodes independently verify against World ID API, consensus writes sybil-resistant verification status to Base via `QovaVerificationConsumer`. |
+| **Tenderly** | $5,000 | All 4 CRE workflows orchestrated and tested on Tenderly Virtual TestNets. Contracts deployed with demo agents, scores, and transactions. CRE reads/writes against Virtual TestNet with real-time mainnet state. Full transaction history visible in public explorer. |
 | **Top 10** | $1,500 | Full CRE-native architecture with 4 workflows, 3 trigger types (Cron, EVM Log, HTTP), AI integration, cross-chain design, and 348 passing tests. |
 
 ---
@@ -219,6 +220,79 @@ flowchart TB
 ```
 
 **Why dual-chain:** CRE workflows settle on Base Sepolia (where Chainlink's KeystoneForwarder lives). Agent day-to-day transactions happen on SKALE on Base with zero gas fees, making high-frequency score updates economically viable. Premium reputation lookups use x402 micropayments settled on SKALE.
+
+---
+
+## Tenderly Virtual TestNet Integration
+
+Qova's CRE workflows are developed, tested, and validated on [Tenderly Virtual TestNets](https://docs.tenderly.co/virtual-testnets) - providing a controlled environment with real Base Sepolia state, unlimited faucets, and full transaction debugging.
+
+### Why Virtual TestNets
+
+| Benefit | How Qova Uses It |
+|:--------|:-----------------|
+| **Real mainnet state** | Virtual TestNet forks Base Sepolia at the latest block, giving CRE workflows access to real contract state and transaction history |
+| **Zero-setup testing** | Deploy all 4 contracts + seed demo agents in a single command with unlimited ETH |
+| **Built-in debugging** | Step-through debugger for every CRE workflow write transaction - trace reverts, inspect storage, profile gas |
+| **Public explorer** | Judges and reviewers can inspect all deployed contracts and transaction history without RPC access |
+| **Isolated environment** | Test CRE score updates, anomaly detection, and budget enforcement without affecting real testnet state |
+
+### Deployed Contracts (Tenderly Virtual TestNet)
+
+| Contract | Address | Txs |
+|:---------|:--------|:---:|
+| **ReputationRegistry** | `0xc668460Cbc34bd3f591e09f6cE8FF0e5A6782236` | 4 |
+| **TransactionValidator** | `0xCF58A0E4e44dbf54B43F6eF3873EE6988a9a9776` | 3 |
+| **BudgetEnforcer** | `0x29f71a3781BCeDfD1C2908F612f1c92DdF976f58` | 2 |
+| **QovaCore** | `0xD562712A86e8AEc7881c9d8b0c8eC47021a47208` | - |
+
+**Demo state**: 1 agent registered (score 750, BBB grade), 1 transaction recorded, all roles granted.
+
+### CRE Workflow Execution on Virtual TestNet
+
+All 4 CRE workflows are configured to run against the Tenderly Virtual TestNet via dedicated targets in [`cre/project.yaml`](./cre/project.yaml):
+
+```bash
+# Simulate CRE workflows against Tenderly Virtual TestNet
+cre workflow simulate reputation-oracle   --target tenderly-reputation-oracle
+cre workflow simulate transaction-monitor --target tenderly-transaction-monitor
+cre workflow simulate budget-alert        --target tenderly-budget-alert
+cre workflow simulate agent-verify        --target tenderly-agent-verify
+```
+
+**How it works:**
+1. CRE workflow triggers (cron/log/http)
+2. Workflow reads contract state from Tenderly Virtual TestNet RPC
+3. Computes score/anomaly/budget via BFT consensus across DON nodes
+4. Writes result back to Virtual TestNet via `writeReport()`
+5. All transactions visible in Tenderly's public explorer with full trace data
+
+### Deploy to Tenderly
+
+```bash
+# 1. Create Virtual TestNet at https://dashboard.tenderly.co
+#    Fork Base Sepolia (chain 84532), enable Public Explorer
+
+# 2. Set RPC URL in contracts/.env
+TENDERLY_VIRTUAL_TESTNET_RPC=https://virtual.rpc.tenderly.co/...
+
+# 3. Deploy all contracts + seed demo data
+cd contracts && bash scripts/deploy-tenderly.sh
+
+# 4. Run CRE workflows against Tenderly
+cd cre
+cre workflow simulate reputation-oracle --target tenderly-reputation-oracle
+```
+
+### Files
+
+| File | Purpose |
+|:-----|:--------|
+| [`contracts/script/DeployTenderly.s.sol`](./contracts/script/DeployTenderly.s.sol) | Full deployment script with demo agent seeding |
+| [`contracts/scripts/deploy-tenderly.sh`](./contracts/scripts/deploy-tenderly.sh) | Shell helper for deploy + address export |
+| [`contracts/deployments/tenderly-virtual.json`](./contracts/deployments/tenderly-virtual.json) | Deployed contract addresses and metadata |
+| [`cre/project.yaml`](./cre/project.yaml) | CRE workflow targets (`tenderly-*` section) |
+| [`contracts/foundry.toml`](./contracts/foundry.toml) | Tenderly RPC endpoint configuration |
 
 ---
 
@@ -717,12 +791,18 @@ bun run build
 # 5. Run all tests (348 total)
 bun run test
 
-# 6. Simulate a CRE workflow
+# 6. Simulate CRE workflows (Base Sepolia testnet)
 cd cre
 cre workflow simulate reputation-oracle --target staging-settings
 cre workflow simulate transaction-monitor --target staging-settings
 cre workflow simulate budget-alert --target staging-settings
 cre workflow simulate agent-verify --target staging-settings
+
+# 7. Simulate CRE workflows (Tenderly Virtual TestNet)
+cre workflow simulate reputation-oracle --target tenderly-reputation-oracle
+cre workflow simulate transaction-monitor --target tenderly-transaction-monitor
+cre workflow simulate budget-alert --target tenderly-budget-alert
+cre workflow simulate agent-verify --target tenderly-agent-verify
 ```
 
 ### Install and Build
@@ -758,6 +838,9 @@ cre workflow simulate reputation-oracle --target staging-settings
 cre workflow simulate transaction-monitor --target staging-settings
 cre workflow simulate budget-alert --target staging-settings
 cre workflow simulate agent-verify --target staging-settings
+
+# Deploy to Tenderly Virtual TestNet
+cd contracts && bash scripts/deploy-tenderly.sh
 ```
 
 ### Seed Demo Data
@@ -795,6 +878,15 @@ DEPLOYER_PRIVATE_KEY=       # Contract deployer wallet private key
 PORT=3001                   # API server port
 ```
 
+### Tenderly (`contracts/.env`)
+
+```env
+TENDERLY_ACCESS_KEY=                # Tenderly API access token
+TENDERLY_ACCOUNT_SLUG=              # Tenderly account slug
+TENDERLY_PROJECT_SLUG=              # Tenderly project slug
+TENDERLY_VIRTUAL_TESTNET_RPC=       # Virtual TestNet RPC URL
+```
+
 ---
 
 ## Tech Stack
@@ -814,6 +906,7 @@ PORT=3001                   # API server port
 | **Styling** | Tailwind v4 + shadcn/ui | Utility-first, accessible components |
 | **Icons** | Phosphor Icons | Consistent, multiple weights |
 | **Charts** | Recharts | Composable, responsive |
+| **Testing** | Tenderly Virtual TestNets | Fork-based testing with real mainnet state, debugger, public explorer |
 | **Monorepo** | Turborepo + Bun workspaces | Fast builds, dependency caching |
 | **Linting** | Biome | Fast, single tool for lint + format |
 | **CI/CD** | Vercel | Auto-deploy from main branch |
@@ -825,10 +918,13 @@ PORT=3001                   # API server port
 | Component | Platform | URL |
 |:----------|:---------|:----|
 | Dashboard | Vercel | [app.qova.cc](https://app.qova.cc) |
-| Contracts | Base Sepolia + SKALE Base | On-chain |
+| Marketing | Vercel | [qova.cc](https://qova.cc) |
+| Contracts (testnet) | Base Sepolia | [Basescan](https://sepolia.basescan.org/address/0x9Ee4ae0bD93E95498fB6AB444ae6205d56fEf76a) |
+| Contracts (Tenderly) | Tenderly Virtual TestNet | [Explorer](https://dashboard.tenderly.co) |
 | CRE Workflows | Chainlink CRE Network | Decentralized |
 | Database | Convex Cloud | Real-time |
 | Auth | Clerk | Managed |
+| Identity | World ID | Proof-of-personhood |
 
 ---
 

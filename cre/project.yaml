@@ -1,3 +1,5 @@
+# ─── Base Sepolia (direct testnet) ───────────────────────────
+
 staging-settings:
   config:
     chainSelectorName: "ethereum-testnet-sepolia-base-1"
@@ -71,6 +73,89 @@ staging-agent-verify:
   rpcs:
     - chain-name: ethereum-testnet-sepolia-base-1
       url: https://sepolia.base.org
+  private-keys:
+    - chain-name: ethereum-testnet-sepolia-base-1
+      value: "${PRIVATE_KEY}"
+
+# ─── Tenderly Virtual TestNet ────────────────────────────────
+# Fork of Base Sepolia with unlimited faucet, real-time state sync,
+# built-in debugger, and transaction explorer.
+# Setup: Create Virtual TestNet at https://dashboard.tenderly.co
+#        forking Base Sepolia (chain 84532), then set the RPC URL below.
+
+tenderly-reputation-oracle:
+  config:
+    chainSelectorName: "ethereum-testnet-sepolia-base-1"
+    reputationRegistryAddress: "${TENDERLY_REPUTATION_REGISTRY}"
+    transactionValidatorAddress: "${TENDERLY_TRANSACTION_VALIDATOR}"
+    budgetEnforcerAddress: "${TENDERLY_BUDGET_ENFORCER}"
+    consumerContractAddress: "${TENDERLY_REPUTATION_REGISTRY}"
+    gasLimit: "500000"
+    schedule: "0 */10 * * * *"
+  user-workflow:
+    workflow-name: "reputation-oracle"
+  workflow-artifacts:
+    workflow-path: "./main.ts"
+    config-path: "./config.json"
+  rpcs:
+    - chain-name: ethereum-testnet-sepolia-base-1
+      url: "${TENDERLY_VIRTUAL_TESTNET_RPC}"
+  private-keys:
+    - chain-name: ethereum-testnet-sepolia-base-1
+      value: "${PRIVATE_KEY}"
+
+tenderly-transaction-monitor:
+  config:
+    chainSelectorName: "ethereum-testnet-sepolia-base-1"
+    reputationRegistryAddress: "${TENDERLY_REPUTATION_REGISTRY}"
+    transactionValidatorAddress: "${TENDERLY_TRANSACTION_VALIDATOR}"
+    gasLimit: "500000"
+  user-workflow:
+    workflow-name: "transaction-monitor"
+  workflow-artifacts:
+    workflow-path: "./main.ts"
+    config-path: "./config.json"
+  rpcs:
+    - chain-name: ethereum-testnet-sepolia-base-1
+      url: "${TENDERLY_VIRTUAL_TESTNET_RPC}"
+  private-keys:
+    - chain-name: ethereum-testnet-sepolia-base-1
+      value: "${PRIVATE_KEY}"
+
+tenderly-budget-alert:
+  config:
+    chainSelectorName: "ethereum-testnet-sepolia-base-1"
+    reputationRegistryAddress: "${TENDERLY_REPUTATION_REGISTRY}"
+    budgetEnforcerAddress: "${TENDERLY_BUDGET_ENFORCER}"
+    gasLimit: "500000"
+  user-workflow:
+    workflow-name: "budget-alert"
+  workflow-artifacts:
+    workflow-path: "./main.ts"
+    config-path: "./config.json"
+  rpcs:
+    - chain-name: ethereum-testnet-sepolia-base-1
+      url: "${TENDERLY_VIRTUAL_TESTNET_RPC}"
+  private-keys:
+    - chain-name: ethereum-testnet-sepolia-base-1
+      value: "${PRIVATE_KEY}"
+
+tenderly-agent-verify:
+  config:
+    chainSelectorName: "ethereum-testnet-sepolia-base-1"
+    reputationRegistryAddress: "${TENDERLY_REPUTATION_REGISTRY}"
+    transactionValidatorAddress: "${TENDERLY_TRANSACTION_VALIDATOR}"
+    budgetEnforcerAddress: "${TENDERLY_BUDGET_ENFORCER}"
+    gasLimit: "500000"
+    authorizedKey: "0x0a3AF9a104Bd2B5d96C7E24fe95Cc03432431158"
+  user-workflow:
+    workflow-name: "agent-verify"
+  workflow-artifacts:
+    workflow-path: "./main.ts"
+    config-path: "./config.json"
+  rpcs:
+    - chain-name: ethereum-testnet-sepolia-base-1
+      url: "${TENDERLY_VIRTUAL_TESTNET_RPC}"
   private-keys:
     - chain-name: ethereum-testnet-sepolia-base-1
       value: "${PRIVATE_KEY}"

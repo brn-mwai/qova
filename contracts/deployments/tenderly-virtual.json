@@ -1,0 +1,31 @@
+{
+  "network": "tenderly-virtual-testnet",
+  "chainId": 99984532,
+  "rpcUrl": "https://virtual.rpc.tenderly.co/brnmwai/project/private/qova-2/3250001d-bce0-4c92-be4c-1f67ed6797c6",
+  "deployer": "0x0a3AF9a104Bd2B5d96C7E24fe95Cc03432431158",
+  "deployedAt": "2026-03-09T14:50:00Z",
+  "solidityVersion": "0.8.28",
+  "evmVersion": "cancun",
+  "optimizerRuns": 200,
+  "contracts": {
+    "ReputationRegistry": { "address": "0xc668460Cbc34bd3f591e09f6cE8FF0e5A6782236" },
+    "TransactionValidator": { "address": "0xCF58A0E4e44dbf54B43F6eF3873EE6988a9a9776" },
+    "BudgetEnforcer": { "address": "0x29f71a3781BCeDfD1C2908F612f1c92DdF976f58" },
+    "QovaCore": { "address": "0xD562712A86e8AEc7881c9d8b0c8eC47021a47208" }
+  },
+  "roleGrants": {
+    "UPDATER_ROLE": {
+      "contract": "ReputationRegistry",
+      "grantee": "QovaCore"
+    },
+    "RECORDER_ROLE": {
+      "contract": "TransactionValidator",
+      "grantee": "QovaCore"
+    },
+    "BUDGET_MANAGER_ROLE": {
+      "contract": "BudgetEnforcer",
+      "grantee": "QovaCore"
+    }
+  },
+  "blockExplorer": "https://dashboard.tenderly.co/explorer/vnet/qova-base-sepolia-2"
+}
