@@ -140,4 +140,57 @@ describe("mapContractError", () => {
     expect(err).toBeInstanceOf(QovaError);
     expect(err.code).toBe("CONTRACT_ERROR");
   });
+
+  it("should extract agent address from AgentNotRegistered args", () => {
+    const err = mapContractError("AgentNotRegistered", ["0xABCD"]);
+    expect(err).toBeInstanceOf(AgentNotRegisteredError);
+    expect(err.message).toContain("0xABCD");
+  });
+
+  it("should extract agent address from AgentAlreadyRegistered args", () => {
+    const err = mapContractError("AgentAlreadyRegistered", ["0x9999"]);
+    expect(err).toBeInstanceOf(AgentAlreadyRegisteredError);
+    expect(err.message).toContain("0x9999");
+  });
+
+  it("should extract score from InvalidScore args", () => {
+    const err = mapContractError("InvalidScore", [2000]);
+    expect(err).toBeInstanceOf(InvalidScoreError);
+    expect(err.message).toContain("2000");
+  });
+
+  it("should extract agent from NoBudgetSet args", () => {
+    const err = mapContractError("NoBudgetSet", ["0xBEEF"]);
+    expect(err).toBeInstanceOf(NoBudgetSetError);
+    expect(err.message).toContain("0xBEEF");
+  });
+
+  it("should extract agent from BudgetExceeded with full args", () => {
+    const err = mapContractError("BudgetExceeded", ["0xCAFE", 500n, 100n]) as BudgetExceededError;
+    expect(err).toBeInstanceOf(BudgetExceededError);
+    expect(err.message).toContain("0xCAFE");
+    expect(err.requested).toBe(500n);
+    expect(err.available).toBe(100n);
+  });
+
+  it("should map MonthlyLimitReached", () => {
+    const err = mapContractError("MonthlyLimitReached", ["0x1234", 200n, 50n]);
+    expect(err).toBeInstanceOf(BudgetExceededError);
+  });
+
+  it("should map PerTxLimitReached", () => {
+    const err = mapContractError("PerTxLimitReached");
+    expect(err).toBeInstanceOf(BudgetExceededError);
+  });
+
+  it("should map InvalidContract to ZeroAddressError", () => {
+    const err = mapContractError("InvalidContract");
+    expect(err).toBeInstanceOf(ZeroAddressError);
+  });
+
+  it("should fallback to 'unknown' when args are missing", () => {
+    const err = mapContractError("AgentNotRegistered");
+    expect(err).toBeInstanceOf(AgentNotRegisteredError);
+    expect(err.message).toContain("unknown");
+  });
 });

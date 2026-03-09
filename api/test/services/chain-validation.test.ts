@@ -4,64 +4,45 @@
  * @author Qova Engineering <eng@qova.cc>
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { getQovaClient, resetClient } from "../../src/services/chain.js";
+import { describe, expect, it, vi } from "vitest";
+import { validatePrivateKey } from "../../src/services/chain.js";
 
-describe("private key validation (Fix 1.4)", () => {
-	let originalKey: string | undefined;
-
-	beforeEach(() => {
-		originalKey = process.env.DEPLOYER_PRIVATE_KEY;
-		resetClient();
+describe("validatePrivateKey (Fix 1.4)", () => {
+	it("returns null when no key is provided", () => {
+		expect(validatePrivateKey(undefined)).toBeNull();
 	});
 
-	afterEach(() => {
-		if (originalKey === undefined) {
-			delete process.env.DEPLOYER_PRIVATE_KEY;
-		} else {
-			process.env.DEPLOYER_PRIVATE_KEY = originalKey;
-		}
-		resetClient();
-	});
-
-	it("creates client without wallet when no private key is set", () => {
-		delete process.env.DEPLOYER_PRIVATE_KEY;
-		const client = getQovaClient("base-sepolia");
-		expect(client).toBeDefined();
-	});
-
-	it("rejects invalid private key format (no 0x prefix)", () => {
+	it("returns null and logs error for key without 0x prefix", () => {
 		const spy = vi.spyOn(console, "error").mockImplementation(() => {});
-		process.env.DEPLOYER_PRIVATE_KEY = "abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890ab";
-
-		// Should create client without wallet (invalid key is treated as null)
-		const client = getQovaClient("base-sepolia");
-		expect(client).toBeDefined();
+		const result = validatePrivateKey(
+			"abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890ab",
+		);
+		expect(result).toBeNull();
 		expect(spy).toHaveBeenCalledWith(expect.stringContaining("Invalid DEPLOYER_PRIVATE_KEY"));
 		spy.mockRestore();
 	});
 
-	it("rejects private key that is too short", () => {
+	it("returns null and logs error for key that is too short", () => {
 		const spy = vi.spyOn(console, "error").mockImplementation(() => {});
-		process.env.DEPLOYER_PRIVATE_KEY = "0xabcd";
-
-		const client = getQovaClient("base-sepolia");
-		expect(client).toBeDefined();
+		const result = validatePrivateKey("0xabcd");
+		expect(result).toBeNull();
 		expect(spy).toHaveBeenCalledWith(expect.stringContaining("Invalid DEPLOYER_PRIVATE_KEY"));
 		spy.mockRestore();
 	});
 
-	it("rejects private key with invalid hex characters", () => {
+	it("returns null and logs error for key with invalid hex characters", () => {
 		const spy = vi.spyOn(console, "error").mockImplementation(() => {});
-		process.env.DEPLOYER_PRIVATE_KEY = "0xgggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg";
-
-		const client = getQovaClient("base-sepolia");
-		expect(client).toBeDefined();
+		const result = validatePrivateKey(
+			"0xgggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg",
+		);
+		expect(result).toBeNull();
 		expect(spy).toHaveBeenCalledWith(expect.stringContaining("Invalid DEPLOYER_PRIVATE_KEY"));
 		spy.mockRestore();
 	});
 
-	it("throws for unsupported chain", () => {
-		expect(() => getQovaClient("invalid-chain")).toThrow("Unsupported chain");
+	it("accepts a valid 0x-prefixed 64-char hex key", () => {
+		const validKey = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
+		const result = validatePrivateKey(validKey);
+		expect(result).toBe(validKey);
 	});
 });

@@ -110,7 +110,7 @@ export async function registerAgent(
 			abi: reputationRegistryAbi,
 			functionName: "registerAgent",
 			args: [agent],
-			account: wallet.account ?? undefined,
+			account: wallet.account,
 		});
 		return wallet.writeContract(request);
 	} catch (error) {
@@ -151,7 +151,7 @@ export async function updateScore(
 			abi: reputationRegistryAbi,
 			functionName: "updateScore",
 			args: [agent, score, reason],
-			account: wallet.account ?? undefined,
+			account: wallet.account,
 		});
 		return wallet.writeContract(request);
 	} catch (error) {
@@ -197,7 +197,7 @@ export async function batchUpdateScores(
 			abi: reputationRegistryAbi,
 			functionName: "batchUpdateScores",
 			args: [agents, scores, reasons],
-			account: wallet.account ?? undefined,
+			account: wallet.account,
 		});
 		return wallet.writeContract(request);
 	} catch (error) {

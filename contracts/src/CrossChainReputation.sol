@@ -61,6 +61,12 @@ contract QovaCrossChainReputation is CCIPReceiver, AccessControl {
     /// @notice Total CCIP messages received by this contract.
     uint256 public totalMessagesReceived;
 
+    /// @notice Maximum number of cross-chain scores stored per agent. // FIX: CONCERNS.md §2.1
+    uint256 public constant MAX_SCORES_PER_AGENT = 1000;
+
+    /// @notice Configurable CCIP gas limit for outgoing messages. // FIX: CONCERNS.md §2.4
+    uint256 public ccipGasLimit = 200_000;
+
     // ──────────────────────────────────────────────
     //  Errors
     // ──────────────────────────────────────────────
@@ -79,6 +85,12 @@ contract QovaCrossChainReputation is CCIPReceiver, AccessControl {
 
     /// @dev Thrown when the score is out of valid range.
     error InvalidScore(uint256 score);
+
+    /// @dev Thrown when an agent has too many cross-chain scores. // FIX: CONCERNS.md §2.1
+    error TooManyScores(address agent);
+
+    /// @dev Thrown when a CCIP gas limit value is invalid. // FIX: CONCERNS.md §2.4
+    error InvalidGasLimit();
 
     // ──────────────────────────────────────────────
     //  Events
@@ -174,6 +186,13 @@ contract QovaCrossChainReputation is CCIPReceiver, AccessControl {
         reputationRegistry = _reputationRegistry;
     }
 
+    /// @notice Update the CCIP gas limit for outgoing messages. // FIX: CONCERNS.md §2.4
+    /// @param newLimit The new gas limit (must be between 1 and 1,000,000).
+    function setCcipGasLimit(uint256 newLimit) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (newLimit == 0 || newLimit > 1_000_000) revert InvalidGasLimit();
+        ccipGasLimit = newLimit;
+    }
+
     // ──────────────────────────────────────────────
     //  Send functions
     // ──────────────────────────────────────────────
@@ -204,7 +223,7 @@ contract QovaCrossChainReputation is CCIPReceiver, AccessControl {
             receiver: abi.encode(destination),
             data: data,
             tokenAmounts: new Client.EVMTokenAmount[](0),
-            extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: 200_000})),
+            extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: ccipGasLimit})),
             feeToken: address(0) // Pay in native
         });
 
@@ -249,7 +268,7 @@ contract QovaCrossChainReputation is CCIPReceiver, AccessControl {
             receiver: abi.encode(destination),
             data: data,
             tokenAmounts: new Client.EVMTokenAmount[](0),
-            extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: 200_000})),
+            extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: ccipGasLimit})),
             feeToken: address(0)
         });
 
@@ -278,6 +297,7 @@ contract QovaCrossChainReputation is CCIPReceiver, AccessControl {
         );
 
         // --- Effects ---
+        if (_crossChainScores[agent].length >= MAX_SCORES_PER_AGENT) revert TooManyScores(agent); // FIX: CONCERNS.md §2.1
         _crossChainScores[agent].push(CrossChainScore({
             agent: agent,
             score: score,

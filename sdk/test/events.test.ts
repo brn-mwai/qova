@@ -60,4 +60,40 @@ describe("event watchers", () => {
     expect(typeof unwatch).toBe("function");
     unwatch();
   });
+
+  // §3.1 - skale-base chain support in events
+  it("watchScoreUpdates throws for skale-base (no contracts deployed)", () => {
+    // skale-base is in CHAIN_MAP but has no deployed contracts in CONTRACTS
+    expect(() =>
+      watchScoreUpdates({ chain: "skale-base" }, () => {}),
+    ).toThrow(QovaError);
+  });
+
+  it("watchTransactions throws for skale-base (no contracts deployed)", () => {
+    expect(() =>
+      watchTransactions({ chain: "skale-base" }, () => {}),
+    ).toThrow(QovaError);
+  });
+
+  it("watchAgentActions throws for skale-base (no contracts deployed)", () => {
+    expect(() =>
+      watchAgentActions({ chain: "skale-base" }, () => {}),
+    ).toThrow(QovaError);
+  });
+
+  it("watchScoreUpdates should work with base chain", () => {
+    // base mainnet has no contracts deployed either
+    expect(() =>
+      watchScoreUpdates({ chain: "base" }, () => {}),
+    ).toThrow(QovaError);
+  });
+
+  it("error message includes chain name", () => {
+    try {
+      watchScoreUpdates({ chain: "unknown-chain" as any }, () => {});
+    } catch (e) {
+      expect((e as QovaError).message).toContain("unknown-chain");
+      expect((e as QovaError).code).toBe("UNSUPPORTED_CHAIN");
+    }
+  });
 });

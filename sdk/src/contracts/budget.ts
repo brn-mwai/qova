@@ -34,7 +34,7 @@ export async function setBudget(
 			abi: budgetEnforcerAbi,
 			functionName: "setBudget",
 			args: [agent, daily, monthly, perTx],
-			account: wallet.account ?? undefined,
+			account: wallet.account,
 		});
 		return wallet.writeContract(request);
 	} catch (error) {
@@ -92,7 +92,7 @@ export async function recordSpend(
 			abi: budgetEnforcerAbi,
 			functionName: "recordSpend",
 			args: [agent, amount],
-			account: wallet.account ?? undefined,
+			account: wallet.account,
 		});
 		return wallet.writeContract(request);
 	} catch (error) {

@@ -66,7 +66,7 @@ export type QovaEvent =
 
 /** Configuration for event watchers. */
 export type WatchConfig = {
-	chain: "base-sepolia" | "base";
+	chain: "base-sepolia" | "base" | "skale-base";
 	rpcUrl?: string;
 	fromBlock?: bigint;
 	/** Optional filter: only events involving this agent address. */

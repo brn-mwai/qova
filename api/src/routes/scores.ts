@@ -13,18 +13,23 @@ import { AnomalyCheckRequest, ComputeScoreRequest, EnrichRequest } from "../sche
 import { getQovaClient } from "../services/chain.js";
 import { type AgentMetrics, computeReputationScore, SCORE_WEIGHTS } from "../services/scoring.js";
 import type { AppEnv } from "../types/env.js";
+import { MOCK_AGENTS } from "../constants.js";
+
+/** Race a promise against a timeout. */
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+	return Promise.race([
+		promise,
+		new Promise<never>((_, reject) =>
+			setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms),
+		),
+	]);
+}
 
 export const scoreRoutes = new Hono<AppEnv>();
 
 /** GET /api/scores/agents -- List all known agents (CRE-compatible) */
 scoreRoutes.get("/agents", (c) => {
-	return c.json({
-		agents: [
-			"0x0a3AF9a104Bd2B5d96C7E24fe95Cc03432431158",
-			"0x0000000000000000000000000000000000000001",
-			"0x0000000000000000000000000000000000000002",
-		],
-	});
+	return c.json({ agents: MOCK_AGENTS });
 });
 
 /** POST /api/scores/enrich -- Off-chain enrichment data (CRE-compatible) */
@@ -99,9 +104,9 @@ scoreRoutes.get(
 		const client = getQovaClient();
 
 		const [stats, budgetStatus, currentScore] = await Promise.all([
-			client.getTransactionStats(address as Address),
-			client.getBudgetStatus(address as Address),
-			client.getScore(address as Address),
+			withTimeout(client.getTransactionStats(address as Address), 10_000, "getTransactionStats"),
+			withTimeout(client.getBudgetStatus(address as Address), 10_000, "getBudgetStatus"),
+			withTimeout(client.getScore(address as Address), 10_000, "getScore"),
 		]);
 
 		const successRateBps =

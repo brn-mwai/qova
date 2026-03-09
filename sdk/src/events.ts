@@ -4,7 +4,7 @@
  */
 
 import { type Address, createPublicClient, http, type PublicClient } from "viem";
-import { base, baseSepolia } from "viem/chains";
+import { base, baseSepolia, type Chain as ViemChain } from "viem/chains";
 import { qovaCoreAbi, reputationRegistryAbi, transactionValidatorAbi } from "./abi/index.js";
 import { CHAIN_IDS, CONTRACTS, DEFAULT_RPC_URLS } from "./constants.js";
 import type {
@@ -17,15 +17,27 @@ import { QovaError } from "./types/errors.js";
 import type { TransactionType } from "./types/transaction.js";
 import { isAgentActionArgs, isScoreUpdateArgs, isTransactionArgs } from "./utils/guards.js";
 
-const CHAIN_MAP = {
+/** SKALE Base L3 chain definition for viem. */
+const skaleBase: ViemChain = {
+	id: CHAIN_IDS.SKALE_BASE,
+	name: "SKALE Base",
+	nativeCurrency: { name: "CREDIT", symbol: "CREDIT", decimals: 18 },
+	rpcUrls: {
+		default: { http: ["https://skale-base.skalenodes.com/v1/base"] },
+	},
+};
+
+const CHAIN_MAP: Record<string, ViemChain> = {
 	"base-sepolia": baseSepolia,
 	base: base,
-} as const;
+	"skale-base": skaleBase,
+};
 
-const CHAIN_ID_FROM_NAME = {
+const CHAIN_ID_FROM_NAME: Record<string, number> = {
 	"base-sepolia": CHAIN_IDS.BASE_SEPOLIA,
 	base: CHAIN_IDS.BASE_MAINNET,
-} as const;
+	"skale-base": CHAIN_IDS.SKALE_BASE,
+};
 
 function resolveClient(config: WatchConfig): { publicClient: PublicClient; chainId: number } {
 	const chainId = CHAIN_ID_FROM_NAME[config.chain];

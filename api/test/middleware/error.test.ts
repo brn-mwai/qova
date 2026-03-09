@@ -12,7 +12,7 @@ import { errorHandler } from "../../src/middleware/error.js";
 function createTestApp(error: Error): Hono {
 	const app = new Hono();
 	app.onError(errorHandler);
-	app.get("/test", () => {
+	app.get("/test", async () => {
 		throw error;
 	});
 	return app;
@@ -56,7 +56,7 @@ describe("errorHandler", () => {
 	});
 
 	it("maps unknown errors to 500", async () => {
-		const app = createTestApp(new Error("unknown"));
+		const app = createTestApp(new TypeError("some unexpected error"));
 		const res = await app.request("/test");
 		expect(res.status).toBe(500);
 		expect((await res.json()).error).toBe("Internal server error");

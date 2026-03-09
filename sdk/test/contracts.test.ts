@@ -88,6 +88,90 @@ describe("batchUpdateScores client-side validation (§1.4)", () => {
   });
 });
 
+describe("updateScore boundary validation", () => {
+  it("accepts score of exactly 0", async () => {
+    // Score 0 is valid but will fail at simulateContract (no real client)
+    await expect(
+      updateScore(
+        {} as any,
+        { simulateContract: () => { throw new Error("no client"); } } as any,
+        "0x0000000000000000000000000000000000000001",
+        "0x0000000000000000000000000000000000000002",
+        0,
+        "0x00",
+      ),
+    ).rejects.toThrow(); // Should NOT be InvalidScoreError
+    try {
+      await updateScore(
+        {} as any,
+        { simulateContract: () => { throw new Error("no client"); } } as any,
+        "0x0000000000000000000000000000000000000001",
+        "0x0000000000000000000000000000000000000002",
+        0,
+        "0x00",
+      );
+    } catch (e) {
+      expect(e).not.toBeInstanceOf(InvalidScoreError);
+    }
+  });
+
+  it("accepts score of exactly 1000", async () => {
+    try {
+      await updateScore(
+        {} as any,
+        { simulateContract: () => { throw new Error("no client"); } } as any,
+        "0x0000000000000000000000000000000000000001",
+        "0x0000000000000000000000000000000000000002",
+        1000,
+        "0x00",
+      );
+    } catch (e) {
+      expect(e).not.toBeInstanceOf(InvalidScoreError);
+    }
+  });
+
+  it("rejects score of 1001", async () => {
+    await expect(
+      updateScore(
+        {} as any,
+        {} as any,
+        "0x0000000000000000000000000000000000000001",
+        "0x0000000000000000000000000000000000000002",
+        1001,
+        "0x00",
+      ),
+    ).rejects.toThrow(InvalidScoreError);
+  });
+});
+
+describe("batchUpdateScores validation details", () => {
+  it("rejects when scores length differs from reasons length", async () => {
+    await expect(
+      batchUpdateScores(
+        {} as any,
+        {} as any,
+        "0x0000000000000000000000000000000000000001",
+        ["0x0000000000000000000000000000000000000002"],
+        [500],
+        ["0x00", "0x01"], // 2 reasons but 1 agent
+      ),
+    ).rejects.toThrow(QovaError);
+  });
+
+  it("rejects negative score in batch", async () => {
+    await expect(
+      batchUpdateScores(
+        {} as any,
+        {} as any,
+        "0x0000000000000000000000000000000000000001",
+        ["0x0000000000000000000000000000000000000002"],
+        [-5],
+        ["0x00"],
+      ),
+    ).rejects.toThrow(InvalidScoreError);
+  });
+});
+
 describe("handleContractError (§2.1)", () => {
   it("re-throws QovaError unchanged", () => {
     const original = new QovaError("test", "TEST");

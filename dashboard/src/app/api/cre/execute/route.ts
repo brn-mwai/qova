@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { createPublicClient, createWalletClient, http, keccak256, toHex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
@@ -66,7 +67,11 @@ export async function POST(request: Request): Promise<NextResponse> {
 	// Security: require either CRE API key (server-to-server) or Clerk session (browser)
 	const apiKey = request.headers.get("x-cre-api-key");
 	const expectedKey = process.env.CRE_API_KEY;
-	const hasValidApiKey = expectedKey && apiKey === expectedKey;
+	const hasValidApiKey = (() => {
+		if (!apiKey || !expectedKey) return false;
+		if (apiKey.length !== expectedKey.length) return false;
+		return timingSafeEqual(Buffer.from(apiKey), Buffer.from(expectedKey));
+	})();
 
 	let hasValidSession = false;
 	if (!hasValidApiKey) {

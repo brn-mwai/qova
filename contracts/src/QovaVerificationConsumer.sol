@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol"; // FIX: CONCERNS.md §2.5
 import {CREReceiver} from "./base/CREReceiver.sol";
 
 /// @title QovaVerificationConsumer
@@ -11,7 +11,7 @@ import {CREReceiver} from "./base/CREReceiver.sol";
 /// @dev The agent-verify CRE workflow verifies World ID proofs off-chain (via cloud API
 ///      with BFT consensus across DON nodes), then writes the result here via KeystoneForwarder.
 ///      Report format: abi.encode(address agent, uint256 nullifierHash, uint256 verificationLevel, uint256 timestamp)
-contract QovaVerificationConsumer is CREReceiver, Ownable {
+contract QovaVerificationConsumer is CREReceiver, AccessControl { // FIX: CONCERNS.md §2.5
     // ──────────────────────────────────────────────
     //  Types
     // ──────────────────────────────────────────────
@@ -57,6 +57,9 @@ contract QovaVerificationConsumer is CREReceiver, Ownable {
     /// @dev Thrown when the verification level is invalid (must be 1 or 2).
     error InvalidVerificationLevel();
 
+    /// @dev Thrown when the nullifier hash is zero. // FIX: CONCERNS.md §2.3
+    error InvalidNullifier();
+
     // ──────────────────────────────────────────────
     //  Events
     // ──────────────────────────────────────────────
@@ -84,7 +87,9 @@ contract QovaVerificationConsumer is CREReceiver, Ownable {
 
     /// @notice Deploys the verification consumer.
     /// @param _forwarder Address of the KeystoneForwarder (CRE report delivery).
-    constructor(address _forwarder) CREReceiver(_forwarder) Ownable(msg.sender) {}
+    constructor(address _forwarder) CREReceiver(_forwarder) { // FIX: CONCERNS.md §2.5
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    }
 
     // ──────────────────────────────────────────────
     //  CRE Report Entry Point
@@ -107,7 +112,8 @@ contract QovaVerificationConsumer is CREReceiver, Ownable {
         (address agent, uint256 nullifierHash, uint256 verificationLevel, uint256 timestamp) =
             abi.decode(report, (address, uint256, uint256, uint256));
 
-        // Step 4: Validate verification level
+        // Step 4: Validate
+        if (nullifierHash == 0) revert InvalidNullifier(); // FIX: CONCERNS.md §2.3
         if (verificationLevel == 0 || verificationLevel > 2) revert InvalidVerificationLevel();
 
         // Step 5: Sybil resistance -- prevent same human from verifying multiple agents
@@ -136,7 +142,7 @@ contract QovaVerificationConsumer is CREReceiver, Ownable {
     /// @notice Revoke an agent's verification (e.g., for fraud). Frees the nullifier
     ///         so the human can re-verify with a different agent.
     /// @param agent The agent address to revoke.
-    function revokeVerification(address agent) external onlyOwner {
+    function revokeVerification(address agent) external onlyRole(DEFAULT_ADMIN_ROLE) { // FIX: CONCERNS.md §2.5
         Verification storage v = verifications[agent];
         if (!v.verified) return;
 

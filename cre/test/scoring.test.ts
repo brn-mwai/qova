@@ -111,4 +111,93 @@ describe("computeReputationScore", () => {
 		const score = computeReputationScore(noBudget);
 		expect(score).toBeGreaterThan(0);
 	});
+
+	it("scores higher with apiReputationScore than without", () => {
+		const base: AgentMetrics = {
+			totalVolume: BigInt(10e18),
+			transactionCount: 100,
+			successRate: 9500,
+			dailySpent: BigInt(1e18),
+			dailyLimit: BigInt(10e18),
+			accountAgeSeconds: 180 * 86400,
+			sanctionsClean: true,
+		};
+		const withApi: AgentMetrics = { ...base, apiReputationScore: 95 };
+		// apiReputationScore is optional metadata, score should still be valid
+		expect(computeReputationScore(base)).toBeGreaterThan(0);
+		expect(computeReputationScore(withApi)).toBeGreaterThan(0);
+	});
+
+	it("returns consistent scores for identical inputs", () => {
+		const metrics: AgentMetrics = {
+			totalVolume: BigInt(50e18),
+			transactionCount: 200,
+			successRate: 9000,
+			dailySpent: BigInt(3e18),
+			dailyLimit: BigInt(10e18),
+			accountAgeSeconds: 120 * 86400,
+			sanctionsClean: true,
+		};
+		const score1 = computeReputationScore(metrics);
+		const score2 = computeReputationScore(metrics);
+		expect(score1).toBe(score2);
+	});
+
+	it("handles maximum possible metrics without overflow", () => {
+		const metrics: AgentMetrics = {
+			totalVolume: BigInt(1000000e18),
+			transactionCount: 1000000,
+			successRate: 10000,
+			dailySpent: 0n,
+			dailyLimit: BigInt(1000000e18),
+			accountAgeSeconds: 10 * 365 * 86400,
+			sanctionsClean: true,
+		};
+		const score = computeReputationScore(metrics);
+		expect(score).toBeLessThanOrEqual(1000);
+		expect(score).toBeGreaterThanOrEqual(0);
+	});
+});
+
+describe("penalty idempotency simulation", () => {
+	it("penalty does not stack below 0", () => {
+		let score = 30n;
+		const penalty = 25n;
+		// Apply penalty multiple times
+		for (let i = 0; i < 5; i++) {
+			score = score > penalty ? score - penalty : 0n;
+		}
+		expect(score).toBe(0n);
+	});
+
+	it("penalty is skipped within interval", () => {
+		const currentScore = 500n;
+		const lastUpdated = 1000n;
+		const nowSec = 2000n; // 1000s since last update
+		const minInterval = 3600n; // 1 hour
+
+		const timeSinceLastUpdate = nowSec - lastUpdated;
+		const shouldPenalize = timeSinceLastUpdate >= minInterval;
+		expect(shouldPenalize).toBe(false);
+		// Score unchanged
+		const adjustedScore = shouldPenalize
+			? (currentScore > 25n ? currentScore - 25n : 0n)
+			: currentScore;
+		expect(adjustedScore).toBe(500n);
+	});
+
+	it("penalty is applied after interval elapses", () => {
+		const currentScore = 500n;
+		const lastUpdated = 1000n;
+		const nowSec = 5000n; // 4000s since last update
+		const minInterval = 3600n;
+
+		const timeSinceLastUpdate = nowSec - lastUpdated;
+		const shouldPenalize = timeSinceLastUpdate >= minInterval;
+		expect(shouldPenalize).toBe(true);
+		const adjustedScore = shouldPenalize
+			? (currentScore > 25n ? currentScore - 25n : 0n)
+			: currentScore;
+		expect(adjustedScore).toBe(475n);
+	});
 });

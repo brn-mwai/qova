@@ -33,24 +33,24 @@ import {
 	REPUTATION_REGISTRY_ABI,
 	EVENT_SIGNATURES,
 } from "../shared/contracts";
+import { withRetry } from "../shared/retry";
 
 const configSchema = z.object({
 	chainSelectorName: z.string(),
 	reputationRegistryAddress: z.string(),
 	budgetEnforcerAddress: z.string(),
 	gasLimit: z.string(),
+	thresholdYellow: z.number().default(7000),
+	thresholdRed: z.number().default(9000),
+	maxPenalty: z.number().default(25),
+	minPenaltyIntervalSec: z.number().default(3600),
 });
 type Config = z.infer<typeof configSchema>;
 
-const THRESHOLD_YELLOW = 7000n;
-const THRESHOLD_RED = 9000n;
-/** Minimum interval between score penalties (1 hour in seconds). */
-const MIN_PENALTY_INTERVAL = 3600n;
-
-function classifyAlert(bps: bigint): "GREEN" | "YELLOW" | "RED" | "CRITICAL" {
+function classifyAlert(bps: bigint, thresholdYellow: bigint, thresholdRed: bigint): "GREEN" | "YELLOW" | "RED" | "CRITICAL" {
 	if (bps > 10000n) return "CRITICAL";
-	if (bps > THRESHOLD_RED) return "RED";
-	if (bps >= THRESHOLD_YELLOW) return "YELLOW";
+	if (bps > thresholdRed) return "RED";
+	if (bps >= thresholdYellow) return "YELLOW";
 	return "GREEN";
 }
 
@@ -72,56 +72,77 @@ const onSpendRecorded = (runtime: Runtime<Config>, log: EVMLog): string => {
 	const evmClient = new EVMClient(network.chainSelector.selector);
 
 	// EVM Read 1: Budget status
-	const budgetResult = evmClient
-		.callContract(runtime, {
-			call: encodeCallMsg({
-				from: zeroAddress,
-				to: config.budgetEnforcerAddress as Address,
-				data: encodeFunctionData({
-					abi: BUDGET_ENFORCER_ABI,
-					functionName: "getBudgetStatus",
-					args: [agentAddress as Address],
-				}),
-			}),
-			blockNumber: LAST_FINALIZED_BLOCK_NUMBER,
-		})
-		.result();
+	let budget = { dailyRemaining: 0n, monthlyRemaining: 0n, dailySpent: 0n, monthlySpent: 0n };
+	try {
+		const budgetResult = withRetry(
+			() =>
+				evmClient
+					.callContract(runtime, {
+						call: encodeCallMsg({
+							from: zeroAddress,
+							to: config.budgetEnforcerAddress as Address,
+							data: encodeFunctionData({
+								abi: BUDGET_ENFORCER_ABI,
+								functionName: "getBudgetStatus",
+								args: [agentAddress as Address],
+							}),
+						}),
+						blockNumber: LAST_FINALIZED_BLOCK_NUMBER,
+					})
+					.result(),
+			2,
+			runtime,
+		);
 
-	const rawBudget = decodeFunctionResult({
-		abi: BUDGET_ENFORCER_ABI,
-		functionName: "getBudgetStatus",
-		data: bytesToHex(budgetResult.data),
-	}) as unknown as Record<string, number | bigint>;
-	const budget = {
-		dailyRemaining: BigInt(rawBudget.dailyRemaining ?? 0),
-		monthlyRemaining: BigInt(rawBudget.monthlyRemaining ?? 0),
-		dailySpent: BigInt(rawBudget.dailySpent ?? 0),
-		monthlySpent: BigInt(rawBudget.monthlySpent ?? 0),
-	};
+		const rawBudget = decodeFunctionResult({
+			abi: BUDGET_ENFORCER_ABI,
+			functionName: "getBudgetStatus",
+			data: bytesToHex(budgetResult.data),
+		}) as unknown as Record<string, number | bigint>;
+		budget = {
+			dailyRemaining: BigInt(rawBudget.dailyRemaining ?? 0),
+			monthlyRemaining: BigInt(rawBudget.monthlyRemaining ?? 0),
+			dailySpent: BigInt(rawBudget.dailySpent ?? 0),
+			monthlySpent: BigInt(rawBudget.monthlySpent ?? 0),
+		};
+	} catch (e) {
+		runtime.log(`Failed to read BudgetEnforcer.getBudgetStatus: ${e instanceof Error ? e.message : String(e)}`);
+	}
 
 	// EVM Read 2: Agent details (score + lastUpdated for penalty interval check)
-	const detailsResult = evmClient
-		.callContract(runtime, {
-			call: encodeCallMsg({
-				from: zeroAddress,
-				to: config.reputationRegistryAddress as Address,
-				data: encodeFunctionData({
-					abi: REPUTATION_REGISTRY_ABI,
-					functionName: "getAgentDetails",
-					args: [agentAddress as Address],
-				}),
-			}),
-			blockNumber: LAST_FINALIZED_BLOCK_NUMBER,
-		})
-		.result();
+	let currentScore = 0n;
+	let lastUpdated = 0n;
+	try {
+		const detailsResult = withRetry(
+			() =>
+				evmClient
+					.callContract(runtime, {
+						call: encodeCallMsg({
+							from: zeroAddress,
+							to: config.reputationRegistryAddress as Address,
+							data: encodeFunctionData({
+								abi: REPUTATION_REGISTRY_ABI,
+								functionName: "getAgentDetails",
+								args: [agentAddress as Address],
+							}),
+						}),
+						blockNumber: LAST_FINALIZED_BLOCK_NUMBER,
+					})
+					.result(),
+			2,
+			runtime,
+		);
 
-	const rawDetails = decodeFunctionResult({
-		abi: REPUTATION_REGISTRY_ABI,
-		functionName: "getAgentDetails",
-		data: bytesToHex(detailsResult.data),
-	}) as unknown as Record<string, number | bigint>;
-	const currentScore = BigInt(rawDetails.score ?? 0);
-	const lastUpdated = BigInt(rawDetails.lastUpdated ?? 0);
+		const rawDetails = decodeFunctionResult({
+			abi: REPUTATION_REGISTRY_ABI,
+			functionName: "getAgentDetails",
+			data: bytesToHex(detailsResult.data),
+		}) as unknown as Record<string, number | bigint>;
+		currentScore = BigInt(rawDetails.score ?? 0);
+		lastUpdated = BigInt(rawDetails.lastUpdated ?? 0);
+	} catch (e) {
+		runtime.log(`Failed to read ReputationRegistry.getAgentDetails: ${e instanceof Error ? e.message : String(e)}`);
+	}
 
 	// Compute utilization (all BigInt)
 	const dailyLimit = budget.dailySpent + budget.dailyRemaining;
@@ -136,7 +157,7 @@ const onSpendRecorded = (runtime: Runtime<Config>, log: EVMLog): string => {
 	const maxUtilBps =
 		dailyUtilBps > monthlyUtilBps ? dailyUtilBps : monthlyUtilBps;
 
-	const alertLevel = classifyAlert(maxUtilBps);
+	const alertLevel = classifyAlert(maxUtilBps, BigInt(config.thresholdYellow), BigInt(config.thresholdRed));
 
 	runtime.log(
 		`Budget: agent=${agentAddress}, daily=${dailyUtilBps}bps, monthly=${monthlyUtilBps}bps, level=${alertLevel}`,
@@ -144,14 +165,16 @@ const onSpendRecorded = (runtime: Runtime<Config>, log: EVMLog): string => {
 
 	// Score penalty for CRITICAL overspend (with idempotency)
 	const nowSec = BigInt(Math.floor(runtime.now().getTime() / 1000));
+	const penaltyAmount = BigInt(config.maxPenalty);
+	const minPenaltyInterval = BigInt(config.minPenaltyIntervalSec);
 	let adjustedScore = currentScore;
 	if (alertLevel === "CRITICAL") {
 		const timeSinceLastUpdate = nowSec - lastUpdated;
-		if (timeSinceLastUpdate >= MIN_PENALTY_INTERVAL) {
-			adjustedScore = currentScore > 25n ? currentScore - 25n : 0n;
+		if (timeSinceLastUpdate >= minPenaltyInterval) {
+			adjustedScore = currentScore > penaltyAmount ? currentScore - penaltyAmount : 0n;
 		} else {
 			adjustedScore = currentScore; // Don't re-penalize within interval
-			runtime.log(`Skipping penalty: last update ${timeSinceLastUpdate}s ago (min interval: ${MIN_PENALTY_INTERVAL}s)`);
+			runtime.log(`Skipping penalty: last update ${timeSinceLastUpdate}s ago (min interval: ${minPenaltyInterval}s)`);
 		}
 	}
 

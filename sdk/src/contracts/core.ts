@@ -36,7 +36,7 @@ export async function executeAgentAction(
 			abi: qovaCoreAbi,
 			functionName: "executeAgentAction",
 			args: [agent, txHash, amount, txType],
-			account: wallet.account ?? undefined,
+			account: wallet.account,
 		});
 		return wallet.writeContract(request);
 	} catch (error) {

@@ -47,6 +47,7 @@ import {
 	MAX_SCORE,
 	MIN_SCORE_CHANGE,
 } from "../shared/scoring";
+import { withRetry } from "../shared/retry";
 
 const configSchema = z.object({
 	chainSelectorName: z.string(),
@@ -186,108 +187,148 @@ const onCronTrigger = (
 	runtime.log(`AI-enhanced scoring for agent: ${agentAddress}`);
 
 	// ── EVM Read 1: Agent score from ReputationRegistry ──
-	const scoreResult = evmClient
-		.callContract(runtime, {
-			call: encodeCallMsg({
-				from: zeroAddress,
-				to: config.reputationRegistryAddress as Address,
-				data: encodeFunctionData({
-					abi: REPUTATION_REGISTRY_ABI,
-					functionName: "getScore",
-					args: [agentAddress],
-				}),
-			}),
-			blockNumber: LAST_FINALIZED_BLOCK_NUMBER,
-		})
-		.result();
+	let currentScore = 0n;
+	try {
+		const scoreResult = withRetry(
+			() =>
+				evmClient
+					.callContract(runtime, {
+						call: encodeCallMsg({
+							from: zeroAddress,
+							to: config.reputationRegistryAddress as Address,
+							data: encodeFunctionData({
+								abi: REPUTATION_REGISTRY_ABI,
+								functionName: "getScore",
+								args: [agentAddress],
+							}),
+						}),
+						blockNumber: LAST_FINALIZED_BLOCK_NUMBER,
+					})
+					.result(),
+			2,
+			runtime,
+		);
 
-	const currentScore = BigInt(
-		decodeFunctionResult({
-			abi: REPUTATION_REGISTRY_ABI,
-			functionName: "getScore",
-			data: bytesToHex(scoreResult.data),
-		}) as number,
-	);
+		currentScore = BigInt(
+			decodeFunctionResult({
+				abi: REPUTATION_REGISTRY_ABI,
+				functionName: "getScore",
+				data: bytesToHex(scoreResult.data),
+			}) as number,
+		);
+	} catch (e) {
+		runtime.log(`Failed to read ReputationRegistry.getScore: ${e instanceof Error ? e.message : String(e)}`);
+	}
 
 	// ── EVM Read 2: Transaction stats from TransactionValidator ──
-	const statsResult = evmClient
-		.callContract(runtime, {
-			call: encodeCallMsg({
-				from: zeroAddress,
-				to: config.transactionValidatorAddress as Address,
-				data: encodeFunctionData({
-					abi: TRANSACTION_VALIDATOR_ABI,
-					functionName: "getTransactionStats",
-					args: [agentAddress],
-				}),
-			}),
-			blockNumber: LAST_FINALIZED_BLOCK_NUMBER,
-		})
-		.result();
+	let stats = { totalCount: 0n, totalVolume: 0n, successCount: 0n, lastActivityTimestamp: 0n };
+	try {
+		const statsResult = withRetry(
+			() =>
+				evmClient
+					.callContract(runtime, {
+						call: encodeCallMsg({
+							from: zeroAddress,
+							to: config.transactionValidatorAddress as Address,
+							data: encodeFunctionData({
+								abi: TRANSACTION_VALIDATOR_ABI,
+								functionName: "getTransactionStats",
+								args: [agentAddress],
+							}),
+						}),
+						blockNumber: LAST_FINALIZED_BLOCK_NUMBER,
+					})
+					.result(),
+			2,
+			runtime,
+		);
 
-	const rawStats = decodeFunctionResult({
-		abi: TRANSACTION_VALIDATOR_ABI,
-		functionName: "getTransactionStats",
-		data: bytesToHex(statsResult.data),
-	}) as unknown as Record<string, number | bigint>;
-	const stats = {
-		totalCount: BigInt(rawStats.totalCount ?? 0),
-		totalVolume: BigInt(rawStats.totalVolume ?? 0),
-		successCount: BigInt(rawStats.successCount ?? 0),
-		lastActivityTimestamp: BigInt(rawStats.lastActivityTimestamp ?? 0),
-	};
+		const rawStats = decodeFunctionResult({
+			abi: TRANSACTION_VALIDATOR_ABI,
+			functionName: "getTransactionStats",
+			data: bytesToHex(statsResult.data),
+		}) as unknown as Record<string, number | bigint>;
+		stats = {
+			totalCount: BigInt(rawStats.totalCount ?? 0),
+			totalVolume: BigInt(rawStats.totalVolume ?? 0),
+			successCount: BigInt(rawStats.successCount ?? 0),
+			lastActivityTimestamp: BigInt(rawStats.lastActivityTimestamp ?? 0),
+		};
+	} catch (e) {
+		runtime.log(`Failed to read TransactionValidator.getTransactionStats: ${e instanceof Error ? e.message : String(e)}`);
+	}
 
 	// ── EVM Read 3: Budget status from BudgetEnforcer ──
-	const budgetResult = evmClient
-		.callContract(runtime, {
-			call: encodeCallMsg({
-				from: zeroAddress,
-				to: config.budgetEnforcerAddress as Address,
-				data: encodeFunctionData({
-					abi: BUDGET_ENFORCER_ABI,
-					functionName: "getBudgetStatus",
-					args: [agentAddress],
-				}),
-			}),
-			blockNumber: LAST_FINALIZED_BLOCK_NUMBER,
-		})
-		.result();
+	let budget = { dailyRemaining: 0n, monthlyRemaining: 0n, perTxLimit: 0n, dailySpent: 0n, monthlySpent: 0n };
+	try {
+		const budgetResult = withRetry(
+			() =>
+				evmClient
+					.callContract(runtime, {
+						call: encodeCallMsg({
+							from: zeroAddress,
+							to: config.budgetEnforcerAddress as Address,
+							data: encodeFunctionData({
+								abi: BUDGET_ENFORCER_ABI,
+								functionName: "getBudgetStatus",
+								args: [agentAddress],
+							}),
+						}),
+						blockNumber: LAST_FINALIZED_BLOCK_NUMBER,
+					})
+					.result(),
+			2,
+			runtime,
+		);
 
-	const rawBudget = decodeFunctionResult({
-		abi: BUDGET_ENFORCER_ABI,
-		functionName: "getBudgetStatus",
-		data: bytesToHex(budgetResult.data),
-	}) as unknown as Record<string, number | bigint>;
-	const budget = {
-		dailyRemaining: BigInt(rawBudget.dailyRemaining ?? 0),
-		monthlyRemaining: BigInt(rawBudget.monthlyRemaining ?? 0),
-		perTxLimit: BigInt(rawBudget.perTxLimit ?? 0),
-		dailySpent: BigInt(rawBudget.dailySpent ?? 0),
-		monthlySpent: BigInt(rawBudget.monthlySpent ?? 0),
-	};
+		const rawBudget = decodeFunctionResult({
+			abi: BUDGET_ENFORCER_ABI,
+			functionName: "getBudgetStatus",
+			data: bytesToHex(budgetResult.data),
+		}) as unknown as Record<string, number | bigint>;
+		budget = {
+			dailyRemaining: BigInt(rawBudget.dailyRemaining ?? 0),
+			monthlyRemaining: BigInt(rawBudget.monthlyRemaining ?? 0),
+			perTxLimit: BigInt(rawBudget.perTxLimit ?? 0),
+			dailySpent: BigInt(rawBudget.dailySpent ?? 0),
+			monthlySpent: BigInt(rawBudget.monthlySpent ?? 0),
+		};
+	} catch (e) {
+		runtime.log(`Failed to read BudgetEnforcer.getBudgetStatus: ${e instanceof Error ? e.message : String(e)}`);
+	}
 
 	// ── EVM Read (bonus): Agent registration timestamp for true account age ──
-	const detailsResult = evmClient
-		.callContract(runtime, {
-			call: encodeCallMsg({
-				from: zeroAddress,
-				to: config.reputationRegistryAddress as Address,
-				data: encodeFunctionData({
-					abi: REPUTATION_REGISTRY_ABI,
-					functionName: "getAgentDetails",
-					args: [agentAddress],
-				}),
-			}),
-			blockNumber: LAST_FINALIZED_BLOCK_NUMBER,
-		})
-		.result();
+	let registrationTimestamp = 0n;
+	try {
+		const detailsResult = withRetry(
+			() =>
+				evmClient
+					.callContract(runtime, {
+						call: encodeCallMsg({
+							from: zeroAddress,
+							to: config.reputationRegistryAddress as Address,
+							data: encodeFunctionData({
+								abi: REPUTATION_REGISTRY_ABI,
+								functionName: "getAgentDetails",
+								args: [agentAddress],
+							}),
+						}),
+						blockNumber: LAST_FINALIZED_BLOCK_NUMBER,
+					})
+					.result(),
+			2,
+			runtime,
+		);
 
-	const rawDetails = decodeFunctionResult({
-		abi: REPUTATION_REGISTRY_ABI,
-		functionName: "getAgentDetails",
-		data: bytesToHex(detailsResult.data),
-	}) as unknown as Record<string, number | bigint>;
-	const registrationTimestamp = BigInt(rawDetails.lastUpdated ?? 0);
+		const rawDetails = decodeFunctionResult({
+			abi: REPUTATION_REGISTRY_ABI,
+			functionName: "getAgentDetails",
+			data: bytesToHex(detailsResult.data),
+		}) as unknown as Record<string, number | bigint>;
+		registrationTimestamp = BigInt(rawDetails.lastUpdated ?? 0);
+	} catch (e) {
+		runtime.log(`Failed to read ReputationRegistry.getAgentDetails: ${e instanceof Error ? e.message : String(e)}`);
+	}
 
 	// ── Compute derived metrics (all BigInt) ──
 	const now = runtime.now();
@@ -332,7 +373,21 @@ const onCronTrigger = (
 	// ── AI-Enhanced Scoring ──
 	let newScore = BigInt(traditionalScore);
 
+	// Validate AI secret before attempting API call
+	let validatedApiKey = "";
 	if (config.aiEnabled) {
+		try {
+			const secret = runtime.getSecret({ id: "AI_API_KEY" }).result();
+			validatedApiKey = secret.value ?? "";
+		} catch (e) {
+			runtime.log(`Failed to retrieve AI_API_KEY secret: ${e instanceof Error ? e.message : String(e)}`);
+		}
+		if (!validatedApiKey) {
+			runtime.log("AI_API_KEY secret not configured, using traditional score only");
+		}
+	}
+
+	if (config.aiEnabled && validatedApiKey) {
 		// Prepare metrics for AI analysis
 		const successRateBps =
 			stats.totalCount > 0n
@@ -353,11 +408,6 @@ const onCronTrigger = (
 		};
 
 		try {
-			// Get API key in DON mode (secrets only available on Runtime, not NodeRuntime)
-			const apiKey = runtime
-				.getSecret({ id: "AI_API_KEY" })
-				.result().value;
-
 			// Each DON node calls Groq independently, consensus via median on numerics
 			const aiResult = runtime.runInNodeMode(
 				analyzeAgentBehavior,
@@ -366,7 +416,7 @@ const onCronTrigger = (
 					behavioral_flags: ignore(),
 					confidence: median(),
 				}),
-			)(metrics, apiKey).result();
+			)(metrics, validatedApiKey).result();
 
 			runtime.log(
 				`AI analysis: risk=${aiResult.risk_score}, confidence=${aiResult.confidence}, flags=${JSON.stringify(aiResult.behavioral_flags)}`,

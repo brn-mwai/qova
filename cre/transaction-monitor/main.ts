@@ -33,6 +33,7 @@ import {
 	TRANSACTION_VALIDATOR_ABI,
 	EVENT_SIGNATURES,
 } from "../shared/contracts";
+import { withRetry } from "../shared/retry";
 
 const configSchema = z.object({
 	chainSelectorName: z.string(),
@@ -64,56 +65,76 @@ const onTransactionRecorded = (
 	const evmClient = new EVMClient(network.chainSelector.selector);
 
 	// EVM Read 1: Current reputation score
-	const scoreResult = evmClient
-		.callContract(runtime, {
-			call: encodeCallMsg({
-				from: zeroAddress,
-				to: config.reputationRegistryAddress as Address,
-				data: encodeFunctionData({
-					abi: REPUTATION_REGISTRY_ABI,
-					functionName: "getScore",
-					args: [agentAddress as Address],
-				}),
-			}),
-			blockNumber: LAST_FINALIZED_BLOCK_NUMBER,
-		})
-		.result();
+	let currentScore = 0n;
+	try {
+		const scoreResult = withRetry(
+			() =>
+				evmClient
+					.callContract(runtime, {
+						call: encodeCallMsg({
+							from: zeroAddress,
+							to: config.reputationRegistryAddress as Address,
+							data: encodeFunctionData({
+								abi: REPUTATION_REGISTRY_ABI,
+								functionName: "getScore",
+								args: [agentAddress as Address],
+							}),
+						}),
+						blockNumber: LAST_FINALIZED_BLOCK_NUMBER,
+					})
+					.result(),
+			2,
+			runtime,
+		);
 
-	const currentScore = BigInt(
-		decodeFunctionResult({
-			abi: REPUTATION_REGISTRY_ABI,
-			functionName: "getScore",
-			data: bytesToHex(scoreResult.data),
-		}) as number,
-	);
+		currentScore = BigInt(
+			decodeFunctionResult({
+				abi: REPUTATION_REGISTRY_ABI,
+				functionName: "getScore",
+				data: bytesToHex(scoreResult.data),
+			}) as number,
+		);
+	} catch (e) {
+		runtime.log(`Failed to read ReputationRegistry.getScore: ${e instanceof Error ? e.message : String(e)}`);
+	}
 
 	// EVM Read 2: Transaction statistics
-	const statsResult = evmClient
-		.callContract(runtime, {
-			call: encodeCallMsg({
-				from: zeroAddress,
-				to: config.transactionValidatorAddress as Address,
-				data: encodeFunctionData({
-					abi: TRANSACTION_VALIDATOR_ABI,
-					functionName: "getTransactionStats",
-					args: [agentAddress as Address],
-				}),
-			}),
-			blockNumber: LAST_FINALIZED_BLOCK_NUMBER,
-		})
-		.result();
+	let stats = { totalCount: 0n, totalVolume: 0n, successCount: 0n, lastActivityTimestamp: 0n };
+	try {
+		const statsResult = withRetry(
+			() =>
+				evmClient
+					.callContract(runtime, {
+						call: encodeCallMsg({
+							from: zeroAddress,
+							to: config.transactionValidatorAddress as Address,
+							data: encodeFunctionData({
+								abi: TRANSACTION_VALIDATOR_ABI,
+								functionName: "getTransactionStats",
+								args: [agentAddress as Address],
+							}),
+						}),
+						blockNumber: LAST_FINALIZED_BLOCK_NUMBER,
+					})
+					.result(),
+			2,
+			runtime,
+		);
 
-	const rawStats = decodeFunctionResult({
-		abi: TRANSACTION_VALIDATOR_ABI,
-		functionName: "getTransactionStats",
-		data: bytesToHex(statsResult.data),
-	}) as unknown as Record<string, number | bigint>;
-	const stats = {
-		totalCount: BigInt(rawStats.totalCount ?? 0),
-		totalVolume: BigInt(rawStats.totalVolume ?? 0),
-		successCount: BigInt(rawStats.successCount ?? 0),
-		lastActivityTimestamp: BigInt(rawStats.lastActivityTimestamp ?? 0),
-	};
+		const rawStats = decodeFunctionResult({
+			abi: TRANSACTION_VALIDATOR_ABI,
+			functionName: "getTransactionStats",
+			data: bytesToHex(statsResult.data),
+		}) as unknown as Record<string, number | bigint>;
+		stats = {
+			totalCount: BigInt(rawStats.totalCount ?? 0),
+			totalVolume: BigInt(rawStats.totalVolume ?? 0),
+			successCount: BigInt(rawStats.successCount ?? 0),
+			lastActivityTimestamp: BigInt(rawStats.lastActivityTimestamp ?? 0),
+		};
+	} catch (e) {
+		runtime.log(`Failed to read TransactionValidator.getTransactionStats: ${e instanceof Error ? e.message : String(e)}`);
+	}
 
 	// Anomaly detection (all BigInt)
 	const nowSec = BigInt(Math.floor(runtime.now().getTime() / 1000));

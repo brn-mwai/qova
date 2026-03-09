@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol"; // FIX: CONCERNS.md §2.5
 import {CREReceiver} from "./base/CREReceiver.sol";
 import {ReputationRegistry} from "./ReputationRegistry.sol";
 
@@ -11,7 +11,7 @@ import {ReputationRegistry} from "./ReputationRegistry.sol";
 ///         reputation scores to the ReputationRegistry.
 /// @dev Extends CREReceiver (ReceiverTemplate pattern) for forwarder validation.
 ///      CRE workflows encode reports as (address agent, uint256 score, uint256 timestamp).
-contract QovaReputationConsumer is CREReceiver, Ownable {
+contract QovaReputationConsumer is CREReceiver, AccessControl { // FIX: CONCERNS.md §2.5
     // ──────────────────────────────────────────────
     //  State
     // ──────────────────────────────────────────────
@@ -49,8 +49,9 @@ contract QovaReputationConsumer is CREReceiver, Ownable {
     /// @param agent    The agent whose score was updated.
     /// @param newScore The new reputation score.
     /// @param timestamp Timestamp from the CRE report.
-    event ReputationReportProcessed(
+    event ReputationReportProcessed( // FIX: CONCERNS.md §2.2
         address indexed agent,
+        bytes32 indexed reportHash,
         uint16 newScore,
         uint256 timestamp
     );
@@ -68,9 +69,10 @@ contract QovaReputationConsumer is CREReceiver, Ownable {
     constructor(
         address _forwarder,
         address _registry
-    ) CREReceiver(_forwarder) Ownable(msg.sender) {
+    ) CREReceiver(_forwarder) { // FIX: CONCERNS.md §2.5
         if (_registry == address(0)) revert InvalidRegistry();
         reputationRegistry = ReputationRegistry(_registry);
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
     // ──────────────────────────────────────────────
@@ -107,7 +109,7 @@ contract QovaReputationConsumer is CREReceiver, Ownable {
         // Step 6: Forward to ReputationRegistry (cast uint256 -> uint16, use reportHash as reason)
         reputationRegistry.updateScore(agent, safeScore, reportHash);
 
-        emit ReputationReportProcessed(agent, safeScore, timestamp);
+        emit ReputationReportProcessed(agent, reportHash, safeScore, timestamp); // FIX: CONCERNS.md §2.2
     }
 
     // ──────────────────────────────────────────────
@@ -116,7 +118,7 @@ contract QovaReputationConsumer is CREReceiver, Ownable {
 
     /// @notice Update the ReputationRegistry reference.
     /// @param _registry Address of the new ReputationRegistry contract.
-    function setReputationRegistry(address _registry) external onlyOwner {
+    function setReputationRegistry(address _registry) external onlyRole(DEFAULT_ADMIN_ROLE) { // FIX: CONCERNS.md §2.5
         if (_registry == address(0)) revert InvalidRegistry();
         address old = address(reputationRegistry);
         reputationRegistry = ReputationRegistry(_registry);

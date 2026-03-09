@@ -135,6 +135,22 @@ contract BudgetEnforcer is AccessControl {
     }
 
     // ──────────────────────────────────────────────
+    //  Internal helpers
+    // ──────────────────────────────────────────────
+
+    /// @dev Lazily resets daily and monthly spend counters when their periods have elapsed. // FIX: CONCERNS.md §3.4
+    function _resetPeriods(BudgetState storage state, uint48 ts) internal {
+        if (ts - state.lastDailyReset >= DAILY_PERIOD) {
+            state.dailySpent = 0;
+            state.lastDailyReset = ts;
+        }
+        if (ts - state.lastMonthlyReset >= MONTHLY_PERIOD) {
+            state.monthlySpent = 0;
+            state.lastMonthlyReset = ts;
+        }
+    }
+
+    // ──────────────────────────────────────────────
     //  Mutative functions
     // ──────────────────────────────────────────────
 
@@ -191,17 +207,8 @@ contract BudgetEnforcer is AccessControl {
         BudgetState storage state = _states[agent];
         uint48 ts = uint48(block.timestamp);
 
-        // --- Lazy daily reset ---
-        if (ts - state.lastDailyReset >= DAILY_PERIOD) {
-            state.dailySpent = 0;
-            state.lastDailyReset = ts;
-        }
-
-        // --- Lazy monthly reset ---
-        if (ts - state.lastMonthlyReset >= MONTHLY_PERIOD) {
-            state.monthlySpent = 0;
-            state.lastMonthlyReset = ts;
-        }
+        // --- Lazy period resets --- // FIX: CONCERNS.md §3.4
+        _resetPeriods(state, ts);
 
         // --- Daily limit check ---
         if (config.dailyLimit > 0) {

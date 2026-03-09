@@ -130,8 +130,9 @@ contract QovaReputationConsumerTest is Test {
         uint256 score = 650;
         uint256 timestamp = block.timestamp + 5;
 
-        vm.expectEmit(true, false, false, true);
-        emit QovaReputationConsumer.ReputationReportProcessed(agent1, uint16(score), timestamp);
+        bytes32 reportHash = keccak256(abi.encode(agent1, score, timestamp));
+        vm.expectEmit(true, true, false, true);
+        emit QovaReputationConsumer.ReputationReportProcessed(agent1, reportHash, uint16(score), timestamp);
 
         vm.prank(forwarder);
         consumer.onReport("", abi.encode(agent1, score, timestamp));

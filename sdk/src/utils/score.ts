@@ -4,20 +4,12 @@
  */
 
 import type { ScoreGrade } from "../types/agent.js";
+import { SCORE_GRADE_THRESHOLDS } from "../constants.js";
 
-/** Score grade thresholds (lower bound, inclusive). */
-const GRADE_THRESHOLDS: readonly { grade: ScoreGrade; min: number }[] = [
-	{ grade: "AAA", min: 950 },
-	{ grade: "AA", min: 900 },
-	{ grade: "A", min: 850 },
-	{ grade: "BBB", min: 750 },
-	{ grade: "BB", min: 650 },
-	{ grade: "B", min: 550 },
-	{ grade: "CCC", min: 450 },
-	{ grade: "CC", min: 350 },
-	{ grade: "C", min: 250 },
-	{ grade: "D", min: 0 },
-] as const;
+/** Score grade thresholds derived from constants (single source of truth). */
+const GRADE_THRESHOLDS: readonly { grade: ScoreGrade; min: number }[] = (
+	Object.entries(SCORE_GRADE_THRESHOLDS) as [ScoreGrade, number][]
+).map(([grade, min]) => ({ grade, min }));
 
 /**
  * Map a numeric score (0-1000) to a letter grade.

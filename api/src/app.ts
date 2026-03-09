@@ -10,7 +10,9 @@ import { prettyJSON } from "hono/pretty-json";
 import { bodyLimit } from "hono/body-limit";
 import { errorHandler } from "./middleware/error.js";
 import { rateLimit } from "./middleware/rate-limit.js";
+import { requestId } from "./middleware/request-id.js";
 import { routes } from "./routes/index.js";
+import { MOCK_AGENTS } from "./constants.js";
 
 const isProd = process.env.NODE_ENV === "production";
 
@@ -30,6 +32,9 @@ const CORS_ORIGINS = isProd
 		];
 
 const app = new Hono();
+
+// ─── Request ID ──────────────────────────────────────────────────
+app.use("*", requestId);
 
 // ─── Security Headers ────────────────────────────────────────────
 
@@ -98,13 +103,7 @@ app.route("/api", routes);
 
 // CRE-compatible routes under /v1 (backward compat with CRE workflow configs)
 app.get("/v1/agents", (c) => {
-	return c.json({
-		agents: [
-			"0x0a3AF9a104Bd2B5d96C7E24fe95Cc03432431158",
-			"0x0000000000000000000000000000000000000001",
-			"0x0000000000000000000000000000000000000002",
-		],
-	});
+	return c.json({ agents: MOCK_AGENTS });
 });
 app.post("/v1/enrich", async (c) => {
 	return c.json({

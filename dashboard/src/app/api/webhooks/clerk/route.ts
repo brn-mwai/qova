@@ -10,10 +10,14 @@ function getConvex(): ConvexHttpClient {
   return new ConvexHttpClient(url);
 }
 
+const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
+if (!WEBHOOK_SECRET) {
+  console.error("[FATAL] CLERK_WEBHOOK_SECRET not set");
+}
+
 export async function POST(req: Request): Promise<Response> {
-  const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
   if (!WEBHOOK_SECRET) {
-    return new Response("Missing CLERK_WEBHOOK_SECRET", { status: 500 });
+    return new Response("Webhook not configured", { status: 503 });
   }
 
   const headerPayload = await headers();

@@ -27,6 +27,24 @@ export function setCache(key: string, data: unknown, ttlSeconds = 30): void {
 	cache.set(key, { data, expires: Date.now() + ttlSeconds * 1000 });
 }
 
+/**
+ * Delete a specific cache entry by key.
+ * @param key - Cache key to invalidate.
+ */
+export function deleteCache(key: string): void {
+	cache.delete(key);
+}
+
+/**
+ * Delete all cache entries matching a prefix.
+ * @param prefix - Key prefix to match.
+ */
+export function deleteCacheByPrefix(prefix: string): void {
+	for (const key of cache.keys()) {
+		if (key.startsWith(prefix)) cache.delete(key);
+	}
+}
+
 /** Clear all cached entries. Useful for testing. */
 export function clearCache(): void {
 	cache.clear();

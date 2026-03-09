@@ -55,6 +55,12 @@ contract ReputationRegistry is AccessControl, Pausable {
     /// @dev Thrown when batch arrays have mismatched lengths.
     error ArrayLengthMismatch();
 
+    /// @dev Thrown when a batch exceeds the maximum allowed size. // FIX: CONCERNS.md §3.2
+    error BatchSizeTooLarge();
+
+    /// @notice Maximum number of agents per batch update. // FIX: CONCERNS.md §3.2
+    uint256 public constant MAX_BATCH_SIZE = 100;
+
     // ──────────────────────────────────────────────
     //  Events
     // ──────────────────────────────────────────────
@@ -160,6 +166,7 @@ contract ReputationRegistry is AccessControl, Pausable {
         bytes32[] calldata reasons
     ) external onlyRole(UPDATER_ROLE) whenNotPaused {
         uint256 len = agents.length;
+        if (len > MAX_BATCH_SIZE) revert BatchSizeTooLarge(); // FIX: CONCERNS.md §3.2
         if (len != scores.length || len != reasons.length) revert ArrayLengthMismatch();
 
         uint48 ts = uint48(block.timestamp);

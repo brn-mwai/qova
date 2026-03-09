@@ -2,9 +2,13 @@
 
 import { ChartBar, MagnifyingGlass, Trophy } from "@phosphor-icons/react";
 import type { ColumnDef } from "@tanstack/react-table";
+import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useState } from "react";
-import { ScoreDistribution } from "@/components/charts/score-distribution";
+import { useMemo, useState } from "react";
+const ScoreDistribution = dynamic(
+	() => import("@/components/charts/score-distribution").then((m) => m.ScoreDistribution),
+	{ loading: () => <div className="h-64 animate-pulse bg-muted rounded" /> },
+);
 import { DataTable } from "@/components/data/data-table";
 import { EmptyState } from "@/components/data/empty-state";
 import { ScoreBadge } from "@/components/scores/score-badge";
@@ -20,7 +24,8 @@ function isValidAddress(addr: string): boolean {
 
 function ScoreLookupPanel({ address }: { address: string }): React.ReactElement {
 	const agent = useAgentByAddress(address);
-	const scoreHistory = useScoreHistory(address, 10);
+	const rawScoreHistory = useScoreHistory(address, 10);
+	const scoreHistory = useMemo(() => rawScoreHistory?.slice(0, 5) ?? [], [rawScoreHistory]);
 
 	if (!agent) {
 		return (
@@ -61,7 +66,7 @@ function ScoreLookupPanel({ address }: { address: string }): React.ReactElement 
 				{scoreHistory.length > 0 && (
 					<div className="space-y-1">
 						<p className="text-xs font-medium text-muted-foreground">Recent History</p>
-						{scoreHistory.slice(0, 5).map((s) => (
+						{scoreHistory.map((s) => (
 							<div key={s._id} className="flex items-center justify-between text-xs">
 								<span className="font-mono">{s.score}</span>
 								<ScoreBadge grade={s.grade} size="xs" />
@@ -147,6 +152,16 @@ export default function ScoresPage(): React.ReactElement {
 	const [activeAddress, setActiveAddress] = useState("");
 	const [addressError, setAddressError] = useState<string | null>(null);
 
+	function handleAddressChange(value: string): void {
+		const sanitized = value.replace(/[^a-fA-F0-9x]/g, "");
+		setLookupAddress(sanitized);
+		if (sanitized && !/^0x[a-fA-F0-9]{40}$/.test(sanitized)) {
+			setAddressError("Invalid Ethereum address");
+		} else {
+			setAddressError(null);
+		}
+	}
+
 	function handleCompute(): void {
 		const trimmed = lookupAddress.trim();
 		setAddressError(null);
@@ -199,10 +214,7 @@ export default function ScoresPage(): React.ReactElement {
 						<input
 							type="text"
 							value={lookupAddress}
-							onChange={(e) => {
-								setLookupAddress(e.target.value);
-								setAddressError(null);
-							}}
+							onChange={(e) => handleAddressChange(e.target.value)}
 							onKeyDown={(e) => {
 								if (e.key === "Enter") handleCompute();
 							}}

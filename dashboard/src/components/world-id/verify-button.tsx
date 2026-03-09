@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useWorldIdStatus } from "@/hooks/use-convex-data";
 
-const APP_ID = process.env.NEXT_PUBLIC_WORLD_ID_APP_ID ?? "";
+const APP_ID = process.env.NEXT_PUBLIC_WORLD_ID_APP_ID;
 const ACTION = process.env.NEXT_PUBLIC_WORLD_ID_ACTION ?? "verify-qova-user";
 
 /**
@@ -74,6 +74,10 @@ export function WorldIdVerifyButton({
 	}, [verifyMutation, onVerified]);
 
 	const handleRealVerify = useCallback(async (): Promise<void> => {
+		if (!APP_ID) {
+			setError("World ID not configured");
+			return;
+		}
 		setLoading(true);
 		setError(null);
 		try {

@@ -90,38 +90,40 @@ export class ArrayLengthMismatchError extends QovaError {
  * @returns A typed QovaError subclass.
  */
 export function mapContractError(errorName: string, args?: readonly unknown[]): QovaError {
+	const agentArg = typeof args?.[0] === "string" ? args[0] : "unknown";
+
 	switch (errorName) {
 		case "AgentNotRegistered":
-			return new AgentNotRegisteredError("unknown");
+			return new AgentNotRegisteredError(agentArg);
 		case "AgentAlreadyRegistered":
-			return new AgentAlreadyRegisteredError("unknown");
+			return new AgentAlreadyRegisteredError(agentArg);
 		case "InvalidScore":
-			return new InvalidScoreError(-1);
+			return new InvalidScoreError(typeof args?.[0] === "number" ? args[0] : -1);
 		case "ArrayLengthMismatch":
 			return new ArrayLengthMismatchError();
 		case "BudgetExceeded":
 			return new BudgetExceededError(
-				"unknown",
-				args?.[0] as bigint | undefined,
-				args?.[1] as bigint | undefined,
+				agentArg,
+				typeof args?.[1] === "bigint" ? args[1] : undefined,
+				typeof args?.[2] === "bigint" ? args[2] : undefined,
 			);
 		case "DailyLimitReached":
 		case "MonthlyLimitReached":
 		case "PerTxLimitReached":
 			return new BudgetExceededError(
-				"unknown",
-				args?.[0] as bigint | undefined,
-				args?.[1] as bigint | undefined,
+				agentArg,
+				typeof args?.[1] === "bigint" ? args[1] : undefined,
+				typeof args?.[2] === "bigint" ? args[2] : undefined,
 			);
 		case "NoBudgetSet":
-			return new NoBudgetSetError("unknown");
+			return new NoBudgetSetError(agentArg);
 		case "BudgetCheckFailed":
-			return new BudgetExceededError("unknown");
+			return new BudgetExceededError(agentArg);
 		case "InvalidContract":
 		case "ZeroAddress":
 			return new ZeroAddressError();
 		case "AccessControlUnauthorizedAccount":
-			return new UnauthorizedError(args?.[1] as string | undefined);
+			return new UnauthorizedError(typeof args?.[1] === "string" ? args[1] : undefined);
 		default:
 			return new QovaError(`Contract error: ${errorName}`, "CONTRACT_ERROR");
 	}

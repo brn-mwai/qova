@@ -25,6 +25,15 @@ contract Deploy is Script {
         validator.grantRole(validator.RECORDER_ROLE(), address(core));
         enforcer.grantRole(enforcer.BUDGET_MANAGER_ROLE(), address(core));
 
+        // Post-deployment assertions // FIX: CONCERNS.md §5.2
+        require(address(registry) != address(0), "Registry deployment failed");
+        require(address(validator) != address(0), "Validator deployment failed");
+        require(address(enforcer) != address(0), "Enforcer deployment failed");
+        require(address(core) != address(0), "Core deployment failed");
+        require(registry.hasRole(registry.UPDATER_ROLE(), address(core)), "Core missing UPDATER_ROLE");
+        require(validator.hasRole(validator.RECORDER_ROLE(), address(core)), "Core missing RECORDER_ROLE");
+        require(enforcer.hasRole(enforcer.BUDGET_MANAGER_ROLE(), address(core)), "Core missing BUDGET_MANAGER_ROLE");
+
         console.log("=== Qova Deployment Complete ===");
         console.log("ReputationRegistry:", address(registry));
         console.log("TransactionValidator:", address(validator));

@@ -6,7 +6,7 @@
 import { formatScore, getGrade, getScoreColor, scoreToPercentage } from "@brnmwai/qova-core";
 import { Hono } from "hono";
 import type { Address, Hex } from "viem";
-import { getCached, setCache } from "../middleware/cache.js";
+import { getCached, setCache, deleteCache, deleteCacheByPrefix } from "../middleware/cache.js";
 import { validateAddress, validateBody } from "../middleware/validate.js";
 import {
 	BatchUpdateScoresRequest,
@@ -16,18 +16,15 @@ import {
 import { getQovaClient } from "../services/chain.js";
 import { enrichAgentDetails } from "../services/enrichment.js";
 import type { AppEnv } from "../types/env.js";
+import { MOCK_AGENTS } from "../constants.js";
 
 export const agentRoutes = new Hono<AppEnv>();
 
 /** GET /api/agents -- List agents (mock data for hackathon) */
 agentRoutes.get("/", (c) => {
 	return c.json({
-		agents: [
-			"0x0a3AF9a104Bd2B5d96C7E24fe95Cc03432431158",
-			"0x0000000000000000000000000000000000000001",
-			"0x0000000000000000000000000000000000000002",
-		],
-		total: 3,
+		agents: MOCK_AGENTS,
+		total: MOCK_AGENTS.length,
 	});
 });
 
@@ -82,6 +79,11 @@ agentRoutes.post("/register", validateBody(RegisterAgentRequest), async (c) => {
 	const { agent } = c.get("body") as { agent: string };
 	const client = getQovaClient();
 	const txHash = await client.registerAgent(agent as Address);
+
+	// Invalidate cached data for this agent
+	deleteCache(`agent:${agent}`);
+	deleteCacheByPrefix("agents:");
+
 	return c.json({ txHash, agent }, 201);
 });
 
@@ -98,6 +100,12 @@ agentRoutes.post(
 		};
 		const client = getQovaClient();
 		const txHash = await client.updateScore(address as Address, score, reason as Hex);
+
+		// Invalidate cached score and agent data
+		deleteCache(`score:${address}`);
+		deleteCache(`agent:${address}`);
+		deleteCache(`scoreBreakdown:${address}`);
+
 		return c.json({ txHash, agent: address, newScore: score });
 	},
 );
@@ -111,5 +119,13 @@ agentRoutes.post("/batch-scores", validateBody(BatchUpdateScoresRequest), async 
 	};
 	const client = getQovaClient();
 	const txHash = await client.batchUpdateScores(agents as Address[], scores, reasons as Hex[]);
+
+	// Invalidate cached data for all affected agents
+	for (const agent of agents) {
+		deleteCache(`score:${agent}`);
+		deleteCache(`agent:${agent}`);
+		deleteCache(`scoreBreakdown:${agent}`);
+	}
+
 	return c.json({ txHash, count: agents.length });
 });

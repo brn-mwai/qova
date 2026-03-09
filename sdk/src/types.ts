@@ -3,7 +3,6 @@
  * @author Qova Engineering <eng@qova.cc>
  */
 
-import type { Address } from "viem";
 import { z } from "zod";
 
 // Result pattern for expected errors
@@ -50,14 +49,3 @@ export type AgentIdentity = z.infer<typeof AgentIdentitySchema>;
 export type ReputationScore = z.infer<typeof ReputationScoreSchema>;
 export type TransactionRecord = z.infer<typeof TransactionRecordSchema>;
 
-// Config
-export interface QovaConfig {
-	readonly chainId: number;
-	readonly rpcUrl: string;
-	readonly contracts: {
-		readonly identityRegistry: Address;
-		readonly reputationRegistry: Address;
-		readonly facilitator: Address;
-	};
-	readonly apiUrl?: string;
-}

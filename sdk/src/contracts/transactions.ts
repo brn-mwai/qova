@@ -34,7 +34,7 @@ export async function recordTransaction(
 			abi: transactionValidatorAbi,
 			functionName: "recordTransaction",
 			args: [agent, txHash, amount, txType],
-			account: wallet.account ?? undefined,
+			account: wallet.account,
 		});
 		return wallet.writeContract(request);
 	} catch (error) {

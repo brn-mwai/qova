@@ -63,7 +63,7 @@ budgetRoutes.post("/:address/set", validateAddress(), validateBody(SetBudgetRequ
 		safeBigInt(monthlyLimit, "monthlyLimit"),
 		safeBigInt(perTxLimit, "perTxLimit"),
 	);
-	return c.json({ txHash, agent: address });
+	return c.json({ txHash, agent: address }, 201);
 });
 
 /** POST /api/budgets/:address/check -- Check if amount is within budget */

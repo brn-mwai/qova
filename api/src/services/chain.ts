@@ -44,7 +44,7 @@ const CHAIN_CONFIGS: Record<string, { viemChain: ViemChain; defaultRpc: string }
  * Validate a private key string format.
  * Must be 0x-prefixed + 64 hex characters.
  */
-function validatePrivateKey(key: string | undefined): `0x${string}` | null {
+export function validatePrivateKey(key: string | undefined): `0x${string}` | null {
 	if (!key) return null;
 	if (!/^0x[a-fA-F0-9]{64}$/.test(key)) {
 		console.error("[FATAL] Invalid DEPLOYER_PRIVATE_KEY format");
