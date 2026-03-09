@@ -1,10 +1,23 @@
 {
   "name": "@qova/langgraph",
-  "version": "0.0.1",
-  "type": "module",
+  "version": "0.1.0",
   "private": true,
+  "description": "LangChain/LangGraph integration for the Qova AI agent credit bureau",
+  "author": "Qova Engineering <eng@qova.cc>",
+  "license": "MIT",
   "scripts": {
-    "build": "echo 'Stub -- no source yet'",
-    "test": "echo 'Integration tests pending'"
-  }
+    "build": "echo 'Python package -- use: pip install -e .' ",
+    "test": "python -m pytest tests/ -v",
+    "lint": "ruff check src/ tests/",
+    "format": "ruff format src/ tests/",
+    "typecheck": "mypy src/"
+  },
+  "keywords": [
+    "qova",
+    "langchain",
+    "langgraph",
+    "ai-agents",
+    "reputation",
+    "credit-bureau"
+  ]
 }

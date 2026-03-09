@@ -1,10 +1,15 @@
 {
   "name": "@qova/crewai",
-  "version": "0.0.1",
-  "type": "module",
+  "version": "0.1.0",
   "private": true,
+  "description": "Qova reputation tools for CrewAI agents - Python package that calls the Qova REST API",
+  "author": "Qova Engineering <eng@qova.cc>",
+  "license": "MIT",
   "scripts": {
-    "build": "echo 'Stub -- no source yet'",
-    "test": "echo 'Integration tests pending'"
-  }
+    "build": "echo 'Python package -- use: pip install -e .'",
+    "test": "pytest tests/ -v",
+    "lint": "ruff check src/ tests/",
+    "format": "ruff format src/ tests/"
+  },
+  "keywords": ["qova", "crewai", "ai-agents", "reputation", "credit-score"]
 }

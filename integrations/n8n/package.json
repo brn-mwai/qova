@@ -1,10 +1,52 @@
 {
-  "name": "@qova/n8n",
-  "version": "0.0.1",
-  "type": "module",
-  "private": true,
-  "scripts": {
-    "build": "echo 'Stub -- no source yet'",
-    "test": "echo 'Integration tests pending'"
-  }
+	"name": "n8n-nodes-qova",
+	"version": "0.1.0",
+	"description": "n8n community nodes for the Qova AI Agent Credit Bureau API",
+	"license": "MIT",
+	"author": "Qova Engineering <eng@qova.cc>",
+	"homepage": "https://qova.cc",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/qova-cc/qova",
+		"directory": "integrations/n8n"
+	},
+	"keywords": [
+		"n8n-community-node-package",
+		"n8n",
+		"qova",
+		"ai-agents",
+		"credit-bureau",
+		"blockchain",
+		"reputation"
+	],
+	"main": "dist/nodes/Qova/Qova.node.js",
+	"n8n": {
+		"n8nNodesApiVersion": 1,
+		"credentials": [
+			"dist/credentials/QovaApi.credentials.js"
+		],
+		"nodes": [
+			"dist/nodes/Qova/Qova.node.js",
+			"dist/nodes/Qova/QovaTrigger.node.js"
+		]
+	},
+	"scripts": {
+		"build": "tsc",
+		"dev": "tsc --watch",
+		"lint": "biome check src/",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"prepublishOnly": "npm run build"
+	},
+	"files": [
+		"dist"
+	],
+	"peerDependencies": {
+		"n8n-workflow": ">=1.0.0"
+	},
+	"devDependencies": {
+		"n8n-workflow": "^2.10.2",
+		"typescript": "^5.7.0",
+		"vitest": "^3.0.0"
+	}
 }

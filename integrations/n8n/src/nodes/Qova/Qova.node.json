@@ -1,0 +1,24 @@
+{
+	"node": "n8n-nodes-qova.qova",
+	"nodeVersion": "1.0",
+	"codexVersion": "1.0",
+	"categories": ["AI", "Development"],
+	"subcategories": {
+		"AI": ["Agents"],
+		"Development": ["Blockchain"]
+	},
+	"resources": {
+		"credentialDocumentation": [
+			{
+				"url": "https://docs.qova.cc/integrations/n8n"
+			}
+		],
+		"primaryDocumentation": [
+			{
+				"url": "https://docs.qova.cc/api"
+			}
+		]
+	},
+	"alias": ["qova", "credit bureau", "agent reputation", "ai agent", "trust score"],
+	"iconUrl": "https://qova.cc/icon.svg"
+}
