@@ -89,16 +89,16 @@ describe("POST /api/scores/compute", () => {
 });
 
 describe("GET /api/scores/:address", () => {
-	it("returns full score breakdown", async () => {
+	it("returns 402 Payment Required without X-Payment header", async () => {
 		const res = await app.request(`/api/scores/${VALID_ADDRESS}`);
-		expect(res.status).toBe(200);
+		expect(res.status).toBe(402);
 		const body = await res.json();
-		expect(body.score).toBe(850);
-		expect(body.grade).toBe("A");
-		expect(body.factors).toBeDefined();
-		expect(body.factors.transactionVolume).toBeDefined();
-		expect(body.factors.successRate.weight).toBe(0.3);
-		expect(body.timestamp).toBeDefined();
+		expect(body.x402Version).toBe(1);
+		expect(body.error).toBe("Payment Required");
+		expect(body.accepts).toBeInstanceOf(Array);
+		expect(body.accepts[0].scheme).toBe("exact");
+		expect(body.accepts[0].network).toBe("base-sepolia");
+		expect(body.accepts[0].maxAmountRequired).toBe("1000");
 	});
 });
 
