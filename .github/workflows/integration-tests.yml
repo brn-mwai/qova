@@ -1,0 +1,24 @@
+name: Integration Tests
+on:
+  schedule:
+    - cron: "0 2 * * *" # Nightly 2am
+
+jobs:
+  python-integrations:
+    name: Python Integration Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: cd integrations/langgraph && pip install -e ".[dev]" && pytest tests/ -v
+      - run: cd integrations/crewai && pip install -e ".[dev]" && pytest tests/ -v
+
+  n8n-integration:
+    name: n8n Node Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: "1.3.6" }
+      - run: cd integrations/n8n && bun install && bun test

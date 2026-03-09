@@ -27,7 +27,7 @@ export class QovaApi implements ICredentialType {
 			default: "https://api.qova.cc",
 			required: true,
 			description:
-				"Base URL for the Qova API. Only change this if you are running a self-hosted instance.",
+				"Base URL for the Qova API. Default: https://api.qova.cc. Only change for self-hosted instances.",
 		},
 	];
 

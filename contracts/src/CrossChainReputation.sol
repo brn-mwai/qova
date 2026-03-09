@@ -106,6 +106,11 @@ contract QovaCrossChainReputation is CCIPReceiver, AccessControl {
         uint256 score
     );
 
+    /// @notice Emitted when a refund of excess CCIP fee fails. // FIX: CONCERNS.md §1.3
+    /// @param recipient The address that should have received the refund.
+    /// @param amount    The refund amount that failed to send.
+    event RefundFailed(address indexed recipient, uint256 amount);
+
     /// @notice Emitted when a destination contract is allowlisted.
     /// @param chainSelector  The CCIP chain selector.
     /// @param destination    The contract address on the destination chain.
@@ -216,11 +221,10 @@ contract QovaCrossChainReputation is CCIPReceiver, AccessControl {
         // --- Interactions ---
         messageId = router.ccipSend{value: fee}(destinationChainSelector, message);
 
-        // Refund excess fee
+        // Refund excess fee // FIX: CONCERNS.md §1.3
         if (msg.value > fee) {
             (bool sent,) = msg.sender.call{value: msg.value - fee}("");
-            // Silently absorb refund failure -- the message was already sent
-            sent;
+            if (!sent) emit RefundFailed(msg.sender, msg.value - fee);
         }
 
         emit ScoreSent(agent, destinationChainSelector, messageId, score);

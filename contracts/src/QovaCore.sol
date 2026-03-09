@@ -45,6 +45,9 @@ contract QovaCore is AccessControl, ReentrancyGuard, Pausable {
     /// @dev Thrown when a zero address is provided for a contract reference.
     error InvalidContract();
 
+    /// @dev Thrown when amount exceeds uint128 max. // FIX: CONCERNS.md §1.6
+    error AmountTooLarge();
+
     // ──────────────────────────────────────────────
     //  Events
     // ──────────────────────────────────────────────
@@ -163,13 +166,12 @@ contract QovaCore is AccessControl, ReentrancyGuard, Pausable {
         uint256 amount,
         TransactionValidator.TransactionType txType
     ) external onlyRole(OPERATOR_ROLE) nonReentrant whenNotPaused {
+        if (amount > type(uint128).max) revert AmountTooLarge(); // FIX: CONCERNS.md §1.6
         uint48 ts = uint48(block.timestamp);
 
         // --- Checks ---
         // If the agent has a budget configured, enforce it.
         if (budgetEnforcer.hasBudget(agent)) {
-            // casting to uint128 is safe because budget limits are uint128-bounded
-            // forge-lint: disable-next-line(unsafe-typecast)
             if (!budgetEnforcer.checkBudget(agent, uint128(amount))) {
                 revert BudgetCheckFailed();
             }
@@ -181,7 +183,6 @@ contract QovaCore is AccessControl, ReentrancyGuard, Pausable {
         // --- Interactions (trusted Qova contracts only) ---
         // Record spend if budget exists.
         if (budgetEnforcer.hasBudget(agent)) {
-            // forge-lint: disable-next-line(unsafe-typecast)
             budgetEnforcer.recordSpend(agent, uint128(amount));
         }
 

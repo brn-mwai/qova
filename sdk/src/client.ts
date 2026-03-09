@@ -150,14 +150,38 @@ export function createQovaClient(config: QovaClientConfig): QovaClient {
 		);
 	}
 
+	// FIX: §1.2 - Validate each address instead of unsafe `as Address` cast
+	function resolveAddress(
+		custom: Address | undefined,
+		fallback: Address | undefined,
+		name: string,
+	): Address {
+		const addr = custom ?? fallback;
+		if (!addr) throw new QovaError(`Missing contract address for ${name}`, "CONFIG_ERROR");
+		return addr;
+	}
+
 	const contracts: ContractAddresses = {
-		ReputationRegistry: (config.contracts?.ReputationRegistry ??
-			defaultContracts?.ReputationRegistry) as Address,
-		TransactionValidator: (config.contracts?.TransactionValidator ??
-			defaultContracts?.TransactionValidator) as Address,
-		BudgetEnforcer: (config.contracts?.BudgetEnforcer ??
-			defaultContracts?.BudgetEnforcer) as Address,
-		QovaCore: (config.contracts?.QovaCore ?? defaultContracts?.QovaCore) as Address,
+		ReputationRegistry: resolveAddress(
+			config.contracts?.ReputationRegistry,
+			defaultContracts?.ReputationRegistry,
+			"ReputationRegistry",
+		),
+		TransactionValidator: resolveAddress(
+			config.contracts?.TransactionValidator,
+			defaultContracts?.TransactionValidator,
+			"TransactionValidator",
+		),
+		BudgetEnforcer: resolveAddress(
+			config.contracts?.BudgetEnforcer,
+			defaultContracts?.BudgetEnforcer,
+			"BudgetEnforcer",
+		),
+		QovaCore: resolveAddress(
+			config.contracts?.QovaCore,
+			defaultContracts?.QovaCore,
+			"QovaCore",
+		),
 	};
 
 	const rpcUrl = config.rpcUrl ?? DEFAULT_RPC_URLS[chainId] ?? undefined;

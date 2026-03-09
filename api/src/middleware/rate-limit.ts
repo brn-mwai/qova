@@ -6,6 +6,26 @@
 
 import type { Context, Next } from "hono";
 
+/**
+ * Determine client identifier for rate limiting.
+ * Prefers API key (unforgeable), falls back to IP.
+ */
+function getClientIdentifier(c: Context): string {
+	// Prefer API key if present (unforgeable)
+	const apiKey = c.req.header("x-api-key");
+	if (apiKey) return `key:${apiKey.substring(0, 16)}`;
+
+	// For IP: only trust x-forwarded-for behind known proxy
+	const trustProxy = process.env.TRUST_PROXY === "true";
+	if (trustProxy) {
+		const forwarded = c.req.header("x-forwarded-for")?.split(",")[0]?.trim();
+		if (forwarded) return `ip:${forwarded}`;
+	}
+
+	// Fallback: direct connection IP
+	return `ip:${c.req.header("x-real-ip") ?? "unknown"}`;
+}
+
 interface RateLimitEntry {
 	count: number;
 	resetAt: number;
@@ -59,11 +79,7 @@ export function rateLimit(
 	ensureCleanup();
 
 	return async (c: Context, next: Next) => {
-		const key = opts.keyFn
-			? opts.keyFn(c)
-			: c.req.header("x-forwarded-for")?.split(",")[0]?.trim() ??
-				c.req.header("x-real-ip") ??
-				"unknown";
+		const key = opts.keyFn ? opts.keyFn(c) : getClientIdentifier(c);
 
 		const now = Date.now();
 		const entry = store.get(key);

@@ -10,6 +10,7 @@ Author: Qova Engineering <eng@qova.cc>
 from __future__ import annotations
 
 import os
+import time
 from typing import Any
 
 import httpx
@@ -24,6 +25,8 @@ from .types import (
     BudgetUtilization,
     ComputedScore,
     QovaApiError,
+    QovaRateLimitError,
+    QovaTimeoutError,
     ScoreBreakdown,
     ScoreFactor,
     TransactionStats,
@@ -54,9 +57,14 @@ class QovaClient:
         timeout: float = _DEFAULT_TIMEOUT,
     ) -> None:
         self.base_url = (base_url or os.environ.get("QOVA_API_URL", _DEFAULT_BASE_URL)).rstrip("/")
-        self.api_key = api_key or os.environ.get("QOVA_API_KEY", "")
         self.timeout = timeout
         self._client: httpx.Client | None = None
+
+        # Resolve API key but only store in header, not as attribute
+        key = api_key or os.environ.get("QOVA_API_KEY")
+        if not key:
+            raise ValueError("QOVA_API_KEY required: pass api_key or set env var")
+        self._auth_header = f"Bearer {key}"
 
     @property
     def client(self) -> httpx.Client:
@@ -65,9 +73,8 @@ class QovaClient:
             headers: dict[str, str] = {
                 "Accept": "application/json",
                 "User-Agent": "qova-crewai/0.1.0",
+                "Authorization": self._auth_header,
             }
-            if self.api_key:
-                headers["Authorization"] = f"Bearer {self.api_key}"
             self._client = httpx.Client(
                 base_url=self.base_url,
                 headers=headers,
@@ -91,13 +98,14 @@ class QovaClient:
     def _request(self, method: str, path: str, **kwargs: Any) -> dict[str, Any]:
         """Make an HTTP request and return the parsed JSON response.
 
-        Raises ``QovaApiError`` on non-2xx responses.
+        Raises ``QovaTimeoutError`` on timeout, ``QovaRateLimitError`` on 429,
+        and ``QovaApiError`` on other non-2xx responses.
         """
         url = f"/api{path}"
         try:
             response = self.client.request(method, url, **kwargs)
         except httpx.TimeoutException as exc:
-            raise QovaApiError(
+            raise QovaTimeoutError(
                 status_code=408,
                 message=f"Request timed out after {self.timeout}s",
                 url=f"{self.base_url}{url}",
@@ -108,6 +116,13 @@ class QovaClient:
                 message=f"HTTP error: {exc}",
                 url=f"{self.base_url}{url}",
             ) from exc
+
+        if response.status_code == 429:
+            raise QovaRateLimitError(
+                status_code=429,
+                message="Rate limited",
+                url=f"{self.base_url}{url}",
+            )
 
         if response.status_code >= 400:
             try:
@@ -122,6 +137,23 @@ class QovaClient:
             )
 
         return response.json()  # type: ignore[no-any-return]
+
+    def _request_with_retry(
+        self, method: str, path: str, max_retries: int = 2, **kwargs: Any
+    ) -> dict[str, Any]:
+        """Make a request with exponential backoff on timeout/rate-limit."""
+        for attempt in range(max_retries + 1):
+            try:
+                return self._request(method, path, **kwargs)
+            except QovaTimeoutError:
+                if attempt == max_retries:
+                    raise
+                time.sleep(2 ** attempt)
+            except QovaRateLimitError:
+                if attempt == max_retries:
+                    raise
+                time.sleep(5)
+        raise QovaApiError(0, "Max retries exceeded", f"{self.base_url}/api{path}")
 
     def _get(self, path: str) -> dict[str, Any]:
         return self._request("GET", path)

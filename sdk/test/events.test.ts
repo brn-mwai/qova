@@ -1,7 +1,27 @@
 import { describe, expect, it } from "vitest";
 import { watchScoreUpdates, watchTransactions, watchAgentActions } from "../src/events.js";
+import { QovaError } from "../src/types/errors.js";
 
 describe("event watchers", () => {
+  // §2.3 - QovaError for unsupported chains
+  it("watchScoreUpdates throws QovaError for unsupported chain", () => {
+    expect(() =>
+      watchScoreUpdates({ chain: "mainnet" as any }, () => {}),
+    ).toThrow(QovaError);
+  });
+
+  it("watchTransactions throws QovaError for unsupported chain", () => {
+    expect(() =>
+      watchTransactions({ chain: "mainnet" as any }, () => {}),
+    ).toThrow(QovaError);
+  });
+
+  it("watchAgentActions throws QovaError for unsupported chain", () => {
+    expect(() =>
+      watchAgentActions({ chain: "mainnet" as any }, () => {}),
+    ).toThrow(QovaError);
+  });
+
   it("watchScoreUpdates should return an unsubscribe function", () => {
     const unwatch = watchScoreUpdates(
       { chain: "base-sepolia" },

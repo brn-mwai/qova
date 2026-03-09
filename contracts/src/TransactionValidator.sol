@@ -68,6 +68,9 @@ contract TransactionValidator is AccessControl, Pausable {
     /// @dev Thrown when a zero amount is supplied for a transaction record.
     error ZeroAmount();
 
+    /// @dev Thrown when the amount exceeds uint128 max. // FIX: CONCERNS.md §1.5
+    error AmountTooLarge(uint256 amount, uint128 max);
+
     // ──────────────────────────────────────────────
     //  Events
     // ──────────────────────────────────────────────
@@ -134,6 +137,7 @@ contract TransactionValidator is AccessControl, Pausable {
     ) external onlyRole(RECORDER_ROLE) whenNotPaused {
         if (agent == address(0)) revert ZeroAddress();
         if (amount == 0) revert ZeroAmount();
+        if (amount > type(uint128).max) revert AmountTooLarge(amount, type(uint128).max); // FIX: CONCERNS.md §1.5
 
         uint48 ts = uint48(block.timestamp);
 
@@ -143,8 +147,6 @@ contract TransactionValidator is AccessControl, Pausable {
         unchecked {
             stats.totalCount += 1;
             stats.successCount += 1;
-            // casting to uint128 is safe because amounts exceeding uint128 are unrealistic
-            // forge-lint: disable-next-line(unsafe-typecast)
             stats.totalVolume += uint128(amount);
         }
         stats.lastActivityTimestamp = ts;

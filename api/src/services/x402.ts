@@ -109,6 +109,32 @@ export interface PaymentVerificationResult {
 	payer?: Address;
 }
 
+// ─── Replay Prevention ──────────────────────────────────────────
+
+/** Track used nonces to prevent replay attacks. */
+const usedNonces = new Map<string, number>();
+
+/** Cleanup expired nonces every 5 minutes. */
+const nonceCleanupTimer = setInterval(() => {
+	const cutoff = Date.now() - 300_000;
+	for (const [nonce, ts] of usedNonces) {
+		if (ts < cutoff) usedNonces.delete(nonce);
+	}
+}, 300_000);
+if (typeof nonceCleanupTimer === "object" && "unref" in nonceCleanupTimer) {
+	nonceCleanupTimer.unref();
+}
+
+/** Maximum allowed X-Payment header length (bytes). */
+const MAX_PAYMENT_HEADER_LENGTH = 10_000;
+
+/**
+ * Clear the used nonces map. For testing only.
+ */
+export function clearUsedNonces(): void {
+	usedNonces.clear();
+}
+
 // ─── Service Functions ───────────────────────────────────────────
 
 /**
@@ -156,6 +182,11 @@ export function createPaymentRequired(
 export function decodePaymentHeader(
 	headerValue: string,
 ): { data: PaymentHeader } | { error: string } {
+	// Fix 2.1: Reject oversized payment headers
+	if (headerValue.length > MAX_PAYMENT_HEADER_LENGTH) {
+		return { error: "Payment header too large" };
+	}
+
 	let decoded: string;
 	try {
 		decoded = atob(headerValue);
@@ -208,6 +239,16 @@ export async function verifyPayment(
 	const { payload } = decoded.data;
 	const { authorization, signature } = payload;
 	const now = Math.floor(Date.now() / 1000);
+
+	// 1b. Replay prevention: check nonce
+	const nonce = authorization.nonce;
+	if (!nonce) {
+		return { valid: false, error: "Missing nonce" };
+	}
+	if (usedNonces.has(nonce)) {
+		return { valid: false, error: "Replay detected: nonce already used" };
+	}
+	usedNonces.set(nonce, Date.now());
 
 	// 2. Check expiration
 	if (authorization.validBefore <= now) {

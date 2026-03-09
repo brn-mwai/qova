@@ -4,9 +4,10 @@
  */
 
 import { Hono } from "hono";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { x402Payment } from "../middleware/x402.js";
 import {
+	clearUsedNonces,
 	createPaymentRequired,
 	decodePaymentHeader,
 	type PaymentRequiredResponse,
@@ -205,6 +206,10 @@ describe("x402 service", () => {
 	});
 
 	describe("verifyPayment", () => {
+		beforeEach(() => {
+			clearUsedNonces();
+		});
+
 		it("rejects expired payment", async () => {
 			const header = makeExpiredPaymentHeader();
 			const result = await verifyPayment(header, 1000n);
@@ -295,6 +300,10 @@ describe("x402 service", () => {
 // ─── Middleware Tests ────────────────────────────────────────────
 
 describe("x402 middleware", () => {
+	beforeEach(() => {
+		clearUsedNonces();
+	});
+
 	it("returns 402 when no X-Payment header is present", async () => {
 		const app = createTestApp();
 		const res = await app.request("/paid");

@@ -40,6 +40,19 @@ const CHAIN_CONFIGS: Record<string, { viemChain: ViemChain; defaultRpc: string }
 	},
 };
 
+/**
+ * Validate a private key string format.
+ * Must be 0x-prefixed + 64 hex characters.
+ */
+function validatePrivateKey(key: string | undefined): `0x${string}` | null {
+	if (!key) return null;
+	if (!/^0x[a-fA-F0-9]{64}$/.test(key)) {
+		console.error("[FATAL] Invalid DEPLOYER_PRIVATE_KEY format");
+		return null;
+	}
+	return key as `0x${string}`;
+}
+
 /** Cached client instances per chain. */
 const clients = new Map<string, QovaClient>();
 
@@ -61,7 +74,7 @@ export function getQovaClient(chain?: string): QovaClient {
 	}
 
 	const rpcUrl = process.env.RPC_URL || chainConfig.defaultRpc;
-	const privateKey = process.env.DEPLOYER_PRIVATE_KEY;
+	const privateKey = validatePrivateKey(process.env.DEPLOYER_PRIVATE_KEY);
 
 	const config: Parameters<typeof createQovaClient>[0] = {
 		chain: chainName as Chain,
@@ -69,7 +82,7 @@ export function getQovaClient(chain?: string): QovaClient {
 	};
 
 	if (privateKey) {
-		const account = privateKeyToAccount(privateKey as `0x${string}`);
+		const account = privateKeyToAccount(privateKey);
 		const walletClient = createWalletClient({
 			account,
 			chain: chainConfig.viemChain,

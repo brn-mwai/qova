@@ -89,6 +89,7 @@ export default function ApiKeysPage(): React.ReactElement {
 	]);
 	const [expiryDays, setExpiryDays] = useState<string>("never");
 	const [revealedKey, setRevealedKey] = useState<string | null>(null);
+	const [showFullKey, setShowFullKey] = useState(false);
 	const [creating, setCreating] = useState(false);
 	const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
@@ -108,6 +109,7 @@ export default function ApiKeysPage(): React.ReactElement {
 				expiresAt,
 			});
 			setRevealedKey(fullKey);
+			setShowFullKey(false);
 			setCreateOpen(false);
 			setNewKeyName("");
 			setSelectedScopes(["agents:read", "scores:read"]);
@@ -261,9 +263,21 @@ export default function ApiKeysPage(): React.ReactElement {
 								<p className="text-xs text-muted-foreground mb-2">
 									Copy this key now. It will not be shown again.
 								</p>
-								<code className="font-mono text-sm bg-background px-2 py-1 rounded border break-all">
-									{revealedKey}
-								</code>
+								<div className="flex items-center gap-2">
+									<code className="font-mono text-sm bg-background px-2 py-1 rounded border break-all">
+										{showFullKey
+											? revealedKey
+											: `${revealedKey.slice(0, 8)}...${revealedKey.slice(-4)}`}
+									</code>
+									<Button
+										size="sm"
+										variant="ghost"
+										className="h-6 px-2 text-xs"
+										onClick={() => setShowFullKey(!showFullKey)}
+									>
+										{showFullKey ? "Hide" : "Reveal"}
+									</Button>
+								</div>
 							</div>
 							<div className="flex gap-2 shrink-0 ml-4">
 								<Button

@@ -4,10 +4,9 @@
  */
 
 import type { Address, Hash, PublicClient, WalletClient } from "viem";
-import { ContractFunctionRevertedError } from "viem";
 import { budgetEnforcerAbi } from "../abi/index.js";
 import type { BudgetStatus } from "../types/budget.js";
-import { mapContractError, QovaError } from "../types/errors.js";
+import { handleContractError } from "../utils/errors.js";
 
 /**
  * Configure spending limits for an agent.
@@ -39,13 +38,7 @@ export async function setBudget(
 		});
 		return wallet.writeContract(request);
 	} catch (error) {
-		if (error instanceof ContractFunctionRevertedError && error.data) {
-			throw mapContractError(
-				error.data.errorName,
-				error.data.args as readonly unknown[] | undefined,
-			);
-		}
-		throw new QovaError("Failed to set budget", "WRITE_FAILED", error);
+		throw handleContractError(error, "setBudget"); // FIX: §2.1
 	}
 }
 
@@ -71,7 +64,7 @@ export async function checkBudget(
 			args: [agent, amount],
 		});
 	} catch (error) {
-		throw new QovaError("Failed to check budget", "READ_FAILED", error);
+		throw handleContractError(error, "checkBudget"); // FIX: §2.1
 	}
 }
 
@@ -103,13 +96,7 @@ export async function recordSpend(
 		});
 		return wallet.writeContract(request);
 	} catch (error) {
-		if (error instanceof ContractFunctionRevertedError && error.data) {
-			throw mapContractError(
-				error.data.errorName,
-				error.data.args as readonly unknown[] | undefined,
-			);
-		}
-		throw new QovaError("Failed to record spend", "WRITE_FAILED", error);
+		throw handleContractError(error, "recordSpend"); // FIX: §2.1
 	}
 }
 
@@ -140,6 +127,6 @@ export async function getBudgetStatus(
 			monthlySpent: BigInt(result.monthlySpent),
 		};
 	} catch (error) {
-		throw new QovaError("Failed to read budget status", "READ_FAILED", error);
+		throw handleContractError(error, "getBudgetStatus"); // FIX: §2.1
 	}
 }

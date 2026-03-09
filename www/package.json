@@ -9,11 +9,16 @@
     "start": "next start"
   },
   "dependencies": {
+    "@coinbase/onchainkit": "^1.1.2",
     "@hackernoon/pixel-icon-library": "^1.0.6",
+    "@tanstack/react-query": "^5.90.21",
+    "@walletconnect/ethereum-provider": "^2.23.7",
     "motion": "^12.35.1",
     "next": "^15.3.0",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "viem": "^2.47.0",
+    "wagmi": "^3.5.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.0.0",

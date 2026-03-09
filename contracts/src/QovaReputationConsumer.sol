@@ -95,17 +95,19 @@ contract QovaReputationConsumer is CREReceiver, Ownable {
         (address agent, uint256 score, uint256 timestamp) =
             abi.decode(report, (address, uint256, uint256));
 
-        // Step 4: Validate
+        // Step 4: Validate // FIX: CONCERNS.md §1.4
         if (score > 1000) revert ScoreOutOfRange();
+        uint16 safeScore = uint16(score);
+        if (uint256(safeScore) != score) revert ScoreOutOfRange(); // double-check truncation
         if (timestamp <= lastReportTimestamp[agent]) revert StaleReport();
 
         // Step 5: Update state
         lastReportTimestamp[agent] = timestamp;
 
         // Step 6: Forward to ReputationRegistry (cast uint256 -> uint16, use reportHash as reason)
-        reputationRegistry.updateScore(agent, uint16(score), reportHash);
+        reputationRegistry.updateScore(agent, safeScore, reportHash);
 
-        emit ReputationReportProcessed(agent, uint16(score), timestamp);
+        emit ReputationReportProcessed(agent, safeScore, timestamp);
     }
 
     // ──────────────────────────────────────────────

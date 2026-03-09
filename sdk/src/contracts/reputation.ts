@@ -3,11 +3,11 @@
  * @author Qova Engineering <eng@qova.cc>
  */
 
-import type { Address, Hash, Hex, PublicClient, WalletClient } from "viem";
-import { ContractFunctionRevertedError } from "viem";
+import { type Address, type Hash, type Hex, type PublicClient, type WalletClient, isAddress } from "viem";
 import { reputationRegistryAbi } from "../abi/index.js";
 import type { AgentDetails } from "../types/agent.js";
-import { mapContractError, QovaError } from "../types/errors.js";
+import { InvalidScoreError, QovaError } from "../types/errors.js";
+import { handleContractError } from "../utils/errors.js";
 
 /**
  * Get the reputation score for an agent.
@@ -31,13 +31,7 @@ export async function getScore(
 		});
 		return Number(result);
 	} catch (error) {
-		if (error instanceof ContractFunctionRevertedError && error.data) {
-			throw mapContractError(
-				error.data.errorName,
-				error.data.args as readonly unknown[] | undefined,
-			);
-		}
-		throw new QovaError("Failed to read score", "READ_FAILED", error);
+		throw handleContractError(error, "getScore"); // FIX: §2.1
 	}
 }
 
@@ -67,7 +61,7 @@ export async function getAgentDetails(
 			isRegistered: result.registered,
 		};
 	} catch (error) {
-		throw new QovaError("Failed to read agent details", "READ_FAILED", error);
+		throw handleContractError(error, "getAgentDetails"); // FIX: §2.1
 	}
 }
 
@@ -91,7 +85,7 @@ export async function isAgentRegistered(
 			args: [agent],
 		});
 	} catch (error) {
-		throw new QovaError("Failed to check registration", "READ_FAILED", error);
+		throw handleContractError(error, "isAgentRegistered"); // FIX: §2.1
 	}
 }
 
@@ -120,13 +114,7 @@ export async function registerAgent(
 		});
 		return wallet.writeContract(request);
 	} catch (error) {
-		if (error instanceof ContractFunctionRevertedError && error.data) {
-			throw mapContractError(
-				error.data.errorName,
-				error.data.args as readonly unknown[] | undefined,
-			);
-		}
-		throw new QovaError("Failed to register agent", "WRITE_FAILED", error);
+		throw handleContractError(error, "registerAgent"); // FIX: §2.1
 	}
 }
 
@@ -150,6 +138,13 @@ export async function updateScore(
 	score: number,
 	reason: Hex,
 ): Promise<Hash> {
+	// FIX: §1.3 - Client-side validation before contract call
+	if (score < 0 || score > 1000) {
+		throw new InvalidScoreError(score);
+	}
+	if (!isAddress(agent)) {
+		throw new QovaError(`Invalid agent address: ${agent}`, "INVALID_ADDRESS");
+	}
 	try {
 		const { request } = await publicClient.simulateContract({
 			address: contractAddress,
@@ -160,13 +155,7 @@ export async function updateScore(
 		});
 		return wallet.writeContract(request);
 	} catch (error) {
-		if (error instanceof ContractFunctionRevertedError && error.data) {
-			throw mapContractError(
-				error.data.errorName,
-				error.data.args as readonly unknown[] | undefined,
-			);
-		}
-		throw new QovaError("Failed to update score", "WRITE_FAILED", error);
+		throw handleContractError(error, "updateScore"); // FIX: §2.1
 	}
 }
 
@@ -189,6 +178,19 @@ export async function batchUpdateScores(
 	scores: number[],
 	reasons: Hex[],
 ): Promise<Hash> {
+	// FIX: §1.4 - Array length validation
+	if (agents.length !== scores.length || scores.length !== reasons.length) {
+		throw new QovaError(
+			`Array length mismatch: agents(${agents.length}), scores(${scores.length}), reasons(${reasons.length})`,
+			"ARRAY_LENGTH_MISMATCH",
+		);
+	}
+	if (agents.length === 0) {
+		throw new QovaError("Batch update requires at least one agent", "EMPTY_BATCH");
+	}
+	for (const score of scores) {
+		if (score < 0 || score > 1000) throw new InvalidScoreError(score);
+	}
 	try {
 		const { request } = await publicClient.simulateContract({
 			address: contractAddress,
@@ -199,12 +201,6 @@ export async function batchUpdateScores(
 		});
 		return wallet.writeContract(request);
 	} catch (error) {
-		if (error instanceof ContractFunctionRevertedError && error.data) {
-			throw mapContractError(
-				error.data.errorName,
-				error.data.args as readonly unknown[] | undefined,
-			);
-		}
-		throw new QovaError("Failed to batch update scores", "WRITE_FAILED", error);
+		throw handleContractError(error, "batchUpdateScores"); // FIX: §2.1
 	}
 }

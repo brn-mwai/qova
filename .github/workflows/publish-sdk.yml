@@ -32,6 +32,9 @@ jobs:
         run: bun run test
         working-directory: sdk
 
+      - name: Verify no TypeScript errors
+        run: cd sdk && bunx tsc --noEmit
+
       - uses: actions/setup-node@v4
         with:
           node-version: "20"

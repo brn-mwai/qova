@@ -44,6 +44,8 @@ type Config = z.infer<typeof configSchema>;
 
 const THRESHOLD_YELLOW = 7000n;
 const THRESHOLD_RED = 9000n;
+/** Minimum interval between score penalties (1 hour in seconds). */
+const MIN_PENALTY_INTERVAL = 3600n;
 
 function classifyAlert(bps: bigint): "GREEN" | "YELLOW" | "RED" | "CRITICAL" {
 	if (bps > 10000n) return "CRITICAL";
@@ -97,15 +99,15 @@ const onSpendRecorded = (runtime: Runtime<Config>, log: EVMLog): string => {
 		monthlySpent: BigInt(rawBudget.monthlySpent ?? 0),
 	};
 
-	// EVM Read 2: Current reputation score
-	const scoreResult = evmClient
+	// EVM Read 2: Agent details (score + lastUpdated for penalty interval check)
+	const detailsResult = evmClient
 		.callContract(runtime, {
 			call: encodeCallMsg({
 				from: zeroAddress,
 				to: config.reputationRegistryAddress as Address,
 				data: encodeFunctionData({
 					abi: REPUTATION_REGISTRY_ABI,
-					functionName: "getScore",
+					functionName: "getAgentDetails",
 					args: [agentAddress as Address],
 				}),
 			}),
@@ -113,13 +115,13 @@ const onSpendRecorded = (runtime: Runtime<Config>, log: EVMLog): string => {
 		})
 		.result();
 
-	const currentScore = BigInt(
-		decodeFunctionResult({
-			abi: REPUTATION_REGISTRY_ABI,
-			functionName: "getScore",
-			data: bytesToHex(scoreResult.data),
-		}) as number,
-	);
+	const rawDetails = decodeFunctionResult({
+		abi: REPUTATION_REGISTRY_ABI,
+		functionName: "getAgentDetails",
+		data: bytesToHex(detailsResult.data),
+	}) as unknown as Record<string, number | bigint>;
+	const currentScore = BigInt(rawDetails.score ?? 0);
+	const lastUpdated = BigInt(rawDetails.lastUpdated ?? 0);
 
 	// Compute utilization (all BigInt)
 	const dailyLimit = budget.dailySpent + budget.dailyRemaining;
@@ -140,14 +142,18 @@ const onSpendRecorded = (runtime: Runtime<Config>, log: EVMLog): string => {
 		`Budget: agent=${agentAddress}, daily=${dailyUtilBps}bps, monthly=${monthlyUtilBps}bps, level=${alertLevel}`,
 	);
 
-	// Score penalty for CRITICAL overspend
+	// Score penalty for CRITICAL overspend (with idempotency)
+	const nowSec = BigInt(Math.floor(runtime.now().getTime() / 1000));
 	let adjustedScore = currentScore;
 	if (alertLevel === "CRITICAL") {
-		adjustedScore = currentScore > 25n ? currentScore - 25n : 0n;
+		const timeSinceLastUpdate = nowSec - lastUpdated;
+		if (timeSinceLastUpdate >= MIN_PENALTY_INTERVAL) {
+			adjustedScore = currentScore > 25n ? currentScore - 25n : 0n;
+		} else {
+			adjustedScore = currentScore; // Don't re-penalize within interval
+			runtime.log(`Skipping penalty: last update ${timeSinceLastUpdate}s ago (min interval: ${MIN_PENALTY_INTERVAL}s)`);
+		}
 	}
-
-	// Write budget report on-chain
-	const nowSec = BigInt(Math.floor(runtime.now().getTime() / 1000));
 
 	const encoded = encodeAbiParameters(
 		parseAbiParameters("address agent, uint256 score, uint256 timestamp"),

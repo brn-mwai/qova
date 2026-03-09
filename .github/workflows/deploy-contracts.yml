@@ -1,0 +1,28 @@
+name: Deploy Contracts
+on:
+  workflow_dispatch:
+    inputs:
+      network:
+        description: "Target network"
+        required: true
+        type: choice
+        options: [base-sepolia, base-mainnet]
+
+jobs:
+  deploy:
+    name: Deploy to ${{ inputs.network }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.network }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { submodules: recursive }
+      - uses: foundry-rs/foundry-toolchain@v1
+      - run: cd contracts && forge build
+      - run: cd contracts && forge test -vvv
+      - run: |
+          cd contracts
+          forge script script/Deploy.s.sol:Deploy \
+            --rpc-url ${{ secrets.RPC_URL }} \
+            --private-key ${{ secrets.DEPLOYER_PRIVATE_KEY }} \
+            --broadcast \
+            --verify

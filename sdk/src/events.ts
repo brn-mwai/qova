@@ -13,7 +13,9 @@ import type {
 	TransactionRecordedEvent,
 	WatchConfig,
 } from "./types/events.js";
+import { QovaError } from "./types/errors.js";
 import type { TransactionType } from "./types/transaction.js";
+import { isAgentActionArgs, isScoreUpdateArgs, isTransactionArgs } from "./utils/guards.js";
 
 const CHAIN_MAP = {
 	"base-sepolia": baseSepolia,
@@ -28,6 +30,9 @@ const CHAIN_ID_FROM_NAME = {
 function resolveClient(config: WatchConfig): { publicClient: PublicClient; chainId: number } {
 	const chainId = CHAIN_ID_FROM_NAME[config.chain];
 	const chain = CHAIN_MAP[config.chain];
+	if (chainId === undefined || !chain) {
+		throw new QovaError(`No contracts deployed on chain ${config.chain}`, "UNSUPPORTED_CHAIN"); // FIX: §2.3
+	}
 	const rpcUrl = config.rpcUrl ?? DEFAULT_RPC_URLS[chainId];
 	// Cast needed for L2 chain type compatibility (OP stack deposit tx types)
 	const publicClient = createPublicClient({ chain, transport: http(rpcUrl) }) as PublicClient;
@@ -53,7 +58,7 @@ export function watchScoreUpdates(
 ): () => void {
 	const { publicClient, chainId } = resolveClient(config);
 	const contracts = CONTRACTS[chainId];
-	if (!contracts) throw new Error(`No contracts on chain ${config.chain}`);
+	if (!contracts) throw new QovaError(`No contracts deployed on chain ${config.chain}`, "UNSUPPORTED_CHAIN"); // FIX: §2.3
 
 	return publicClient.watchContractEvent({
 		address: contracts.ReputationRegistry,
@@ -61,16 +66,19 @@ export function watchScoreUpdates(
 		eventName: "ScoreUpdated",
 		onLogs: (logs) => {
 			for (const log of logs) {
-				if (!log.args) continue;
-				const a = log.args as Record<string, unknown>;
-				if (config.agent && a.agent !== config.agent) continue;
-				callback({
-					agent: a.agent as Address,
-					oldScore: Number(a.oldScore),
-					newScore: Number(a.newScore),
-					reason: a.reason as `0x${string}`,
-					timestamp: BigInt(a.timestamp as number | bigint),
-				});
+				try { // FIX: §2.2 error boundary
+					if (!isScoreUpdateArgs(log.args)) continue; // FIX: §1.1 type guard
+					if (config.agent && log.args.agent !== config.agent) continue;
+					callback({
+						agent: log.args.agent,
+						oldScore: Number(log.args.oldScore),
+						newScore: Number(log.args.newScore),
+						reason: log.args.reason,
+						timestamp: BigInt(log.args.timestamp),
+					});
+				} catch (err) {
+					console.error("[Qova SDK] Event parsing error:", err);
+				}
 			}
 		},
 	});
@@ -88,7 +96,7 @@ export function watchTransactions(
 ): () => void {
 	const { publicClient, chainId } = resolveClient(config);
 	const contracts = CONTRACTS[chainId];
-	if (!contracts) throw new Error(`No contracts on chain ${config.chain}`);
+	if (!contracts) throw new QovaError(`No contracts deployed on chain ${config.chain}`, "UNSUPPORTED_CHAIN"); // FIX: §2.3
 
 	return publicClient.watchContractEvent({
 		address: contracts.TransactionValidator,
@@ -96,16 +104,19 @@ export function watchTransactions(
 		eventName: "TransactionRecorded",
 		onLogs: (logs) => {
 			for (const log of logs) {
-				if (!log.args) continue;
-				const a = log.args as Record<string, unknown>;
-				if (config.agent && a.agent !== config.agent) continue;
-				callback({
-					agent: a.agent as Address,
-					txHash: a.txHash as `0x${string}`,
-					amount: BigInt(a.amount as number | bigint),
-					txType: Number(a.txType) as TransactionType,
-					timestamp: BigInt(a.timestamp as number | bigint),
-				});
+				try { // FIX: §2.2 error boundary
+					if (!isTransactionArgs(log.args)) continue; // FIX: §1.1 type guard
+					if (config.agent && log.args.agent !== config.agent) continue;
+					callback({
+						agent: log.args.agent,
+						txHash: log.args.txHash,
+						amount: BigInt(log.args.amount),
+						txType: Number(log.args.txType) as TransactionType,
+						timestamp: BigInt(log.args.timestamp),
+					});
+				} catch (err) {
+					console.error("[Qova SDK] Event parsing error:", err);
+				}
 			}
 		},
 	});
@@ -123,7 +134,7 @@ export function watchAgentActions(
 ): () => void {
 	const { publicClient, chainId } = resolveClient(config);
 	const contracts = CONTRACTS[chainId];
-	if (!contracts) throw new Error(`No contracts on chain ${config.chain}`);
+	if (!contracts) throw new QovaError(`No contracts deployed on chain ${config.chain}`, "UNSUPPORTED_CHAIN"); // FIX: §2.3
 
 	return publicClient.watchContractEvent({
 		address: contracts.QovaCore,
@@ -131,16 +142,19 @@ export function watchAgentActions(
 		eventName: "AgentActionExecuted",
 		onLogs: (logs) => {
 			for (const log of logs) {
-				if (!log.args) continue;
-				const a = log.args as Record<string, unknown>;
-				if (config.agent && a.agent !== config.agent) continue;
-				callback({
-					agent: a.agent as Address,
-					txHash: a.txHash as `0x${string}`,
-					amount: BigInt(a.amount as number | bigint),
-					txType: Number(a.txType) as TransactionType,
-					timestamp: BigInt(a.timestamp as number | bigint),
-				});
+				try { // FIX: §2.2 error boundary
+					if (!isAgentActionArgs(log.args)) continue; // FIX: §1.1 type guard
+					if (config.agent && log.args.agent !== config.agent) continue;
+					callback({
+						agent: log.args.agent,
+						txHash: log.args.txHash,
+						amount: BigInt(log.args.amount),
+						txType: Number(log.args.txType) as TransactionType,
+						timestamp: BigInt(log.args.timestamp),
+					});
+				} catch (err) {
+					console.error("[Qova SDK] Event parsing error:", err);
+				}
 			}
 		},
 	});

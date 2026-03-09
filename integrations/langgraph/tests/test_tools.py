@@ -409,7 +409,7 @@ class TestQovaCallbackHandler:
     def test_should_track_normal_tool(self) -> None:
         handler = QovaCallbackHandler(
             agent_address=AGENT_ADDR,
-            client=QovaClient(base_url=BASE_URL),
+            client=QovaClient(base_url=BASE_URL, api_key="test-key"),
         )
         assert handler._should_track("swap") is True
         assert handler._should_track("transfer_tokens") is True
@@ -417,7 +417,7 @@ class TestQovaCallbackHandler:
     def test_should_not_track_qova_tools(self) -> None:
         handler = QovaCallbackHandler(
             agent_address=AGENT_ADDR,
-            client=QovaClient(base_url=BASE_URL),
+            client=QovaClient(base_url=BASE_URL, api_key="test-key"),
         )
         assert handler._should_track("qova_score_lookup") is False
         assert handler._should_track("qova_record_transaction") is False
@@ -425,7 +425,7 @@ class TestQovaCallbackHandler:
     def test_should_not_track_ignored_tools(self) -> None:
         handler = QovaCallbackHandler(
             agent_address=AGENT_ADDR,
-            client=QovaClient(base_url=BASE_URL),
+            client=QovaClient(base_url=BASE_URL, api_key="test-key"),
             ignore_tools=["internal_tool"],
         )
         assert handler._should_track("internal_tool") is False
@@ -434,7 +434,7 @@ class TestQovaCallbackHandler:
     def test_track_only_listed_tools(self) -> None:
         handler = QovaCallbackHandler(
             agent_address=AGENT_ADDR,
-            client=QovaClient(base_url=BASE_URL),
+            client=QovaClient(base_url=BASE_URL, api_key="test-key"),
             track_tools=["swap", "bridge"],
         )
         assert handler._should_track("swap") is True
@@ -444,7 +444,7 @@ class TestQovaCallbackHandler:
     def test_metrics_initial(self) -> None:
         handler = QovaCallbackHandler(
             agent_address=AGENT_ADDR,
-            client=QovaClient(base_url=BASE_URL),
+            client=QovaClient(base_url=BASE_URL, api_key="test-key"),
         )
         metrics = handler.get_metrics()
         assert metrics["total_recorded"] == 0
@@ -507,7 +507,7 @@ class TestQovaCallbackHandler:
 
 class TestQovaClient:
     def test_default_config(self) -> None:
-        client = QovaClient()
+        client = QovaClient(api_key="test-key")
         assert client.base_url == "https://api.qova.cc"
         assert client.timeout == 30.0
 
@@ -518,12 +518,12 @@ class TestQovaClient:
             timeout=10.0,
         )
         assert client.base_url == "https://custom.qova.cc"
-        assert client.api_key == "my-key"
+        assert not hasattr(client, "api_key")
         assert client.timeout == 10.0
         assert client._headers["Authorization"] == "Bearer my-key"
 
     def test_url_trailing_slash_stripped(self) -> None:
-        client = QovaClient(base_url="https://api.qova.cc/")
+        client = QovaClient(base_url="https://api.qova.cc/", api_key="test-key")
         assert client.base_url == "https://api.qova.cc"
 
     @respx.mock
@@ -532,7 +532,7 @@ class TestQovaClient:
             return_value=httpx.Response(500, json={"error": "Internal server error"})
         )
 
-        client = QovaClient(base_url=BASE_URL)
+        client = QovaClient(base_url=BASE_URL, api_key="test-key")
         result = client.get_score(AGENT_ADDR)
 
         from qova_langchain.types import QovaError

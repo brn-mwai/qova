@@ -4,6 +4,7 @@
  */
 
 import { Hono } from "hono";
+import { HTTPException } from "hono/http-exception";
 import type { Address } from "viem";
 import { getCached, setCache } from "../middleware/cache.js";
 import { validateAddress, validateBody } from "../middleware/validate.js";
@@ -11,6 +12,24 @@ import { CheckBudgetRequest, RecordSpendRequest, SetBudgetRequest } from "../sch
 import { getQovaClient } from "../services/chain.js";
 import { enrichBudgetStatus } from "../services/enrichment.js";
 import type { AppEnv } from "../types/env.js";
+
+/** uint128 max value for budget limits. */
+const MAX_BUDGET = 2n ** 128n - 1n;
+
+/**
+ * Safely parse a string to BigInt with bounds checking.
+ * @throws HTTPException with 400 status on invalid input.
+ */
+function safeBigInt(value: string, fieldName: string, max: bigint = MAX_BUDGET): bigint {
+	try {
+		const n = BigInt(value);
+		if (n < 0n) throw new Error("negative");
+		if (n > max) throw new Error("exceeds max");
+		return n;
+	} catch {
+		throw new HTTPException(400, { message: `Invalid ${fieldName}: must be positive integer <= ${max}` });
+	}
+}
 
 export const budgetRoutes = new Hono<AppEnv>();
 
@@ -40,9 +59,9 @@ budgetRoutes.post("/:address/set", validateAddress(), validateBody(SetBudgetRequ
 	const client = getQovaClient();
 	const txHash = await client.setBudget(
 		address as Address,
-		BigInt(dailyLimit),
-		BigInt(monthlyLimit),
-		BigInt(perTxLimit),
+		safeBigInt(dailyLimit, "dailyLimit"),
+		safeBigInt(monthlyLimit, "monthlyLimit"),
+		safeBigInt(perTxLimit, "perTxLimit"),
 	);
 	return c.json({ txHash, agent: address });
 });
@@ -56,7 +75,7 @@ budgetRoutes.post(
 		const address = c.req.param("address");
 		const { amount } = c.get("body") as { amount: string };
 		const client = getQovaClient();
-		const withinBudget = await client.checkBudget(address as Address, BigInt(amount));
+		const withinBudget = await client.checkBudget(address as Address, safeBigInt(amount, "amount"));
 		return c.json({ agent: address, withinBudget, amount });
 	},
 );
@@ -70,7 +89,7 @@ budgetRoutes.post(
 		const address = c.req.param("address");
 		const { amount } = c.get("body") as { amount: string };
 		const client = getQovaClient();
-		const txHash = await client.recordSpend(address as Address, BigInt(amount));
+		const txHash = await client.recordSpend(address as Address, safeBigInt(amount, "amount"));
 		return c.json({ txHash, agent: address });
 	},
 );

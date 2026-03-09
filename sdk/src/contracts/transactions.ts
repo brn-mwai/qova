@@ -4,10 +4,9 @@
  */
 
 import type { Address, Hash, Hex, PublicClient, WalletClient } from "viem";
-import { ContractFunctionRevertedError } from "viem";
 import { transactionValidatorAbi } from "../abi/index.js";
-import { mapContractError, QovaError } from "../types/errors.js";
 import type { TransactionStats, TransactionType } from "../types/transaction.js";
+import { handleContractError } from "../utils/errors.js";
 
 /**
  * Record a new transaction for an agent.
@@ -39,13 +38,7 @@ export async function recordTransaction(
 		});
 		return wallet.writeContract(request);
 	} catch (error) {
-		if (error instanceof ContractFunctionRevertedError && error.data) {
-			throw mapContractError(
-				error.data.errorName,
-				error.data.args as readonly unknown[] | undefined,
-			);
-		}
-		throw new QovaError("Failed to record transaction", "WRITE_FAILED", error);
+		throw handleContractError(error, "recordTransaction"); // FIX: §2.1
 	}
 }
 
@@ -75,6 +68,6 @@ export async function getTransactionStats(
 			lastActivityTimestamp: BigInt(result.lastActivityTimestamp),
 		};
 	} catch (error) {
-		throw new QovaError("Failed to read transaction stats", "READ_FAILED", error);
+		throw handleContractError(error, "getTransactionStats"); // FIX: §2.1
 	}
 }

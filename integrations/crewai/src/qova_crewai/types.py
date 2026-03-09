@@ -161,3 +161,15 @@ class QovaApiError(Exception):
         self.message = message
         self.url = url
         super().__init__(f"Qova API error {status_code} at {url}: {message}")
+
+
+class QovaTimeoutError(QovaApiError):
+    """Raised when a Qova API request times out."""
+
+    pass
+
+
+class QovaRateLimitError(QovaApiError):
+    """Raised when the Qova API returns 429 (rate limited)."""
+
+    pass

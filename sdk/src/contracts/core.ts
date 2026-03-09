@@ -4,10 +4,9 @@
  */
 
 import type { Address, Hash, Hex, PublicClient, WalletClient } from "viem";
-import { ContractFunctionRevertedError } from "viem";
 import { qovaCoreAbi } from "../abi/index.js";
-import { mapContractError, QovaError } from "../types/errors.js";
 import type { TransactionType } from "../types/transaction.js";
+import { handleContractError } from "../utils/errors.js";
 
 /**
  * Execute an agent action through QovaCore: validates budget, records the
@@ -41,12 +40,6 @@ export async function executeAgentAction(
 		});
 		return wallet.writeContract(request);
 	} catch (error) {
-		if (error instanceof ContractFunctionRevertedError && error.data) {
-			throw mapContractError(
-				error.data.errorName,
-				error.data.args as readonly unknown[] | undefined,
-			);
-		}
-		throw new QovaError("Failed to execute agent action", "WRITE_FAILED", error);
+		throw handleContractError(error, "executeAgentAction"); // FIX: §2.1
 	}
 }

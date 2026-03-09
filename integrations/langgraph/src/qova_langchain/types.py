@@ -305,3 +305,25 @@ class QovaError(BaseModel):
         if self.detail:
             base += f" - {self.detail}"
         return base
+
+
+class QovaAPIError(Exception):
+    """Exception raised on non-2xx Qova API responses."""
+
+    def __init__(self, status: int, message: str, detail: str | None = None) -> None:
+        self.status = status
+        self.message = message
+        self.detail = detail
+        super().__init__(f"Qova API {status}: {message}")
+
+
+class QovaTimeoutError(QovaAPIError):
+    """Raised when a Qova API request times out."""
+
+    pass
+
+
+class QovaRateLimitError(QovaAPIError):
+    """Raised when the Qova API returns 429 (rate limited)."""
+
+    pass

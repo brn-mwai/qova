@@ -23,7 +23,11 @@ export function validateBody<T extends z.ZodSchema>(
 		}
 		const result = schema.safeParse(raw);
 		if (!result.success) {
-			return c.json({ error: "Validation failed", details: result.error.issues }, 400);
+			// In production, redact schema structure details
+			const details = process.env.NODE_ENV === "production"
+				? result.error.issues.map((i) => ({ path: i.path.join("."), message: i.message }))
+				: result.error.issues;
+			return c.json({ error: "Validation failed", details }, 400);
 		}
 		c.set("body", result.data);
 		await next();

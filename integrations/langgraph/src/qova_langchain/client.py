@@ -8,6 +8,7 @@ Uses httpx for HTTP transport with automatic retries and timeouts.
 from __future__ import annotations
 
 import os
+import time
 from typing import Any, Optional
 
 import httpx
@@ -18,7 +19,10 @@ from qova_langchain.types import (
     BudgetSetResponse,
     BudgetStatusResponse,
     ComputeScoreResponse,
+    QovaAPIError,
     QovaError,
+    QovaRateLimitError,
+    QovaTimeoutError,
     RecordTransactionResponse,
     RegisterAgentResponse,
     ScoreBreakdownResponse,
@@ -50,16 +54,19 @@ class QovaClient:
         self.base_url = (
             base_url or os.environ.get("QOVA_API_URL", _DEFAULT_BASE_URL)
         ).rstrip("/")
-        self.api_key = api_key or os.environ.get("QOVA_API_KEY", "")
         self.timeout = timeout
+
+        # Resolve API key but only store in header, not as attribute
+        key = api_key or os.environ.get("QOVA_API_KEY")
+        if not key:
+            raise ValueError("QOVA_API_KEY required: pass api_key or set env var")
 
         self._headers: dict[str, str] = {
             "Content-Type": "application/json",
             "Accept": "application/json",
             "User-Agent": "qova-langchain/0.1.0",
+            "Authorization": f"Bearer {key}",
         }
-        if self.api_key:
-            self._headers["Authorization"] = f"Bearer {self.api_key}"
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -83,6 +90,46 @@ class QovaClient:
             message=str(message),
             detail=str(detail) if detail else None,
         )
+
+    def _request(self, method: str, path: str, **kwargs: Any) -> dict[str, Any]:
+        """Make an HTTP request, raising typed exceptions on failure."""
+        url = self._url(path)
+        try:
+            with self._sync_client() as client:
+                response = client.request(method, url, **kwargs)
+        except httpx.TimeoutException as e:
+            raise QovaTimeoutError(0, "Request timed out", str(e)) from e
+
+        if response.status_code == 429:
+            raise QovaRateLimitError(429, "Rate limited", response.text[:200])
+        if response.status_code >= 400:
+            try:
+                body = response.json()
+                msg = body.get("error", body.get("message", "Unknown"))
+                detail = body.get("detail")
+            except Exception:
+                msg = response.text[:200] if response.text else "Unknown error"
+                detail = None
+            raise QovaAPIError(response.status_code, str(msg), str(detail) if detail else None)
+
+        return response.json()  # type: ignore[no-any-return]
+
+    def _request_with_retry(
+        self, method: str, path: str, max_retries: int = 2, **kwargs: Any
+    ) -> dict[str, Any]:
+        """Make a request with exponential backoff on timeout/rate-limit."""
+        for attempt in range(max_retries + 1):
+            try:
+                return self._request(method, path, **kwargs)
+            except QovaTimeoutError:
+                if attempt == max_retries:
+                    raise
+                time.sleep(2 ** attempt)
+            except QovaRateLimitError:
+                if attempt == max_retries:
+                    raise
+                time.sleep(5)
+        raise QovaAPIError(0, "Max retries exceeded")  # unreachable but satisfies type checker
 
     # ------------------------------------------------------------------
     # Sync methods

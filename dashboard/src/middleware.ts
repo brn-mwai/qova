@@ -14,7 +14,9 @@ export default async function middleware(
 		!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ||
 		!process.env.CLERK_SECRET_KEY
 	) {
-		return NextResponse.next();
+		// Allow health check even without auth config
+		if (request.nextUrl.pathname === "/api/health") return NextResponse.next();
+		return new NextResponse("Auth not configured", { status: 503 });
 	}
 
 	// Dynamic import avoids Clerk crashing at module init when keys are absent

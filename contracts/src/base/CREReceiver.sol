@@ -15,7 +15,11 @@ abstract contract CREReceiver is IReceiver {
     /// @dev Thrown when a caller other than the forwarder invokes onReport.
     error UnauthorizedForwarder();
 
+    /// @dev Thrown when the forwarder address is zero. // FIX: CONCERNS.md §1.1
+    error ZeroForwarderAddress();
+
     constructor(address forwarder) {
+        if (forwarder == address(0)) revert ZeroForwarderAddress(); // FIX: CONCERNS.md §1.1
         i_forwarder = forwarder;
     }
 

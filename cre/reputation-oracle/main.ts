@@ -56,8 +56,25 @@ const configSchema = z.object({
 	gasLimit: z.string(),
 	schedule: z.string(),
 	aiEnabled: z.boolean().default(true),
+	agentAddress: z.string().optional(),
 });
 type Config = z.infer<typeof configSchema>;
+
+// ── AI Response Validation Schemas ──
+
+const AIResponseSchema = z.object({
+	choices: z.array(z.object({
+		message: z.object({
+			content: z.string(),
+		}),
+	})).min(1),
+});
+
+const AIAnalysisSchema = z.object({
+	risk_score: z.number().min(0).max(100),
+	behavioral_flags: z.array(z.string()),
+	confidence: z.number().min(0).max(100),
+});
 
 // ── AI Analysis Types ──
 
@@ -134,9 +151,15 @@ const analyzeAgentBehavior = (
 		})
 		.result();
 
-	const groqResponse = JSON.parse(response.body);
-	const content = groqResponse.choices[0].message.content;
-	return JSON.parse(content) as AIAnalysis;
+	try {
+		const groqResponse = JSON.parse(response.body);
+		const parsed = AIResponseSchema.parse(groqResponse);
+		const content = parsed.choices[0].message.content;
+		const analysis = AIAnalysisSchema.parse(JSON.parse(content));
+		return analysis;
+	} catch (e) {
+		throw new Error(`AI response validation failed: ${e instanceof Error ? e.message : String(e)}`);
+	}
 };
 
 // ── Callback ──
@@ -156,9 +179,9 @@ const onCronTrigger = (
 
 	const evmClient = new EVMClient(network.chainSelector.selector);
 
-	// For hackathon demo: score the deployer address
-	const agentAddress =
-		"0x0a3AF9a104Bd2B5d96C7E24fe95Cc03432431158" as Address;
+	// Read agent address from config, fallback to deployer for hackathon demo
+	const agentAddress = (config.agentAddress ??
+		"0x0a3AF9a104Bd2B5d96C7E24fe95Cc03432431158") as Address;
 
 	runtime.log(`AI-enhanced scoring for agent: ${agentAddress}`);
 
@@ -243,13 +266,39 @@ const onCronTrigger = (
 		monthlySpent: BigInt(rawBudget.monthlySpent ?? 0),
 	};
 
+	// ── EVM Read (bonus): Agent registration timestamp for true account age ──
+	const detailsResult = evmClient
+		.callContract(runtime, {
+			call: encodeCallMsg({
+				from: zeroAddress,
+				to: config.reputationRegistryAddress as Address,
+				data: encodeFunctionData({
+					abi: REPUTATION_REGISTRY_ABI,
+					functionName: "getAgentDetails",
+					args: [agentAddress],
+				}),
+			}),
+			blockNumber: LAST_FINALIZED_BLOCK_NUMBER,
+		})
+		.result();
+
+	const rawDetails = decodeFunctionResult({
+		abi: REPUTATION_REGISTRY_ABI,
+		functionName: "getAgentDetails",
+		data: bytesToHex(detailsResult.data),
+	}) as unknown as Record<string, number | bigint>;
+	const registrationTimestamp = BigInt(rawDetails.lastUpdated ?? 0);
+
 	// ── Compute derived metrics (all BigInt) ──
 	const now = runtime.now();
 	const nowSec = BigInt(Math.floor(now.getTime() / 1000));
+	// Use registration timestamp if available, fall back to lastActivity
 	const accountAgeSec =
-		stats.lastActivityTimestamp > 0n
-			? nowSec - stats.lastActivityTimestamp
-			: 0n;
+		registrationTimestamp > 0n
+			? nowSec - registrationTimestamp
+			: stats.lastActivityTimestamp > 0n
+				? nowSec - stats.lastActivityTimestamp
+				: 0n;
 
 	const dailyLimit = budget.dailyRemaining + budget.dailySpent;
 	const monthlyLimit = budget.monthlyRemaining + budget.monthlySpent;

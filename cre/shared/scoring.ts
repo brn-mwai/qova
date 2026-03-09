@@ -88,8 +88,9 @@ function volumeToScore(volume: bigint): bigint {
 	if (volume >= eth1 * 100n) return 900n;
 	if (volume >= eth1 * 10n) return 750n;
 	if (volume >= eth1) return 600n;
+	if (volume >= eth1 / 2n) return 500n;       // 0.5 ETH
 	if (volume >= eth1 / 10n) return 400n;
-	if (volume >= eth1 / 100n) return 200n;
+	if (volume >= eth1 / 100n) return 200n;      // 0.01 ETH
 	if (volume > 0n) return 100n;
 	return 0n;
 }
@@ -102,8 +103,11 @@ function computeBudgetCompliance(
 	if (dailyLimit === 0n) return MAX_SCORE;
 
 	const dailyUtilBps = (dailySpent * 10000n) / dailyLimit;
+	// Under 80% utilization -> full score
 	if (dailyUtilBps <= 8000n) return MAX_SCORE;
+	// 80-100% utilization -> linear decay from MAX_SCORE to 0
 	if (dailyUtilBps <= 10000n)
 		return ((10000n - dailyUtilBps) * MAX_SCORE) / 2000n;
+	// Utilization > 100% means overspent -> score = 0
 	return 0n;
 }

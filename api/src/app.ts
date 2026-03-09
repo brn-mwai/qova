@@ -22,6 +22,7 @@ const CORS_ORIGINS = isProd
 		]
 	: [
 			"http://localhost:3000",
+			"http://localhost:3001",
 			"http://localhost:5173",
 			"https://qova.cc",
 			"https://app.qova.cc",
@@ -29,6 +30,18 @@ const CORS_ORIGINS = isProd
 		];
 
 const app = new Hono();
+
+// ─── Security Headers ────────────────────────────────────────────
+
+app.use("*", async (c, next) => {
+	await next();
+	c.header("X-Frame-Options", "DENY");
+	c.header("X-Content-Type-Options", "nosniff");
+	c.header("X-XSS-Protection", "1; mode=block");
+	c.header("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+	c.header("Referrer-Policy", "strict-origin-when-cross-origin");
+	c.header("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+});
 
 // ─── Security Middleware ──────────────────────────────────────────
 
@@ -64,7 +77,13 @@ app.use(
 );
 
 // ─── Observability ────────────────────────────────────────────────
-app.use("*", logger());
+app.use("*", logger((msg) => {
+	// Redact sensitive headers from log output
+	const redacted = msg
+		.replace(/X-Payment:\s*\S+/gi, "X-Payment: [REDACTED]")
+		.replace(/Authorization:\s*\S+/gi, "Authorization: [REDACTED]");
+	console.log(redacted);
+}));
 app.use("*", prettyJSON());
 app.onError(errorHandler);
 
