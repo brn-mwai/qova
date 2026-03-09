@@ -9,8 +9,8 @@ const securityHeaders = [
     key: "Content-Security-Policy",
     value: [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://challenges.cloudflare.com https://clerk.qova.cc https://*.clerk.accounts.dev",
-      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https:",
+      "style-src 'self' 'unsafe-inline' https:",
       "img-src 'self' data: https: blob:",
       "font-src 'self' https://fonts.gstatic.com",
       "connect-src 'self' https://*.convex.cloud wss://*.convex.cloud https://sepolia.base.org https://*.clerk.dev https://clerk.qova.cc https://*.metamask.io https://*.walletconnect.org https://*.web3modal.org https://*.reown.com https://*.coinbase.com https://*.walletconnect.com wss://*.walletconnect.org wss://*.walletconnect.com wss://*.relay.walletconnect.com",
