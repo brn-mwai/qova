@@ -21,6 +21,36 @@
 
 Qova is a credit bureau for autonomous AI agents. As agents transact on-chain via protocols like x402, Qova computes verifiable reputation scores (0-1000) from on-chain transaction data using Chainlink CRE, then writes those scores back on-chain for any protocol to consume. Think Equifax, but for AI.
 
+<p align="center">
+  <a href="https://youtu.be/g0TLMmjwJt4">
+    <img src="https://img.youtube.com/vi/g0TLMmjwJt4/maxresdefault.jpg" alt="Qova Demo Video" width="700" />
+  </a>
+</p>
+<p align="center">
+  <a href="https://youtu.be/g0TLMmjwJt4">Watch the demo</a>
+</p>
+
+---
+
+## Simulations
+
+### CRE & AI - reputation-oracle
+![reputation-oracle simulation](./assets/scene-02-cre-ai.gif)
+
+### Risk & Compliance - transaction-monitor + budget-alert
+![risk and compliance simulation](./assets/scene-03-risk.gif)
+
+### World ID with CRE - agent-verify
+![agent verification simulation](./assets/scene-04-worldid.gif)
+
+### On-Chain Proof
+![on-chain score read](./assets/scene-07-onchain-proof.gif)
+
+### Badge API
+![embeddable score badge](./assets/scene-07c-badge.gif)
+
+---
+
 ## How It Works
 
 ```mermaid

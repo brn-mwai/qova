@@ -362,6 +362,33 @@ export default function Home(): ReactElement {
           </div>
         </div>
 
+        {/* ── Demo Video ─────────────────────────────────── */}
+        <section className="py-16 sm:py-24 lg:py-28">
+          <div className="mx-auto max-w-[1200px] px-4 sm:px-6">
+            <Reveal>
+              <div className="text-center mb-8 sm:mb-10">
+                <p className="text-[10px] uppercase tracking-[0.2em] text-[var(--dim)] mb-3" style={{ fontFamily: "var(--font-mono)" }}>
+                  Demo
+                </p>
+                <h2 className="text-[clamp(1.25rem,4vw,2rem)] font-semibold leading-[1.1] tracking-[-0.025em]">
+                  See it in action.
+                </h2>
+              </div>
+            </Reveal>
+            <Reveal delay={0.1}>
+              <div className="relative w-full overflow-hidden border border-[var(--border)] bg-black" style={{ aspectRatio: "16/9" }}>
+                <iframe
+                  src="https://www.youtube.com/embed/g0TLMmjwJt4"
+                  title="Qova Demo"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  className="absolute inset-0 w-full h-full"
+                />
+              </div>
+            </Reveal>
+          </div>
+        </section>
+
         {/* ── Problem ────────────────────────────────────── */}
         <section className="py-16 sm:py-24 lg:py-32">
           <div className="mx-auto max-w-[1200px] px-4 sm:px-6">
