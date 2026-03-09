@@ -41,6 +41,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <meta name="talentapp:project_verification" content="9eb2b9c7e7cdbe4c734676a4eeba2b0e474e7a08fb6a488cf4b168d62fa0d99129ff0a5f268ac67a510a83af4a664d45475815fd760bcdd6784f05350952180d" />
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
