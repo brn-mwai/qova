@@ -12,11 +12,6 @@ cache/
 contracts/out/
 contracts/cache/
 .convex/
-# Claude
-.claude/
-CLAUDE.md
-CLAUDE-2.md
-**/CLAUDE.md
 qova-progress.txt
 reference/build-plan.md
 reference/build-plan-addendum.md
@@ -24,7 +19,6 @@ reference/decisions/012-dashboard-architecture.md
 reference/ui-design-system.md
 .vercel
 *.tsbuildinfo
-qova-claude-agents.tar.gz
 
 # CRE build artifacts
 cre/**/.cre_build_tmp.js
